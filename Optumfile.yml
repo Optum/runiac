@@ -1,0 +1,18 @@
+application:
+  name: "gaia"
+pipeline:
+  gaia:
+    rings:
+      pr:
+        account: "346166872260"
+      prod:
+        account: "626017279283"
+  buildStatus:
+    nodeLabel: "hcc-build-docker"
+    gheOrg: "healthcarecloud"
+    gheProject: "terrascale-oss"
+    gheTokenCredId: "GHE_build_state_PAT"
+    contextBase: "continuous-integration/jenkins/pr-merge"
+  ci:
+    tests:
+      unit: true
