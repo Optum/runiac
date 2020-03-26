@@ -85,23 +85,21 @@ def handleDeployment(optumfile, String account, String namespace, String lockNam
     lock(resource: lockName) {
         stage('Deploy Containers') {
              try {
-                dir('containers') {
-                    withAssumedAccessSh(account) {
-                    """
-                    if [ -z "${namespace}" ]; then
-                        bash deploy-containers.sh --account-id ${account} --aws-profile "static"
-                    else
-                        bash deploy-containers.sh --account-id ${account} --aws-profile "static" --namespace ${namespace}
-                    fi
-                    """
-                    }
+                withAssumedAccessSh(account) {
+                """
+                if [ -z "${namespace}" ]; then
+                    bash deploy-containers.sh --account-id ${account} --aws-profile "static"
+                else
+                    bash deploy-containers.sh --account-id ${account} --aws-profile "static" --namespace ${namespace}
+                fi
+                """
+                }
 
-                    junit "**/*.xml"
-                    if (currentBuild.result == "UNSTABLE") {
-                        updateBuildStatus(optumfile, "error", "unit-tests", "Unit tests failed")
-                    } else {
-                        updateBuildStatus(optumfile, "success", "unit-tests", "Unit tests passed")
-                    }
+                junit "**/*.xml"
+                if (currentBuild.result == "UNSTABLE") {
+                    updateBuildStatus(optumfile, "error", "unit-tests", "Unit tests failed")
+                } else {
+                    updateBuildStatus(optumfile, "success", "unit-tests", "Unit tests passed")
                 }
             } catch(Exception e) {
                echo "Exception caught when deploying containers: ${e}"
