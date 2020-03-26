@@ -638,9 +638,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 		stateAccountIDDirectory = exec.GaiaTargetAccountID
 	}
 	baseS3StateDir := fmt.Sprintf("bootstrap-launchpad-%s", stateAccountIDDirectory)
-	if !exec.FeatureToggleDisableS3BackendKeyPrefix {
 		s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
-	}
 
 	backendConfig := map[string]map[string]interface{}{
 		"s3":    s3Config,
@@ -672,6 +670,11 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 			b["key"] = strings.ReplaceAll(b["key"].(string), "${var.gaia_deployment_ring}", exec.DeploymentRing)
 		}
 
+		if strings.Contains(b["key"].(string), "${var.gaia_target_account_id}") {
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
+		}
+
 		if strings.Contains(b["key"].(string), "${var.core_account_ids_map") {
 			accountID, err := TranslateCoreAccountMapVariable(exec.Logger, b["key"].(string), exec)
 
@@ -689,7 +692,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	if declaredBackend.S3RoleArn != "" {
 		b["role_arn"] = declaredBackend.S3RoleArn
 
-		if strings.Contains(declaredBackend.S3RoleArn, "${var.core_account_ids_map") {
+		if strings.Contains(b["role_arn"].(string), "${var.core_account_ids_map") {
 			accountID, err := TranslateCoreAccountMapVariable(exec.Logger, declaredBackend.S3RoleArn, exec)
 
 			if err == nil {
@@ -701,6 +704,12 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 				exec.Logger.WithError(err).Error("Error translating backend.tf ${var.core_account_ids_map} variable to account id")
 			}
 		}
+
+		if strings.Contains(b["role_arn"].(string), "${var.gaia_target_account_id}") {
+			b["role_arn"] = strings.ReplaceAll(b["role_arn"].(string),
+				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
+		}
+		exec.Logger.Debugf("Declared S3RoleArn: %s", b["role_arn"])
 	}
 
 	declaredBackend.Config = b
