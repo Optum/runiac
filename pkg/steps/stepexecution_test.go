@@ -103,6 +103,43 @@ func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorr
 	require.True(t, strings.HasPrefix(mockResult.Config["key"].(string), "noprefix"), "%s should have no prefix appended when using FeatureToggleDisableS3BackendKeyPrefix", mockResult.Config["key"].(string))
 }
 
+func TestGetBackendConfig_ShouldReturnSameValueForKeyAsStepAsNoKey(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" {
+		key         = "fakestep"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:        fs,
+		Logger:    logger,
+		AccountID: "fun",
+		StepName:  "fakestep",
+	}, ParseTFBackend)
+
+	fs2 := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs2, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" { }
+	}
+	`), 0644)
+
+	mockResult2 := GetBackendConfig(ExecutionConfig{
+		Fs:        fs,
+		Logger:    logger,
+		AccountID: "fun",
+		StepName:  "fakestep",
+	}, ParseTFBackend)
+
+	require.Equal(t, mockResult.Config["key"].(string), mockResult2.Config["key"].(string))
+}
+
 func TestHandleOverrides_ShouldSetFields(t *testing.T) {
 	t.Parallel()
 

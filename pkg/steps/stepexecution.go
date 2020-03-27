@@ -689,6 +689,11 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
 		}
 
+		if strings.Contains(b["key"].(string), "${var.gaia_step}") {
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${var.gaia_step}", exec.StepName)
+		}
+
 		if strings.Contains(b["key"].(string), "${var.core_account_ids_map") {
 			accountID, err := TranslateCoreAccountMapVariable(exec.Logger, b["key"].(string), exec)
 
