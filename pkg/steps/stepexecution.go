@@ -173,37 +173,39 @@ func (exec ExecutionConfig) GetTerraformEnvVars() map[string]string {
 
 func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType RegionDeployType, region string, defaultStepOutputVariables map[string]map[string]string) ExecutionConfig {
 	return ExecutionConfig{
-		RegionDeployType: regionDeployType,
-		Region:           region,
+		RegionDeployType:                         regionDeployType,
+		Region:                                   region,
+		Fs:                                       fs,
+		GaiaTargetAccountID:                      s.DeployConfig.GaiaTargetAccountID,
+		RegionGroup:                              s.DeployConfig.GaiaRegionGroup,
+		DefaultStepOutputVariables:               defaultStepOutputVariables,
+		Environment:                              s.DeployConfig.Environment,
+		AppVersion:                               s.DeployConfig.Version,
+		CredsID:                                  s.DeployConfig.CredsID,
+		AccountID:                                s.DeployConfig.AccountID,
+		AccountOwnerID:                           s.DeployConfig.AccountOwnerMSID,
+		CoreAccounts:                             s.DeployConfig.CoreAccounts,
+		StepName:                                 s.Name,
+		StepID:                                   s.ID,
+		Namespace:                                s.DeployConfig.Namespace,
+		CommonRegion:                             s.DeployConfig.CommonRegion,
+		Authenticator:                            s.DeployConfig.Authenticator,
+		Dir:                                      s.Dir,
+		CSP:                                      s.DeployConfig.CSP,
+		DeploymentRing:                           s.DeployConfig.DeploymentRing,
+		DryRun:                                   s.DeployConfig.DryRun,
+		Stage:                                    s.DeployConfig.Stage,
+		TrackName:                                s.TrackName,
+		RegionGroupRegions:                       s.DeployConfig.GaiaTargetRegions,
+		FargateTaskID:                            s.DeployConfig.FargateTaskID,
+		RegionGroups:                             s.DeployConfig.RegionGroups,
+		GaiaConfig:                               s.GaiaConfig,
+		FeatureToggleDisableS3BackendKeyPrefix:   s.DeployConfig.FeatureToggleDisableS3BackendKeyPrefix,
+		FeatureToggleDisableBackendDefaultBucket: s.DeployConfig.FeatureToggleDisableBackendDefaultBucket,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
 		}),
-		Fs:                         fs,
-		GaiaTargetAccountID:        s.DeployConfig.GaiaTargetAccountID,
-		RegionGroup:                s.DeployConfig.GaiaRegionGroup,
-		DefaultStepOutputVariables: defaultStepOutputVariables,
-		Environment:                s.DeployConfig.Environment,
-		AppVersion:                 s.DeployConfig.Version,
-		CredsID:                    s.DeployConfig.CredsID,
-		AccountID:                  s.DeployConfig.AccountID,
-		AccountOwnerID:             s.DeployConfig.AccountOwnerMSID,
-		CoreAccounts:               s.DeployConfig.CoreAccounts,
-		StepName:                   s.Name,
-		StepID:                     s.ID,
-		Namespace:                  s.DeployConfig.Namespace,
-		CommonRegion:               s.DeployConfig.CommonRegion,
-		Authenticator:              s.DeployConfig.Authenticator,
-		Dir:                        s.Dir,
-		CSP:                        s.DeployConfig.CSP,
-		DeploymentRing:             s.DeployConfig.DeploymentRing,
-		DryRun:                     s.DeployConfig.DryRun,
-		Stage:                      s.DeployConfig.Stage,
-		TrackName:                  s.TrackName,
-		RegionGroupRegions:         s.DeployConfig.GaiaTargetRegions,
-		FargateTaskID:              s.DeployConfig.FargateTaskID,
-		RegionGroups:               s.DeployConfig.RegionGroups,
-		GaiaConfig:                 s.GaiaConfig,
 	}
 }
 
@@ -233,7 +235,19 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs, regionDeployType 
 		exec.Dir = execRegionalDir
 	}
 
-	provider, err := ParseTFProvider(exec.Fs, exec.Logger, exec.Dir, exec.CoreAccounts)
+	accounts := map[string]config.Account{
+		"gaia_target_account_id": {
+			ID:               exec.GaiaTargetAccountID,
+			CredsID:          exec.CredsID,
+			CSP:              exec.CSP,
+			AccountOwnerMSID: exec.AccountOwnerID,
+		},
+	}
+	for k, v := range exec.CoreAccounts {
+		accounts[k] = v
+	}
+
+	provider, err := ParseTFProvider(exec.Fs, exec.Logger, exec.Dir, accounts)
 
 	if err != nil {
 		exec.Logger.WithError(err).Error(err)
@@ -638,7 +652,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 		stateAccountIDDirectory = exec.GaiaTargetAccountID
 	}
 	baseS3StateDir := fmt.Sprintf("bootstrap-launchpad-%s", stateAccountIDDirectory)
-		s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
+	s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
 
 	backendConfig := map[string]map[string]interface{}{
 		"s3":    s3Config,
@@ -709,6 +723,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 			b["role_arn"] = strings.ReplaceAll(b["role_arn"].(string),
 				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
 		}
+
 		exec.Logger.Debugf("Declared S3RoleArn: %s", b["role_arn"])
 	}
 
