@@ -23,37 +23,38 @@ import (
 type TerraformStepper struct{}
 
 type ExecutionConfig struct {
-	RegionDeployType                         RegionDeployType
-	Region                                   string `json:"region"`
-	Logger                                   *logrus.Entry
-	Fs                                       afero.Fs
-	FargateTaskID                            string
-	RegionGroupRegions                       []string
-	GaiaTargetAccountID                      string
-	RegionGroup                              string
-	PrimaryRegion                            string
-	Dir                                      string
-	TFProvider                               TerraformProvider
-	TFBackend                                TerraformBackend
-	CSP                                      string
-	Environment                              string `json:"environment"`
-	AppVersion                               string `json:"app_version"`
-	CredsID                                  string `json:"creds_id"`
-	AccountID                                string `json:"account_id"`
-	AccountOwnerID                           string `json:"account_owner_msid"`
-	CoreAccounts                             map[string]config.Account
-	RegionGroups                             config.RegionGroupsMap
-	Namespace                                string
-	CommonRegion                             string
-	StepName                                 string
-	StepID                                   string
-	DeploymentRing                           string
-	Stage                                    string
-	TrackName                                string
-	DryRun                                   bool
-	GaiaConfig                               GaiaConfig
-	FeatureToggleDisableBackendDefaultBucket bool // TODO: tech debt remove consumption model that requires these feature toggles
-	FeatureToggleDisableS3BackendKeyPrefix   bool
+	RegionDeployType                            RegionDeployType
+	Region                                      string `json:"region"`
+	Logger                                      *logrus.Entry
+	Fs                                          afero.Fs
+	FargateTaskID                               string
+	RegionGroupRegions                          []string
+	GaiaTargetAccountID                         string
+	RegionGroup                                 string
+	PrimaryRegion                               string
+	Dir                                         string
+	TFProvider                                  TerraformProvider
+	TFBackend                                   TerraformBackend
+	CSP                                         string
+	Environment                                 string `json:"environment"`
+	AppVersion                                  string `json:"app_version"`
+	CredsID                                     string `json:"creds_id"`
+	AccountID                                   string `json:"account_id"`
+	AccountOwnerID                              string `json:"account_owner_msid"`
+	CoreAccounts                                map[string]config.Account
+	RegionGroups                                config.RegionGroupsMap
+	Namespace                                   string
+	CommonRegion                                string
+	StepName                                    string
+	StepID                                      string
+	DeploymentRing                              string
+	Stage                                       string
+	TrackName                                   string
+	DryRun                                      bool
+	GaiaConfig                                  GaiaConfig
+	FeatureToggleDisableBackendDefaultBucket    bool // TODO: tech debt remove consumption model that requires these feature toggles
+	FeatureToggleDisableS3BackendKeyPrefix      bool
+	FeatureToggleDisableS3BackendKeyNamespacing bool
 
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
 	Authenticator              auth.Authenticator
@@ -202,6 +203,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		GaiaConfig:                               s.GaiaConfig,
 		FeatureToggleDisableS3BackendKeyPrefix:   s.DeployConfig.FeatureToggleDisableS3BackendKeyPrefix,
 		FeatureToggleDisableBackendDefaultBucket: s.DeployConfig.FeatureToggleDisableBackendDefaultBucket,
+		FeatureToggleDisableS3BackendKeyNamespacing: s.DeployConfig.FeatureToggleDisableS3BackendKeyNamespacing,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
@@ -665,19 +667,24 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	// if user has decided to overwrite state file convention in backend.tf, support this override
 	if declaredBackend.Key != "" {
 		// grab statefile name (base)
-		stateFileName := filepath.Base(declaredBackend.Key)
-		namespacedTfState := getStateFile(stateFileName, exec.Namespace, exec.DeploymentRing, exec.Environment, exec.Region, exec.RegionDeployType)
 
-		// if parsed key contains directories, inject appropriately
-		if strings.Contains(declaredBackend.Key, "/") {
-			namespacedTfState = filepath.Join(filepath.Dir(declaredBackend.Key), namespacedTfState)
+		if !exec.FeatureToggleDisableS3BackendKeyNamespacing {
+			stateFileName := filepath.Base(declaredBackend.Key)
+			namespacedTfState := getStateFile(stateFileName, exec.Namespace, exec.DeploymentRing, exec.Environment, exec.Region, exec.RegionDeployType)
+
+			// if parsed key contains directories, inject appropriately
+			if strings.Contains(declaredBackend.Key, "/") {
+				namespacedTfState = filepath.Join(filepath.Dir(declaredBackend.Key), namespacedTfState)
+			}
+
+			b["key"] = namespacedTfState
+		} else {
+			b["key"] = declaredBackend.Key
 		}
 
 		// prepend account specific directory
 		if !exec.FeatureToggleDisableS3BackendKeyPrefix {
-			b["key"] = filepath.Join(baseS3StateDir, namespacedTfState)
-		} else {
-			b["key"] = namespacedTfState
+			b["key"] = filepath.Join(baseS3StateDir, b["key"].(string))
 		}
 
 		if strings.Contains(b["key"].(string), "${var.gaia_deployment_ring}") {
@@ -687,6 +694,37 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 		if strings.Contains(b["key"].(string), "${var.gaia_target_account_id}") {
 			b["key"] = strings.ReplaceAll(b["key"].(string),
 				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
+		}
+
+		if strings.Contains(b["key"].(string), "${var.gaia_step}") {
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${var.gaia_step}", exec.StepName)
+		}
+
+		if strings.Contains(b["key"].(string), "${var.gaia_region_deploy_type}") {
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${var.gaia_region_deploy_type}", exec.RegionDeployType.String())
+		}
+
+		if strings.Contains(b["key"].(string), "${var.region}") {
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${var.region}", exec.Region)
+		}
+
+		if strings.Contains(b["key"].(string), "${local.namespace-}") {
+			namespace_ := exec.Namespace
+
+			if len(namespace_) > 0 {
+				namespace_ += "-"
+			}
+
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${local.namespace-}", namespace_)
+		}
+
+		if strings.Contains(b["key"].(string), "${var.region}") {
+			b["key"] = strings.ReplaceAll(b["key"].(string),
+				"${var.gaia_step}", exec.StepName)
 		}
 
 		if strings.Contains(b["key"].(string), "${var.core_account_ids_map") {

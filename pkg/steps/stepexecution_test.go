@@ -78,6 +78,27 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 	require.Equal(t, fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", DefaultStubAccountID), mockResult.Config["role_arn"])
 }
 
+func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" {
+		key         = "/aws/core/logging/${var.gaia_step}-consumeraas_aws.tfstate"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:       fs,
+		Logger:   logger,
+		StepName: "fakestep",
+	}, ParseTFBackend)
+
+	require.Equal(t, "bootstrap-launchpad-/aws/core/logging/fakestep-consumeraas_aws.tfstate/primary-", mockResult.Config["key"].(string))
+}
+
 func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorrectly(t *testing.T) {
 	t.Parallel()
 	fs := afero.NewMemMapFs()
@@ -101,6 +122,43 @@ func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorr
 	}, ParseTFBackend)
 
 	require.True(t, strings.HasPrefix(mockResult.Config["key"].(string), "noprefix"), "%s should have no prefix appended when using FeatureToggleDisableS3BackendKeyPrefix", mockResult.Config["key"].(string))
+}
+
+func TestGetBackendConfig_ShouldReturnSameValueForKeyAsStepAsNoKey(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" {
+		key         = "fakestep"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:        fs,
+		Logger:    logger,
+		AccountID: "fun",
+		StepName:  "fakestep",
+	}, ParseTFBackend)
+
+	fs2 := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs2, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" { }
+	}
+	`), 0644)
+
+	mockResult2 := GetBackendConfig(ExecutionConfig{
+		Fs:        fs,
+		Logger:    logger,
+		AccountID: "fun",
+		StepName:  "fakestep",
+	}, ParseTFBackend)
+
+	require.Equal(t, mockResult.Config["key"].(string), mockResult2.Config["key"].(string))
 }
 
 func TestHandleOverrides_ShouldSetFields(t *testing.T) {

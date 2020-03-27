@@ -1,5 +1,14 @@
 # Terrascale
 
+## 0.0.3 (Mar 27, 2020)
+
+Updated the `backend.tf` parser to interpolate the following variables for the s3 `key` attribute:
+
+- `var.gaia_step` 
+- `var.gaia_region_deploy_type` 
+- `var.region` 
+- `local.namespace-` (temporary backwards compatibility variable) 
+
 ## 0.0.2 (Mar 26, 2020)
 
 Back-porting a few missed commits
