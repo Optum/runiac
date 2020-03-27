@@ -336,6 +336,8 @@ See `TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccou
 Supported variables for dynamic `role_arn` configuration:
 
 - `${var.core_account_ids_map}`
+- `${var.gaia_target_account_id}`
+- `${var.gaia_deployment_ring}`
 
 #### Provider (AWS)
 
@@ -364,7 +366,7 @@ When using this functionality, you can only specifiy an account in the `core_acc
 
 ###### Supported parameters
 
-Any key available in the `core_account_ids_map` input variable can be used in the `provider.assume_role.role_arn` value. For example, to deploy infrastracture only the AWS Bridge Logging accounts the configuration would minimally need to include:
+The `gaia_target_account_id` and any key available in the `core_account_ids_map` input variable can be used in the `provider.assume_role.role_arn` value. For example, to deploy infrastructure only the AWS Bridge Logging accounts the configuration would minimally need to include:
 
 ```hcl
 provider "aws" {
@@ -455,7 +457,7 @@ A common use case for this feature is controlling terraform `lifecycle` paramete
 Terrascale is only executed locally via it's unit tests. To execute Gaia child projects locally, one would need to build this container first.
 
 ```bash
-$ docker build -t bd
+$ DOCKER_BUILDKIT=1 docker build -t terrascale .
 # Now one can build the child containers (launchpad_core_aws, bedrock_aws, etc)
 ```
 

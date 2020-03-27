@@ -189,7 +189,7 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 			assumeRoleRoleArn = substring[1]
 		}
 
-		// if assume role arn is set, extract out account id for proper logging in bedrock
+		// if assume role arn is set, extract out account id for proper logging
 		if assumeRoleRoleArn != "" {
 			provider.AccountOverridden = true
 
@@ -199,25 +199,30 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountID))
 
 			// check for variable arn:aws:iam::${var.core_account_ids_map.logging_final_destination}:role/OrganizationAccountAccessRole
-			checkForVariable := strings.Split(accountID, "var.core_account_ids_map.")
+			checkForCoreAccount := strings.Split(accountID, "var.core_account_ids_map.")
+			checkForTargetAccount := strings.Contains(accountID, "var.gaia_target_account_id")
 
-			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", strings.Join(checkForVariable, ", ")))
+			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", strings.Join(checkForCoreAccount, ", ")))
 
-			if len(checkForVariable) > 1 {
+			var accountIDKey string
+			if len(checkForCoreAccount) > 1 {
 				// parse out variable key ${var.core_account_ids_map.logging_final_destination}
-				accountIDKey := strings.Split(checkForVariable[1], "}")[0]
+				accountIDKey = strings.Split(checkForCoreAccount[1], "}")[0]
 
-				logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountIDKey))
 
-				if val, ok := accountIds[accountIDKey]; ok {
-					provider.AssumeRoleAccount = val
-				} else {
-					logger.Errorf(`Did not find match for variable "%v" while parsing provider assume role. Possible options include: %v`, accountIDKey, KeysString(accountIds))
-				}
-			} else {
-				return provider, errors.New(fmt.Sprintf("Unsupported assume role configuration: %v. Unable to find core_account_ids_map.", assumeRoleRoleArn))
+			} else if checkForTargetAccount {
+				accountIDKey = "gaia_target_account_id"
 			}
 
+			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountIDKey))
+
+			if val, ok := accountIds[accountIDKey]; ok {
+				provider.AssumeRoleAccount = val
+			} else {
+				logger.Warnf(`Did not find match for variable "%v" while parsing provider assume role. Possible options include: %v`, accountIDKey, KeysString(accountIds))
+			}
+
+			// TODO(GAIA_FEATURE_DISABLE_CREDS): remove this error return after ensuring all projects have this feature toggle as true
 			if len(provider.AssumeRoleAccount.CredsID) == 0 {
 				return provider, errors.New("Unable to correctly set AssumeRoleAccount from provider.tf assume role override")
 			}
