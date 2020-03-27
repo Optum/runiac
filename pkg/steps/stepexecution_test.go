@@ -78,6 +78,27 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 	require.Equal(t, fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", DefaultStubAccountID), mockResult.Config["role_arn"])
 }
 
+func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" {
+		key         = "/aws/core/logging/${var.gaia_step}-consumeraas_aws.tfstate"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:       fs,
+		Logger:   logger,
+		StepName: "fakestep",
+	}, ParseTFBackend)
+
+	require.Equal(t, "bootstrap-launchpad-/aws/core/logging/fakestep-consumeraas_aws.tfstate/primary-", mockResult.Config["key"].(string))
+}
+
 func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorrectly(t *testing.T) {
 	t.Parallel()
 	fs := afero.NewMemMapFs()

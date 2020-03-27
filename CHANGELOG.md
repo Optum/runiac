@@ -1,5 +1,9 @@
 # Terrascale
 
+## 0.0.3 (Mar 27, 2020)
+
+Updated the `backend.tf` parser to interpolate `var.gaia_step` for the key attribute.
+
 ## 0.0.2 (Mar 26, 2020)
 
 Back-porting a few missed commits
