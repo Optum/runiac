@@ -95,12 +95,15 @@ def handleDeployment(optumfile, String account, String namespace, String lockNam
                 """
                 }
 
-                junit "**/*.xml"
-                if (currentBuild.result == "UNSTABLE") {
-                    updateBuildStatus(optumfile, "error", "unit-tests", "Unit tests failed")
-                } else {
-                    updateBuildStatus(optumfile, "success", "unit-tests", "Unit tests passed")
+                dir('reports') {
+                    junit "junit.xml"
+                    if (currentBuild.result == "UNSTABLE") {
+                        updateBuildStatus(optumfile, "error", "unit-tests", "Unit tests failed")
+                    } else {
+                        updateBuildStatus(optumfile, "success", "unit-tests", "Unit tests passed")
+                    }
                 }
+
             } catch(Exception e) {
                echo "Exception caught when deploying containers: ${e}"
                updateBuildStatus(optumfile, "error", "deployment", "Containers deployment failed")
