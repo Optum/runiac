@@ -57,7 +57,7 @@ if [ "$AWSPROFILE" != "static" ]; then
   fi
 else
   # If relevant, utilize the ephemeral role to authenticate to ecr
-  creds=$(aws sts assume-role --role-arn "arn:aws:iam::$ACCOUNTID:role/GaiaDeployRole" --role-session-name "${NAMESPACE_}Gaia-Deploy-$ACCOUNTID" --output json | jq '{ accessKeyId: .Credentials.AccessKeyId, secretAccessKey: .Credentials.SecretAccessKey, sessionToken: .Credentials.SessionToken }') &>/dev/null
+  creds=$(aws sts assume-role --role-arn "arn:aws:iam::$ACCOUNTID:role/GaiaDeployRole" --role-session-name "Gaia-Deploy-$ACCOUNTID" --output json | jq '{ accessKeyId: .Credentials.AccessKeyId, secretAccessKey: .Credentials.SecretAccessKey, sessionToken: .Credentials.SessionToken }') &>/dev/null
 
   export AWS_ACCESS_KEY_ID=$(echo "$creds" | jq -r '.accessKeyId') &>/dev/null
   export AWS_SECRET_ACCESS_KEY=$(echo "$creds" | jq -r '.secretAccessKey' ) &>/dev/null
