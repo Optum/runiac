@@ -687,87 +687,81 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 			b["key"] = filepath.Join(baseS3StateDir, b["key"].(string))
 		}
 
-		if strings.Contains(b["key"].(string), "${var.gaia_deployment_ring}") {
-			b["key"] = strings.ReplaceAll(b["key"].(string), "${var.gaia_deployment_ring}", exec.DeploymentRing)
-		}
-
-		if strings.Contains(b["key"].(string), "${var.gaia_target_account_id}") {
-			b["key"] = strings.ReplaceAll(b["key"].(string),
-				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
-		}
-
-		if strings.Contains(b["key"].(string), "${var.gaia_step}") {
-			b["key"] = strings.ReplaceAll(b["key"].(string),
-				"${var.gaia_step}", exec.StepName)
-		}
-
-		if strings.Contains(b["key"].(string), "${var.gaia_region_deploy_type}") {
-			b["key"] = strings.ReplaceAll(b["key"].(string),
-				"${var.gaia_region_deploy_type}", exec.RegionDeployType.String())
-		}
-
-		if strings.Contains(b["key"].(string), "${var.region}") {
-			b["key"] = strings.ReplaceAll(b["key"].(string),
-				"${var.region}", exec.Region)
-		}
-
-		if strings.Contains(b["key"].(string), "${local.namespace-}") {
-			namespace_ := exec.Namespace
-
-			if len(namespace_) > 0 {
-				namespace_ += "-"
-			}
-
-			b["key"] = strings.ReplaceAll(b["key"].(string),
-				"${local.namespace-}", namespace_)
-		}
-
-		if strings.Contains(b["key"].(string), "${var.region}") {
-			b["key"] = strings.ReplaceAll(b["key"].(string),
-				"${var.gaia_step}", exec.StepName)
-		}
-
-		if strings.Contains(b["key"].(string), "${var.core_account_ids_map") {
-			accountID, err := TranslateCoreAccountMapVariable(exec.Logger, b["key"].(string), exec)
-
-			if err == nil {
-				tfVar := strings.Split(b["key"].(string), "${")
-				tfVar2 := strings.Split(tfVar[1], "}")
-				fullVariableNameToTranslate := tfVar2[0]
-				b["key"] = strings.ReplaceAll(b["key"].(string), fmt.Sprintf("${%s}", fullVariableNameToTranslate), accountID)
-			} else {
-				exec.Logger.WithError(err).Error("Error translating backend.tf ${var.core_account_ids_map} variable to account id")
-			}
-		}
+		b["key"] = interpolateString(exec, b["key"].(string))
 	}
 
 	if declaredBackend.S3RoleArn != "" {
-		b["role_arn"] = declaredBackend.S3RoleArn
-
-		if strings.Contains(b["role_arn"].(string), "${var.core_account_ids_map") {
-			accountID, err := TranslateCoreAccountMapVariable(exec.Logger, declaredBackend.S3RoleArn, exec)
-
-			if err == nil {
-				tfVar := strings.Split(declaredBackend.S3RoleArn, "${")
-				tfVar2 := strings.Split(tfVar[1], "}")
-				fullVariableNameToTranslate := tfVar2[0]
-				b["role_arn"] = strings.ReplaceAll(declaredBackend.S3RoleArn, fmt.Sprintf("${%s}", fullVariableNameToTranslate), accountID)
-			} else {
-				exec.Logger.WithError(err).Error("Error translating backend.tf ${var.core_account_ids_map} variable to account id")
-			}
-		}
-
-		if strings.Contains(b["role_arn"].(string), "${var.gaia_target_account_id}") {
-			b["role_arn"] = strings.ReplaceAll(b["role_arn"].(string),
-				"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
-		}
+		b["role_arn"] = interpolateString(exec, declaredBackend.S3RoleArn)
 
 		exec.Logger.Debugf("Declared S3RoleArn: %s", b["role_arn"])
+	}
+
+	if declaredBackend.S3Bucket != "" {
+		b["bucket"] = interpolateString(exec, declaredBackend.S3Bucket)
+
+		exec.Logger.Debugf("Declared bucket: %s", b["bucket"])
 	}
 
 	declaredBackend.Config = b
 
 	return declaredBackend
+}
+
+func interpolateString(exec ExecutionConfig, s string) string {
+	if strings.Contains(s, "${var.gaia_deployment_ring}") {
+		s = strings.ReplaceAll(s, "${var.gaia_deployment_ring}", exec.DeploymentRing)
+	}
+
+	if strings.Contains(s, "${var.gaia_target_account_id}") {
+		s = strings.ReplaceAll(s,
+			"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
+	}
+
+	if strings.Contains(s, "${var.gaia_step}") {
+		s = strings.ReplaceAll(s,
+			"${var.gaia_step}", exec.StepName)
+	}
+
+	if strings.Contains(s, "${var.gaia_region_deploy_type}") {
+		s = strings.ReplaceAll(s,
+			"${var.gaia_region_deploy_type}", exec.RegionDeployType.String())
+	}
+
+	if strings.Contains(s, "${var.region}") {
+		s = strings.ReplaceAll(s,
+			"${var.region}", exec.Region)
+	}
+
+	if strings.Contains(s, "${local.namespace-}") {
+		namespace_ := exec.Namespace
+
+		if len(namespace_) > 0 {
+			namespace_ += "-"
+		}
+
+		s = strings.ReplaceAll(s,
+			"${local.namespace-}", namespace_)
+	}
+
+	if strings.Contains(s, "${var.region}") {
+		s = strings.ReplaceAll(s,
+			"${var.gaia_step}", exec.StepName)
+	}
+
+	if strings.Contains(s, "${var.core_account_ids_map") {
+		accountID, err := TranslateCoreAccountMapVariable(exec.Logger, s, exec)
+
+		if err == nil {
+			tfVar := strings.Split(s, "${")
+			tfVar2 := strings.Split(tfVar[1], "}")
+			fullVariableNameToTranslate := tfVar2[0]
+			s = strings.ReplaceAll(s, fmt.Sprintf("${%s}", fullVariableNameToTranslate), accountID)
+		} else {
+			exec.Logger.WithError(err).Error("Error translating backend.tf ${var.core_account_ids_map} variable to account id")
+		}
+	}
+
+	return s
 }
 
 func getCommonTfOptions2(exec ExecutionConfig) (tfOptions *terraform.Options, err error) {

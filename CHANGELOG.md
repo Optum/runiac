@@ -1,5 +1,13 @@
 # Terrascale
 
+## 0.0.4 (Mar 28, 2020)
+
+Updated the `backend.tf` parser to interpolate the following fields consistently:
+ 
+- `key`
+- `bucket`
+- `role_arn`
+
 ## 0.0.3 (Mar 27, 2020)
 
 Updated the `backend.tf` parser to interpolate the following variables for the s3 `key` attribute:
