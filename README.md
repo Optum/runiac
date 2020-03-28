@@ -317,27 +317,32 @@ Supported Types:
 
 If defining local, the terraform will be executed "fresh" each time. This works very well when the step is only executing scripts/binaries through `local-exec`
 
-##### [S3 Key](https://www.terraform.io/docs/backends/types/s3.html#key)
+##### S3
 
-By convention the state file key will use the step name as state file key. If the `backend.key` parameter is set, Gaia will use this value. This helps provide backwards compatibility for existing terraform infrastructure moving to Gaia.
-Gaia will also automatically prepend the `backend.key` value to be specific to the account. This is based on the `account_id` and `gaia_target_account_id` variables.
+Supported variables for dynamic [`key`](https://www.terraform.io/docs/backends/types/s3.html#key), [`bucket`](https://www.terraform.io/docs/backends/types/s3.html#role_arn) or [`role_arn`](https://www.terraform.io/docs/backends/types/s3.html#bucket) configuration:
 
-If `gaia_target_account_id` exists this will be used as the state account directory. If `gaia_target_account_id` does not exist (projects using `ByCount` execution model, ie. `launchpad_core_aws`) `account_id` will be used
-
-Supported variables for dynamic `key` configuration:
-
-- `${var.gaia_deployment_ring}`
-
-See `TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccountDirectory` in the [unit tests](pkg/steps/steps_test.go) for more information
-
-
-##### [S3 RoleArn](https://www.terraform.io/docs/backends/types/s3.html#role_arn)
-
-Supported variables for dynamic `role_arn` configuration:
-
+- `${var.gaia_region_deploy_type}`: **required** in `key` 
+- `${var.region}`: **required** in `key`
+- `${var.gaia_step}`
 - `${var.core_account_ids_map}`
 - `${var.gaia_target_account_id}`
 - `${var.gaia_deployment_ring}`
+- `${local.namespace-}` (temporary backwards compatibility variable) 
+
+Example Usage:
+
+```hcl-terraform
+terraform {
+  backend "s3" {
+    key      = "${var.gaia_target_account_id}/${local.namespace-}${var.gaia_step}/${var.gaia_region_deploy_type}-${var.region}.tfstate"
+    bucket   = "launchpad-tfstate-${var.core_account_ids_map.gaia_deploy}"
+    role_arn = "arn:aws:iam::${var.core_account_ids_map.gaia_deploy}:role/StateRole"
+    acl      = "bucket-owner-full-control"
+    region   = "us-east-1"
+    encrypt  = true
+  }
+}
+```
 
 #### Provider (AWS)
 

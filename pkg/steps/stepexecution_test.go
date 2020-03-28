@@ -78,6 +78,28 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 	require.Equal(t, fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", DefaultStubAccountID), mockResult.Config["role_arn"])
 }
 
+func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "s3" {
+		bucket      = "${var.gaia_deployment_ring}-bucket"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:                                       fs,
+		Logger:                                   logger,
+		DeploymentRing:                           "fake",
+		FeatureToggleDisableBackendDefaultBucket: true,
+	}, ParseTFBackend)
+
+	require.Equal(t, "fake-bucket", mockResult.Config["bucket"])
+}
+
 func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
 	t.Parallel()
 	fs := afero.NewMemMapFs()

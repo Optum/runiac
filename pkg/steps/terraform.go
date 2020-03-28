@@ -86,6 +86,7 @@ type TerraformBackend struct {
 	Type      TFBackendType
 	Key       string
 	S3RoleArn string
+	S3Bucket  string
 	Config    map[string]interface{}
 }
 
@@ -141,6 +142,14 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 
 	if len(roleMatch) > 0 {
 		backend.S3RoleArn = roleMatch[1]
+	}
+
+	// Bucket
+	bRegex, _ := regexp.Compile(`bucket\s*=\s*"(.+)"`)
+	bucketMatch := bRegex.FindStringSubmatch(s)
+
+	if len(bucketMatch) > 0 {
+		backend.S3Bucket = bucketMatch[1]
 	}
 
 	return
@@ -208,7 +217,6 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 			if len(checkForCoreAccount) > 1 {
 				// parse out variable key ${var.core_account_ids_map.logging_final_destination}
 				accountIDKey = strings.Split(checkForCoreAccount[1], "}")[0]
-
 
 			} else if checkForTargetAccount {
 				accountIDKey = "gaia_target_account_id"
