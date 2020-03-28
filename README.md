@@ -321,11 +321,8 @@ If defining local, the terraform will be executed "fresh" each time. This works 
 
 Supported variables for dynamic [`key`](https://www.terraform.io/docs/backends/types/s3.html#key), [`bucket`](https://www.terraform.io/docs/backends/types/s3.html#role_arn) or [`role_arn`](https://www.terraform.io/docs/backends/types/s3.html#bucket) configuration:
 
-**Required**
-- `${var.gaia_region_deploy_type}` 
-- `${var.region}` 
-
-**Optional**
+- `${var.gaia_region_deploy_type}`: **required** in `key` 
+- `${var.region}`: **required** in `key`
 - `${var.gaia_step}`
 - `${var.core_account_ids_map}`
 - `${var.gaia_target_account_id}`
