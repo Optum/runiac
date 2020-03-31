@@ -1,5 +1,9 @@
 # Terrascale
 
+## 0.0.5 (Mar 28, 2020)
+
+Expanded `FeatureToggleDisableCreds` feature toggle
+
 ## 0.0.4 (Mar 28, 2020)
 
 Updated the `backend.tf` parser to interpolate the following fields consistently:
