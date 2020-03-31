@@ -88,7 +88,7 @@ func (exec ExecutionConfig) GetCredentialEnvVars() (map[string]string, error) {
 		// If a non AWS CSP is selected and using the S3 backend, we need to grab
 		// credentials for an assumed role in order to access the bucket
 		if (exec.TFProvider.Type != AWSProvider || exec.TFProvider.AccountOverridden) && exec.TFBackend.Type == S3Backend && exec.TFBackend.S3RoleArn != "" {
-			awsCredsValue, s3CredsErr := exec.Authenticator.GetAWSMasterCreds(exec.Logger, "aws", exec.CoreAccounts["gaia_deploy"].CredsID)
+			awsCredsValue, s3CredsErr := exec.Authenticator.GetAWSMasterCreds(exec.Logger, "aws", exec.CredsID)
 
 			if s3CredsErr != nil {
 				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
