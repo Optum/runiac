@@ -84,50 +84,50 @@ func (exec ExecutionConfig) GetCredentialEnvVars() (map[string]string, error) {
 		for k, v := range c {
 			creds[k] = v
 		}
-	}
 
-	// If a non AWS CSP is selected and using the S3 backend, we need to grab
-	// credentials for an assumed role in order to access the bucket
-	if (exec.TFProvider.Type != AWSProvider || exec.TFProvider.AccountOverridden) && exec.TFBackend.Type == S3Backend && exec.TFBackend.S3RoleArn != "" {
-		awsCredsValue, s3CredsErr := exec.Authenticator.GetAWSMasterCreds(exec.Logger, "aws", exec.CoreAccounts["gaia_deploy"].CredsID)
+		// If a non AWS CSP is selected and using the S3 backend, we need to grab
+		// credentials for an assumed role in order to access the bucket
+		if (exec.TFProvider.Type != AWSProvider || exec.TFProvider.AccountOverridden) && exec.TFBackend.Type == S3Backend && exec.TFBackend.S3RoleArn != "" {
+			awsCredsValue, s3CredsErr := exec.Authenticator.GetAWSMasterCreds(exec.Logger, "aws", exec.CredsID)
 
-		if s3CredsErr != nil {
-			exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
-			return nil, s3CredsErr
+			if s3CredsErr != nil {
+				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
+				return nil, s3CredsErr
+			}
+
+			awsCreds, err := awsCredsValue.Get()
+
+			if err != nil {
+				exec.Logger.WithError(err).Error("unable to retrieve credentials to access s3")
+				return nil, err
+			}
+
+			creds["AWS_ACCESS_KEY_ID"] = awsCreds.AccessKeyID
+			creds["AWS_SECRET_ACCESS_KEY"] = awsCreds.SecretAccessKey
+			creds["AWS_SESSION_TOKEN"] = awsCreds.SessionToken
+		} else if exec.TFProvider.Type != AWSProvider && exec.TFBackend.Type == S3Backend {
+			s3Creds, s3CredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, "aws", "304095320850", "poc")
+			if s3CredsErr != nil {
+				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
+				return nil, s3CredsErr
+			}
+			// Add these additional credentials to the creds object above
+			for k, v := range s3Creds {
+				creds[k] = v
+			}
 		}
 
-		awsCreds, err := awsCredsValue.Get()
-
-		if err != nil {
-			exec.Logger.WithError(err).Error("unable to retrieve credentials to access s3")
-			return nil, err
-		}
-
-		creds["AWS_ACCESS_KEY_ID"] = awsCreds.AccessKeyID
-		creds["AWS_SECRET_ACCESS_KEY"] = awsCreds.SecretAccessKey
-		creds["AWS_SESSION_TOKEN"] = awsCreds.SessionToken
-	} else if exec.TFProvider.Type != AWSProvider && exec.TFBackend.Type == S3Backend {
-		s3Creds, s3CredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, "aws", "304095320850", "poc")
-		if s3CredsErr != nil {
-			exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
-			return nil, s3CredsErr
-		}
-		// Add these additional credentials to the creds object above
-		for k, v := range s3Creds {
-			creds[k] = v
-		}
-	}
-
-	// adding the azu creds if passed in front config and not matching already pulled creds
-	if config.CSP == "AZU" && config.CredsID != "" && exec.CSP != config.CSP {
-		azuCreds, azuCredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, config.CSP, exec.GaiaTargetAccountID, config.CredsID)
-		if azuCredsErr != nil {
-			exec.Logger.WithError(azuCredsErr).Error("unable to retrieve credentials to access account")
-			return nil, azuCredsErr
-		}
-		// Add these additional credentials to the creds object above
-		for k, v := range azuCreds {
-			creds[k] = v
+		// adding the azu creds if passed in front config and not matching already pulled creds
+		if config.CSP == "AZU" && config.CredsID != "" && exec.CSP != config.CSP {
+			azuCreds, azuCredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, config.CSP, exec.GaiaTargetAccountID, config.CredsID)
+			if azuCredsErr != nil {
+				exec.Logger.WithError(azuCredsErr).Error("unable to retrieve credentials to access account")
+				return nil, azuCredsErr
+			}
+			// Add these additional credentials to the creds object above
+			for k, v := range azuCreds {
+				creds[k] = v
+			}
 		}
 	}
 	return creds, nil
