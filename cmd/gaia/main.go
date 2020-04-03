@@ -93,7 +93,7 @@ func main() {
 	})
 
 	if result == "success" {
-		slog.Info()
+		slog.Info(resultMessage)
 	} else {
 		slog.Error(resultMessage)
 	}
