@@ -87,6 +87,7 @@ type RegionExecution struct {
 	Region                     string
 	RegionDeployType           steps.RegionDeployType
 	StepperFactory             steps.StepperFactory
+	PrimaryOutput              ExecutionOutput // This value is only set when regiondeploytype == regional
 	DefaultStepOutputVariables map[string]map[string]string
 }
 
@@ -417,18 +418,6 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		return
 	}
 
-	if primaryTrackExecution.Output.FailedTestCount > 0 || primaryTrackExecution.Output.FailureCount > 0 {
-		logger.Warn("Primary region deployment encountered errors, skipping regional deployments for this track.")
-		_, err := cloudaccountdeployment.FlushTrack(logger, t.Name)
-
-		if err != nil {
-			logger.WithError(err).Error(err)
-		}
-
-		out <- output
-		return
-	}
-
 	targetRegions := cfg.GaiaTargetRegions
 	targetRegionsCount := len(targetRegions)
 	regionOutChan := make(chan RegionExecution, targetRegionsCount)
@@ -463,6 +452,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 			RegionDeployType:           steps.RegionalRegionDeployType,
 			StepperFactory:             execution.StepperFactory,
 			DefaultStepOutputVariables: outputVars,
+			PrimaryOutput:              primaryTrackExecution.Output,
 		}
 
 		regionInChan <- regionalRegionExecution
@@ -595,11 +585,33 @@ func ExecuteDeployTrackRegion(in <-chan RegionExecution, out chan<- RegionExecut
 		for _, s := range execution.TrackOrderedSteps[progressionLevel] {
 
 			// if any previous failures, skip
-			if (progressionLevel > 1 && execution.Output.FailureCount > 0) || (execution.RegionDeployType == steps.RegionalRegionDeployType && !s.RegionalResourcesExist) {
+			if execution.RegionDeployType == steps.RegionalRegionDeployType && !s.RegionalResourcesExist {
 				go func(s steps.Step) {
 					s.Output.Status = steps.Skipped
 					sChan <- s
 				}(s)
+			} else if progressionLevel > 1 && execution.Output.FailureCount > 0 {
+				go func(s steps.Step, logger *logrus.Entry) {
+					slogger := logger.WithFields(logrus.Fields{
+						"step": s.Name,
+					})
+
+					slogger.Warn("Skipping step due to earlier step failures in this region")
+
+					s.Output.Status = steps.Skipped
+					sChan <- s
+				}(s, logger)
+			} else if execution.PrimaryOutput.FailureCount > 0 {
+				go func(s steps.Step, logger *logrus.Entry) {
+					slogger := logger.WithFields(logrus.Fields{
+						"step": s.Name,
+					})
+
+					slogger.Warn("Skipping step due to failures in primary region deployment")
+
+					s.Output.Status = steps.Skipped
+					sChan <- s
+				}(s, logger)
 			} else {
 				go ExecuteStep(execution.StepperFactory, execution.Region, execution.RegionDeployType, logger, execution.Fs, execution.Output.StepOutputVariables, progressionLevel, s, sChan, false)
 			}
