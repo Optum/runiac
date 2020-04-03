@@ -369,14 +369,6 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 			stubTargetRegions:         []string{"us-east-1", "us-east-2"},
 			expectedCallCount:         3,
 		},
-		"ShouldNotExecuteTargetRegionsWhenPrimaryHasFail": {
-			stubExecutedFailCount:     1,
-			stubExecutedTestFailCount: 0,
-			stubRegionalDeployment:    true,
-			regionGroup:               "us",
-			stubTargetRegions:         []string{"us-east-1", "us-east-2"},
-			expectedCallCount:         1,
-		},
 	}
 
 	executionParams := []tracks.RegionExecution{}
@@ -632,4 +624,47 @@ func TestExecuteDeployTrackRegion_ShouldNotExecuteSecondProgressionWhenFirstFail
 
 	require.NotNil(t, primaryTrackExecution)
 	require.Len(t, executeStepSpy, 1, "Should not execute the second progression step with a failure in first progression")
+}
+
+func TestExecuteDeployTrackRegion_ShouldSkipWhenPrimaryFails(t *testing.T) {
+	primaryOutChan := make(chan tracks.RegionExecution, 1)
+	primaryInChan := make(chan tracks.RegionExecution, 1)
+
+	executeStepSpy := map[string]steps.Step{}
+
+	tracks.ExecuteStep = func(stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
+		s steps.Step, out chan<- steps.Step, destroy bool) {
+		executeStepSpy[s.Name] = s
+
+		s.Output = steps.StepOutput{
+			Status: steps.Fail,
+		}
+		out <- s
+		return
+	}
+
+	regionalExecution := tracks.RegionExecution{
+		Logger:                     logger,
+		Fs:                         fs,
+		Output:                     tracks.ExecutionOutput{},
+		TrackStepProgressionsCount: 2,
+		TrackOrderedSteps: map[int][]steps.Step{
+			1: {
+				{
+					ID:        "",
+					Name:      "step_p1",
+					TrackName: "",
+					Dir:       "",
+				},
+			},
+		},
+		PrimaryOutput: tracks.ExecutionOutput{FailureCount: 1},
+	}
+
+	go tracks.ExecuteDeployTrackRegion(primaryInChan, primaryOutChan)
+	primaryInChan <- regionalExecution
+	primaryTrackExecution := <-primaryOutChan
+
+	require.NotNil(t, primaryTrackExecution)
+	require.Len(t, executeStepSpy, 0, "Should not execute regional steps when primary region fails")
 }

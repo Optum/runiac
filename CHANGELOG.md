@@ -1,10 +1,20 @@
 # Terrascale
 
+## 0.0.6 (Apr 3, 2020)
+
+### REFACTOR
+
+- Improved logging when steps fail
+
 ## 0.0.5 (Mar 28, 2020)
+
+### REFACTOR
 
 Expanded `FeatureToggleDisableCreds` feature toggle
 
 ## 0.0.4 (Mar 28, 2020)
+
+### ENHANCEMENTS
 
 Updated the `backend.tf` parser to interpolate the following fields consistently:
  
@@ -13,6 +23,8 @@ Updated the `backend.tf` parser to interpolate the following fields consistently
 - `role_arn`
 
 ## 0.0.3 (Mar 27, 2020)
+
+### ENHANCEMENTS
 
 Updated the `backend.tf` parser to interpolate the following variables for the s3 `key` attribute:
 

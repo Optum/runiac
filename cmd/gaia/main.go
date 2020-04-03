@@ -36,18 +36,27 @@ func main() {
 
 	trackCount := len(output.Tracks)
 	failedSteps := []string{}
+	skippedSteps := []string{}
 	failedDestroySteps := []string{}
 	stepCount := 0
+	executedStepCount := 0
 	failedTestCount := 0
 
 	for _, t := range output.Tracks {
 		for _, tExecution := range t.Output.Executions {
-			stepCount += tExecution.Output.ExecutedCount
-			for _, fStep := range tExecution.Output.FailedSteps {
-				failedSteps = append(failedSteps, fmt.Sprintf("%v/%v/%v/%v", t.Name, fStep.Name, tExecution.RegionDeployType, tExecution.Region))
+			executedStepCount += tExecution.Output.ExecutedCount
+			stepCount += tExecution.Output.ExecutedCount + tExecution.Output.SkippedCount
+			failedTestCount += tExecution.Output.FailedTestCount
+
+			for _, s := range tExecution.Output.Steps {
+				switch s.Output.Status {
+				case steps.Fail:
+					failedSteps = append(failedSteps, fmt.Sprintf("%v/%v/%v/%v", t.Name, s.Name, tExecution.RegionDeployType, tExecution.Region))
+				case steps.Skipped:
+					skippedSteps = append(skippedSteps, fmt.Sprintf("%v/%v/%v/%v", t.Name, s.Name, tExecution.RegionDeployType, tExecution.Region))
+				}
 			}
 
-			failedTestCount += tExecution.Output.FailedTestCount
 		}
 
 		for _, tExecution := range t.DestroyOutput.Executions {
@@ -60,17 +69,34 @@ func main() {
 	failedStepCount := len(failedSteps)
 
 	resultMessage := fmt.Sprintf("Executed %v/%v steps successfully with %v test failure(s) across %v track(s).",
-		stepCount-failedStepCount, stepCount, failedTestCount, trackCount)
+		executedStepCount-failedStepCount, stepCount, failedTestCount, trackCount)
+
+	result := "success"
 
 	if failedStepCount > 0 {
-		resultMessage += fmt.Sprintf("  Failed: %v", strings.Join(failedSteps, ", "))
+		resultMessage += fmt.Sprintf("  Failed: %v.", strings.Join(failedSteps, ", "))
+		result = "fail"
+	}
+
+	if len(skippedSteps) > 0 {
+		resultMessage += fmt.Sprintf("  Skipped: %v.", strings.Join(skippedSteps, ", "))
+		result = "fail"
 	}
 
 	if len(failedDestroySteps) > 0 {
-		resultMessage += fmt.Sprintf(".  Failed to destroy: %v", strings.Join(failedDestroySteps, ", "))
+		resultMessage += fmt.Sprintf("  Failed to destroy: %v.", strings.Join(failedDestroySteps, ", "))
 	}
 
-	log.WithField("type", "summary").Info(resultMessage)
+	slog := log.WithFields(logrus.Fields{
+		"type":   "summary",
+		"result": result,
+	})
+
+	if result == "success" {
+		slog.Info()
+	} else {
+		slog.Error(resultMessage)
+	}
 }
 
 func initFunc() {
