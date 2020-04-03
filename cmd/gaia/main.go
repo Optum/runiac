@@ -92,8 +92,6 @@ func main() {
 		"result": result,
 	})
 
-	resultMessage = strings.Title(result) + ".  " + resultMessage
-
 	if result == "success" {
 		slog.Info()
 	} else {
