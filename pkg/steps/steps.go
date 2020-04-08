@@ -101,6 +101,7 @@ const (
 	Success
 	Unstable
 	Skipped
+	Na // not applicable (e.g. no regional resources exist or step was disabled for execution)
 )
 
 func (d DeployResult) String() string {
