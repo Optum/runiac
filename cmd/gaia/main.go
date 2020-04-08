@@ -88,8 +88,11 @@ func main() {
 	}
 
 	slog := log.WithFields(logrus.Fields{
-		"type":   "summary",
-		"result": result,
+		"type":          "summary",
+		"skipped":       strings.Join(skippedSteps, ","),
+		"failed":        strings.Join(failedSteps, ","),
+		"failOrSkipped": strings.Join(append(skippedSteps, failedSteps...), ","),
+		"result":        result,
 	})
 
 	if result == "success" {

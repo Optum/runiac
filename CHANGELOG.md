@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.0.7 (Apr 8, 2020)
+
+### BUG FIX
+
+- Resolve summary inaccurately including steps skipped for not existing
+
 ## 0.0.6 (Apr 3, 2020)
 
 ### REFACTOR

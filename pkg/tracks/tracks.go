@@ -159,7 +159,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 
 						// if step is not targeted, skip.
 						if !contains(config.StepWhitelist, stepID) && !config.TargetAll {
-							tracker.Log.Warningf("Skipping Step %s. Not present in whitelist.", stepID)
+							tracker.Log.Warningf("Step %s disabled. Not present in whitelist.", stepID)
 							continue
 						}
 
@@ -176,7 +176,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 						}
 
 						if v.IsSet("enabled") && !v.GetBool("enabled") {
-							tracker.Log.Warningf("Skipping Step %s. Not enabled in configuration.", stepID)
+							tracker.Log.Warningf("Step %s disabled. Not enabled in configuration.", stepID)
 							continue
 						}
 
@@ -584,12 +584,13 @@ func ExecuteDeployTrackRegion(in <-chan RegionExecution, out chan<- RegionExecut
 		sChan := make(chan steps.Step)
 		for _, s := range execution.TrackOrderedSteps[progressionLevel] {
 
-			// if any previous failures, skip
+			// regional resources do not exist
 			if execution.RegionDeployType == steps.RegionalRegionDeployType && !s.RegionalResourcesExist {
 				go func(s steps.Step) {
-					s.Output.Status = steps.Skipped
+					s.Output.Status = steps.Na
 					sChan <- s
 				}(s)
+				// if any previous failures, skip
 			} else if progressionLevel > 1 && execution.Output.FailureCount > 0 {
 				go func(s steps.Step, logger *logrus.Entry) {
 					slogger := logger.WithFields(logrus.Fields{
