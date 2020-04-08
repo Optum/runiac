@@ -15,7 +15,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 var DefaultStubAccountID string
@@ -381,11 +380,6 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 				regionExecution := <-in
 				callCount++
 
-				// sleep to ensure DefaultStepOutputVariables do not overwrite each other based on concurrency timing
-				if regionExecution.RegionDeployType == steps.RegionalRegionDeployType && callCount == 2 {
-					time.Sleep(100)
-				}
-
 				executionParams = append(executionParams, regionExecution)
 
 				regionExecution.Output = tracks.ExecutionOutput{
@@ -667,4 +661,35 @@ func TestExecuteDeployTrackRegion_ShouldSkipWhenPrimaryFails(t *testing.T) {
 
 	require.NotNil(t, primaryTrackExecution)
 	require.Len(t, executeStepSpy, 0, "Should not execute regional steps when primary region fails")
+}
+
+func TestExecuteDeployTrackRegion_ShouldNaWhenRegionalResourcesDoNotExist(t *testing.T) {
+	primaryOutChan := make(chan tracks.RegionExecution, 1)
+	primaryInChan := make(chan tracks.RegionExecution, 1)
+
+	regionalExecution := tracks.RegionExecution{
+		Logger:                     logger,
+		Fs:                         fs,
+		Output:                     tracks.ExecutionOutput{},
+		TrackStepProgressionsCount: 2,
+		TrackOrderedSteps: map[int][]steps.Step{
+			1: {
+				{
+					ID:                     "",
+					Name:                   "step_p1",
+					TrackName:              "",
+					Dir:                    "",
+					RegionalResourcesExist: false,
+				},
+			},
+		},
+		RegionDeployType: steps.RegionalRegionDeployType,
+	}
+
+	go tracks.ExecuteDeployTrackRegion(primaryInChan, primaryOutChan)
+	primaryInChan <- regionalExecution
+	primaryTrackExecution := <-primaryOutChan
+
+	require.NotNil(t, primaryTrackExecution)
+	require.Equal(t, steps.Na, primaryTrackExecution.Output.Steps["step_p1"].Output.Status)
 }
