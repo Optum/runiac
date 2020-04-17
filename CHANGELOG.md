@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.0.8 (Apr 17, 2020)
+
+### ENHANCEMENTS
+
+- Added support for the `OPTUM TELEHEALTH` tenant
+
 ## 0.0.7 (Apr 8, 2020)
 
 ### BUG FIX
@@ -23,7 +29,7 @@ Expanded `FeatureToggleDisableCreds` feature toggle
 ### ENHANCEMENTS
 
 Updated the `backend.tf` parser to interpolate the following fields consistently:
- 
+
 - `key`
 - `bucket`
 - `role_arn`
@@ -34,10 +40,10 @@ Updated the `backend.tf` parser to interpolate the following fields consistently
 
 Updated the `backend.tf` parser to interpolate the following variables for the s3 `key` attribute:
 
-- `var.gaia_step` 
-- `var.gaia_region_deploy_type` 
-- `var.region` 
-- `local.namespace-` (temporary backwards compatibility variable) 
+- `var.gaia_step`
+- `var.gaia_region_deploy_type`
+- `var.region`
+- `local.namespace-` (temporary backwards compatibility variable)
 
 ## 0.0.2 (Mar 26, 2020)
 
