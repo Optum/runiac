@@ -191,14 +191,16 @@ func initFunc() {
 	cloudaccountdeployment.Auth = deployment.Config.Authenticator
 	cloudaccountdeployment.UpdateStatusLambda = deployment.Config.UpdateStatusLambda
 
-	paramSession, err := deployment.Config.Authenticator.GetPlatformParametersSession(log)
+	if !deployment.Config.FeatureToggleDisableParamStoreVars {
+		paramSession, err := deployment.Config.Authenticator.GetPlatformParametersSession(log)
 
-	if err == nil {
-		deployment.Config.StepParameters = &params.AWSParamStore{
-			Ssmapi: ssm.New(paramSession),
+		if err == nil {
+			deployment.Config.StepParameters = &params.AWSParamStore{
+				Ssmapi: ssm.New(paramSession),
+			}
+		} else {
+			log.WithError(err).Error("Failed to initialize Parameter Store plugin")
 		}
-	} else {
-		log.WithError(err).Fatal("Failed to initialize Param Store")
 	}
 
 }

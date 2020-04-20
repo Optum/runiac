@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.0.9 (Apr 20, 2020)
+
+### ENHANCEMENTS
+
+- Added `FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS` environment configuration for users that do not need param store variable injection 
+
 ## 0.0.8 (Apr 17, 2020)
 
 ### ENHANCEMENTS
