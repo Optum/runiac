@@ -56,6 +56,7 @@ type Config struct {
 	FeatureToggleDisableBackendDefaultBucket    bool            `envconfig:"GAIA_FEATURE_DISABLE_S3_BACKEND_DEFAULT_BUCKET"`  // Disables setting the backend bucket, utilizing what is set in backend tf file.
 	FeatureToggleDisableS3BackendKeyPrefix      bool            `envconfig:"GAIA_FEATURE_DISABLE_S3_BACKEND_KEY_PREFIX"`      // Disables setting a standardized account key prefix
 	FeatureToggleDisableS3BackendKeyNamespacing bool            `envconfig:"GAIA_FEATURE_DISABLE_S3_BACKEND_KEY_NAMESPACING"` // Disables the usage of namespace, region, and region deploy type to automatically create state file
+	FeatureToggleDisableParamStoreVars          bool            `envconfig:"FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS"`
 	// Set at task definition creation
 	Namespace        string `required:"true" envconfig:"NAMESPACE"`                                   // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
 	Environment      string `required:"true" validate:"eq=prod|eq=pr|eq=nonprod|eq=local|eq=jenkins"` // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project

@@ -300,9 +300,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs, regionDeployType 
 		"accountOwnerMSID": exec.AccountOwnerID,
 	})
 
-	params := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.DeploymentRing)
-
-	exec.Logger.Debugf("output variables: %s", KeysStringMap(exec.DefaultStepOutputVariables))
+	var params = map[string]string{}
 
 	// translate custom type to map type for terraformer to parse correctly
 	var rgs map[string]map[string][]string = s.DeployConfig.RegionGroups
@@ -319,7 +317,12 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs, regionDeployType 
 	params["gaia_primary_region"] = exec.PrimaryRegion
 	params["gaia_region_groups"] = terraformer.OutputToString(rgs)
 
-	exec.Logger.Infof("gaia_region_groups: %v", params["gaia_region_groups"])
+	// TODO: pre-step param store plugin for integrating "just-in-time" variables from param store
+	if s.DeployConfig.StepParameters != nil {
+		params = s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.DeploymentRing)
+	}
+
+	exec.Logger.Debugf("output variables: %s", KeysStringMap(exec.DefaultStepOutputVariables))
 
 	// Add previous step outputs from the track into stepParams
 	stepParams := AppendToStepParams(params, exec.DefaultStepOutputVariables)
