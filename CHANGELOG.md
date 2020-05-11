@@ -1,5 +1,15 @@
 # Terrascale
 
+## 0.1.0 (May 11, 2020)
+
+### BREAKING CHANGES
+
+- When an execution contains a failed step the exit code will now be `1`
+
+### BUG FIXES
+
+- Fix when using "just in time" tfvars from param store 
+
 ## 0.0.9 (Apr 20, 2020)
 
 ### ENHANCEMENTS
