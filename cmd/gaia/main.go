@@ -99,6 +99,7 @@ func main() {
 		slog.Info(resultMessage)
 	} else {
 		slog.Error(resultMessage)
+		os.Exit(1)
 	}
 }
 
