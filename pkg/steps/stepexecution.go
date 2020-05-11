@@ -319,7 +319,12 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs, regionDeployType 
 
 	// TODO: pre-step param store plugin for integrating "just-in-time" variables from param store
 	if s.DeployConfig.StepParameters != nil {
-		params = s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.DeploymentRing)
+		paramStoreParams := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.DeploymentRing)
+
+		// Add to params
+		for k, v := range paramStoreParams {
+			params[k] = v
+		}
 	}
 
 	exec.Logger.Debugf("output variables: %s", KeysStringMap(exec.DefaultStepOutputVariables))
