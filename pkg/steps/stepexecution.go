@@ -378,7 +378,7 @@ func (stepper TerraformStepper) ExecuteStep(exec ExecutionConfig) StepOutput {
 	if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
 		exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
 		return StepOutput{
-			Status:           Skipped,
+			Status:           Na,
 			RegionDeployType: exec.RegionDeployType,
 			Region:           exec.Region,
 			StepName:         exec.StepName,
