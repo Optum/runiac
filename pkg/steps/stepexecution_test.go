@@ -216,7 +216,7 @@ func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 	})
 
 	// assert
-	require.Equal(t, Skipped, exec.Status, "Status should be skipped")
+	require.Equal(t, Na, exec.Status, "Status should be skipped")
 }
 
 func TestExecuteStep_ShouldExecuteWhenExecuteWhenUndefined(t *testing.T) {
