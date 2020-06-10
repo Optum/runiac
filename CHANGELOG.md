@@ -1,5 +1,12 @@
 # Terrascale
 
+## 0.1.1 (June 10, 2020)
+
+### REFACTOR
+
+- Default JSON Log output will now log `time` fields to nanosecond granularity
+- Skipped fields from `gaia.yml` will be marked as `Na` instead of `Skipped`
+
 ## 0.1.0 (May 11, 2020)
 
 ### BREAKING CHANGES

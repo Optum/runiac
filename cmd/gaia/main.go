@@ -15,6 +15,7 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
 	"os"
 	"strings"
+	"time"
 )
 
 var fs afero.Fs
@@ -111,7 +112,9 @@ func initFunc() {
 			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
 		})
 	} else {
-		logger.SetFormatter(&logrus.JSONFormatter{})
+		logger.SetFormatter(&logrus.JSONFormatter{
+			TimestampFormat: time.RFC3339Nano,
+		})
 	}
 	logger.SetReportCaller(true)
 	log = logrus.NewEntry(logger)
