@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.1.2 (June 18, 2020)
+
+### BUG FIX
+
+- Security fix: ssm parameter safety
+
 ## 0.1.1 (June 10, 2020)
 
 ### REFACTOR

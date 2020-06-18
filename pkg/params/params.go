@@ -58,7 +58,7 @@ func (p AWSParamStore) GetParamsForStep(logger *logrus.Entry, csp string, stage 
 				return
 			}
 
-			logger.Debugf("Retrieved %v params: %v", len(paramResponse.Parameters), paramResponse.Parameters)
+			logger.Debugf("Retrieved %v params", len(paramResponse.Parameters))
 			ParametersList = append(ParametersList, paramResponse.Parameters...)
 
 			if nextToken == nil {
