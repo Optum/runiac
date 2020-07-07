@@ -4,7 +4,6 @@
 
 ### ENHANCEMENTS
 
-- Add `CODEOWNERS` file.
 - Add `PULL_REQUEST_TEMPLATE.md` file.
 
 ### BUG FIX

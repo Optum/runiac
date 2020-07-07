@@ -1,6 +1,0 @@
-# Code owners are automatically requested for review when someone opens a pull request that modifies code that they own. 
-# Order is important; the last matching pattern takes the most precedence.
-
-# The below owner(s) will be the default owners for everything in this repo. 
-# Unless a later match takes precedence, they will be requested for review when someone opens a pull request.
-* @nmundahl @zbecker2 @akhounlo @epaasone @jhopkin5 @smerug11 @hshaik5
