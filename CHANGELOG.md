@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.1.3 (July 7, 2020)
+
+### BUG FIX
+
+- Failed destroy steps will now be considered as an overall failure.
+
 ## 0.1.2 (June 18, 2020)
 
 ### BUG FIX
