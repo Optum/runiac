@@ -1,5 +1,16 @@
 # Terrascale
 
+## 0.1.3 (July 7, 2020)
+
+### ENHANCEMENTS
+
+- Add `PULL_REQUEST_TEMPLATE.md` file.
+
+### BUG FIX
+
+- Failed destroy steps will now be considered as an overall failure.
+- Fix link in README for local instructions.
+
 ## 0.1.2 (June 18, 2020)
 
 ### BUG FIX
