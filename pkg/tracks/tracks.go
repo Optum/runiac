@@ -18,6 +18,10 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 )
 
+const (
+	PRE_TRACK_NAME = "_pretrack" // The name of the directory for the pretrack
+)
+
 // ExecuteTrackFunc facilitates track executions across multiple regions and RegionDeployTypes (e.g. Primary us-east-1 and regional us-*)
 type ExecuteTrackFunc func(execution Execution, cfg config.Config, t Track, out chan<- Output)
 
@@ -59,6 +63,7 @@ type Track struct {
 	OrderedSteps                map[int][]steps.Step
 	Output                      Output
 	DestroyOutput               Output
+	IsPreTrack                  bool // If true, this is a PreTrack, meaning it should be run before all other tracks
 }
 
 type Output struct {
@@ -121,6 +126,11 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 				Name:         item.Name(),
 				Dir:          fmt.Sprintf("%s/%s", tracksDir, item.Name()),
 				OrderedSteps: map[int][]steps.Step{},
+			}
+
+			if t.Name == PRE_TRACK_NAME {
+				tracker.Log.Debug("Pretrack found")
+				t.IsPreTrack = true
 			}
 
 			tConfig := viper.New()
@@ -263,21 +273,56 @@ func exists(fs afero.Fs, filename string) bool {
 	return err == nil && !info
 }
 
-// ExecuteTracks executes all tracks in parallel
+// ExecuteTracks executes all tracks in parallel.
+// If a _pretrack exists, this is executed before
+// all other tracks.
 func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperFactory, cfg config.Config) (output Stage) {
 	output.Tracks = map[string]Track{}
-	var executingTracks = tracker.GatherTracks(cfg)
+	var tracks = tracker.GatherTracks(cfg) // **All** tracks
+	var parallelTracks []Track             // Tracks that should be executed in parallel
 
-	for _, t := range executingTracks {
+	// Pre track
+	var preTrackExists bool
+	var preTrack Track
+	var preTrackOutput Output
+
+	for _, t := range tracks {
 		output.Tracks[t.Name] = t
+		if t.IsPreTrack {
+			preTrackExists = true
+			preTrack = t
+		} else {
+			parallelTracks = append(parallelTracks, t)
+		}
 	}
 
-	numTracks := len(executingTracks)
-	trackChan := make(chan Output)
+	// Execute _pretrack if it exists
+	if preTrackExists {
+		tracker.Log.Debug("Pre track found. Must execute before all other tracks")
+
+		preTrackChan := make(chan Output)
+		preTrackExecution := Execution{
+			Logger:                              tracker.Log,
+			Fs:                                  tracker.Fs,
+			Output:                              ExecutionOutput{},
+			StepperFactory:                      stepperFactory,
+			DefaultExecutionStepOutputVariables: map[string]map[string]map[string]string{},
+		}
+		go DeployTrack(preTrackExecution, cfg, preTrack, preTrackChan)
+		preTrackOutput = <-preTrackChan
+		tracker.Log.Debug("Pre track finished")
+		tracker.Log.Debugf("Pre track output: %+v", preTrackOutput)
+		preTrack.Output = preTrackOutput
+		tracker.Log.Debugf("Tracks so far: %+v", output.Tracks)
+	}
+
+	// Execute non pre/post tracks in parallel
+	numParallelTracks := len(parallelTracks)
+	parallelTrackChan := make(chan Output)
 
 	// execute all tracks concurrently
 	// within ExecuteDeployTrack, track result will be added to trackChan feeding next loop
-	for _, t := range executingTracks {
+	for _, t := range parallelTracks {
 		execution := Execution{
 			Logger:                              tracker.Log,
 			Fs:                                  tracker.Fs,
@@ -285,13 +330,13 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			StepperFactory:                      stepperFactory,
 			DefaultExecutionStepOutputVariables: map[string]map[string]map[string]string{},
 		}
-		go DeployTrack(execution, cfg, t, trackChan)
+		go DeployTrack(execution, cfg, t, parallelTrackChan)
 	}
 
 	// wait for all executions to finish (this loop matches above range)
-	for tExecution := 0; tExecution < numTracks; tExecution++ {
+	for tExecution := 0; tExecution < numParallelTracks; tExecution++ {
 		// waiting to append <-trackChan Track N times will inherently wait for all above executions to finish
-		tOutput := <-trackChan
+		tOutput := <-parallelTrackChan
 		if t, ok := output.Tracks[tOutput.Name]; ok {
 			// TODO: is it better to have a pointer for map value?
 			t.Output = tOutput
@@ -304,7 +349,7 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 		tracker.Log.Info("Executing destroy...")
 		trackDestroyChan := make(chan Output)
 
-		for _, t := range executingTracks {
+		for _, t := range parallelTracks {
 			executionStepOutputVariables := map[string]map[string]map[string]string{}
 
 			for _, exec := range output.Tracks[t.Name].Output.Executions {
@@ -327,7 +372,7 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 		}
 
 		// wait for all executions to finish (this loop matches above range)
-		for range executingTracks {
+		for range parallelTracks {
 			// waiting to append <-trackDestroyChan Track N times will inherently wait for all above executions to finish
 			tDestroyOutout := <-trackDestroyChan
 
