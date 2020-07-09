@@ -78,6 +78,7 @@ type Execution struct {
 	Output                              ExecutionOutput
 	StepperFactory                      steps.StepperFactory
 	DefaultExecutionStepOutputVariables map[string]map[string]map[string]string
+	PreTrackOutput                      *Output
 }
 
 type RegionExecution struct {
@@ -284,7 +285,6 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 	// Pre track
 	var preTrackExists bool
 	var preTrack Track
-	var preTrackOutput Output
 
 	for _, t := range tracks {
 		output.Tracks[t.Name] = t
@@ -309,11 +309,14 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			DefaultExecutionStepOutputVariables: map[string]map[string]map[string]string{},
 		}
 		go DeployTrack(preTrackExecution, cfg, preTrack, preTrackChan)
-		preTrackOutput = <-preTrackChan
-		tracker.Log.Debug("Pre track finished")
-		tracker.Log.Debugf("Pre track output: %+v", preTrackOutput)
+		// Wait for the track to contain an item,
+		// indicating the track has completed.
+		preTrackOutput := <-preTrackChan
 		preTrack.Output = preTrackOutput
-		tracker.Log.Debugf("Tracks so far: %+v", output.Tracks)
+		tracker.Log.Debug("Pre track finished")
+		tracker.Log.Debugf("Pre track output: %+v", preTrack.Output)
+		// TODO: Exit early if pretrack fails
+		// TODO: Track number reporting
 	}
 
 	// Execute non pre/post tracks in parallel
@@ -329,6 +332,11 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			Output:                              ExecutionOutput{},
 			StepperFactory:                      stepperFactory,
 			DefaultExecutionStepOutputVariables: map[string]map[string]map[string]string{},
+		}
+		// If there is a pretrack, add its outputs
+		// to the execution so they are available.
+		if preTrackExists {
+			execution.PreTrackOutput = &preTrack.Output
 		}
 		go DeployTrack(execution, cfg, t, parallelTrackChan)
 	}
@@ -362,13 +370,19 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 				tracker.Log.Debugf("OUTPUT VARS: %s", string(jsonBytes))
 			}
 
-			go DestroyTrack(Execution{
+			execution := Execution{
 				Logger:                              tracker.Log,
 				Fs:                                  tracker.Fs,
 				Output:                              ExecutionOutput{},
 				StepperFactory:                      stepperFactory,
 				DefaultExecutionStepOutputVariables: executionStepOutputVariables,
-			}, cfg, t, trackDestroyChan)
+			}
+			// If there is a pretrack, add its outputs
+			// to the execution so they are available.
+			if preTrackExists {
+				execution.PreTrackOutput = &preTrack.Output
+			}
+			go DestroyTrack(execution, cfg, t, trackDestroyChan)
 		}
 
 		// wait for all executions to finish (this loop matches above range)
@@ -408,6 +422,55 @@ func AppendTrackOutput(trackOutputVariables map[string]map[string]string, output
 	return trackOutputVariables
 }
 
+func AppendPreTrackOutputsToDefaultStepOutputVariables(defaultStepOutputVariables map[string]map[string]string, preTrackOutput *Output, regionDeployType steps.RegionDeployType, region string) map[string]map[string]string {
+	//// Always add primary step outputs from the pretrack
+	//for step, outputVarMap := range preTrackOutput.PrimaryStepOutputVariables {
+	//	for outVarName, outVarVal := range outputVarMap {
+	//		key := fmt.Sprintf("pretrack-%s", step)
+	//
+	//		// Check if the key already exists
+	//		if _, ok := defaultStepOutputVariables[key]; ok {
+	//			defaultStepOutputVariables[key][outVarName] = outVarVal
+	//		} else {
+	//			defaultStepOutputVariables[key] = map[string]string{
+	//				outVarName: outVarVal,
+	//			}
+	//		}
+	//	}
+	//}
+	//
+	//// For regional deploys, also add the outputs from regional steps
+	//if regionDeployType == steps.RegionalRegionDeployType {
+	//	for _, execution := range preTrackOutput.Executions {
+	//		if execution.RegionDeployType == steps.RegionalRegionDeployType && execution.Region == region {
+	//			preTrackOutput.Executions[0].Logger.Debugf("Regional execution output: %+v", execution.Output.StepOutputVariables)
+	//
+	//		}
+	//	}
+	//}
+
+	for _, execution := range preTrackOutput.Executions {
+		if execution.RegionDeployType == regionDeployType && execution.Region == region {
+			for step, outputVarMap := range execution.Output.StepOutputVariables {
+				for outVarName, outVarVal := range outputVarMap {
+					key := fmt.Sprintf("pretrack-%s", step)
+
+					// Check if the key already exists
+					if _, ok := defaultStepOutputVariables[key]; ok {
+						defaultStepOutputVariables[key][outVarName] = outVarVal
+					} else {
+						defaultStepOutputVariables[key] = map[string]string{
+							outVarName: outVarVal,
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return defaultStepOutputVariables
+}
+
 // ExecuteDeployTrack is for executing a single track across regions
 func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out chan<- Output) {
 	logger := execution.Logger.WithFields(logrus.Fields{
@@ -441,6 +504,14 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 
 	if val, ok := execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", primaryRegionExecution.RegionDeployType, primaryRegionExecution.Region)]; ok {
 		primaryRegionExecution.DefaultStepOutputVariables = val
+	}
+
+	// Add step outputs for primary steps
+	// from the pretrack
+	if execution.PreTrackOutput != nil {
+		logger.Debug("Adding pretrack step outputs to primary region execution")
+		primaryRegionExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(primaryRegionExecution.DefaultStepOutputVariables, execution.PreTrackOutput, primaryRegionExecution.RegionDeployType, primaryRegionExecution.Region)
+		logger.Debugf("PrimaryRegionExecution DefaultStepOutputVariables are: %+v", primaryRegionExecution.DefaultStepOutputVariables)
 	}
 
 	go DeployTrackRegion(primaryInChan, primaryOutChan)
@@ -498,6 +569,15 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 			StepperFactory:             execution.StepperFactory,
 			DefaultStepOutputVariables: outputVars,
 			PrimaryOutput:              primaryTrackExecution.Output,
+		}
+
+		// Add step outputs for primary steps
+		// from the pretrack and also the regional
+		// outputs from the pretrack
+		if execution.PreTrackOutput != nil {
+			logger.Debugf("Adding pretrack step outputs to %s region execution", regionalRegionExecution.Region)
+			regionalRegionExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(regionalRegionExecution.DefaultStepOutputVariables, execution.PreTrackOutput, regionalRegionExecution.RegionDeployType, regionalRegionExecution.Region)
+			logger.Debugf("RegionalRegionExecution DefaultStepOutputVariables are: %+v", regionalRegionExecution.DefaultStepOutputVariables)
 		}
 
 		regionInChan <- regionalRegionExecution
