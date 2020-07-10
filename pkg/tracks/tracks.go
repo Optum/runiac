@@ -630,7 +630,7 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		}
 
 		for _, reg := range targetRegions {
-			regionInChan <- RegionExecution{
+			regionExecution := RegionExecution{
 				TrackName:                  t.Name,
 				TrackDir:                   t.Dir,
 				TrackStepProgressionsCount: t.StepProgressionsCount,
@@ -643,6 +643,17 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 				StepperFactory:             execution.StepperFactory,
 				DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.RegionalRegionDeployType, reg)],
 			}
+
+			// Add step outputs for primary steps
+			// from the pretrack and also the regional
+			// outputs from the pretrack
+			if execution.PreTrackOutput != nil {
+				trackLogger.Debugf("Adding pretrack step outputs to %s region destroy", regionExecution.Region)
+				regionExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(regionExecution.DefaultStepOutputVariables, execution.PreTrackOutput, regionExecution.RegionDeployType, regionExecution.Region)
+				trackLogger.Debugf("RegionalRegionExecution DefaultStepOutputVariables for destroy are: %+v", regionExecution.DefaultStepOutputVariables)
+			}
+
+			regionInChan <- regionExecution
 		}
 
 		for i := 0; i < targetRegionsCount; i++ {
@@ -667,6 +678,14 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		RegionDeployType:           steps.PrimaryRegionDeployType,
 		StepperFactory:             execution.StepperFactory,
 		DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.PrimaryRegionDeployType, cfg.GetPrimaryRegionByCSP(cfg.CSP))],
+	}
+
+	// Add step outputs for primary steps
+	// from the pretrack
+	if execution.PreTrackOutput != nil {
+		trackLogger.Debug("Adding pretrack step outputs to primary region destroy")
+		primaryExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(primaryExecution.DefaultStepOutputVariables, execution.PreTrackOutput, primaryExecution.RegionDeployType, primaryExecution.Region)
+		trackLogger.Debugf("PrimaryRegionExecution DefaultStepOutputVariables for destroy are: %+v", primaryExecution.DefaultStepOutputVariables)
 	}
 
 	go DestroyTrackRegion(primaryInChan, primaryOutChan)
