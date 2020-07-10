@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 	DefaultStubAccountID = "1"
 	StubVersion = "v0.0.5"
 
-	stubTrackCount = 2
+	stubTrackCount = 3
 	stubStepCount = 5
 	stubStepTestsCount = 0
 
@@ -69,6 +69,7 @@ func TestMain(m *testing.M) {
 		RegionalResourcesExist: true,
 	}
 
+	stubPreTrackName = tracks.PRE_TRACK_NAME
 	stubTrackNameA = "track-a"
 	stubTrackNameB = "track-b"
 
@@ -176,12 +177,27 @@ func TestGetTracksWithTargetAll_ShouldReturnCorrectTracks(t *testing.T) {
 	})
 
 	// assert
-	assert.Equal(t, stubTrackCount, len(mockTracks), "Three tracks should have been gathered")
-	assert.Equal(t, stubTrackNameA, mockTracks[0].Name, "tracks should be correctly derived from directory")
-	assert.Equal(t, 2, mockTracks[0].StepProgressionsCount, "StepProgressionsCount should be derived correctly based on steps")
-	assert.Equal(t, 2, len(mockTracks[0].OrderedSteps[1]), "Track A Step Progression 1 should have 2 step(s)")
-	assert.Equal(t, 1, len(mockTracks[0].OrderedSteps[2]), "Track A Step Progression 2 should have 1 step(s)")
-	assert.Contains(t, stubTrackNameB, mockTracks[1].Name)
+	require.Equal(t, stubTrackCount, len(mockTracks), "Three tracks should have been gathered")
+
+	// Gather all track names
+	var trackNames []string
+	var trackAIndex int
+	for index, track := range mockTracks {
+		trackNames = append(trackNames, track.Name)
+		if track.Name == stubTrackNameA {
+			trackAIndex = index
+		}
+	}
+
+	// Ensures all expected tracks are present
+	require.Contains(t, trackNames, "_pretrack", "The pretrack should be found")
+	require.Contains(t, trackNames, stubTrackNameA, "Track A should be found")
+	require.Contains(t, trackNames, stubTrackNameB, "Track B should be found")
+
+	// Spot check one of the tracks
+	require.Equal(t, 2, mockTracks[trackAIndex].StepProgressionsCount, "StepProgressionsCount should be derived correctly based on steps")
+	require.Equal(t, 2, len(mockTracks[trackAIndex].OrderedSteps[1]), "Track A Step Progression 1 should have 2 step(s)")
+	require.Equal(t, 1, len(mockTracks[trackAIndex].OrderedSteps[2]), "Track A Step Progression 2 should have 1 step(s)")
 
 	for _, track := range mockTracks {
 		totalStepSteps := 0
@@ -262,10 +278,6 @@ func shouldHaveRegionDeployment(s []steps.Step, e string) bool {
 	return false
 }
 
-func TestExecuteTracks_ShouldExecutePreTrackBeforeAllOtherTracks(t *testing.T) {
-
-}
-
 func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariables(t *testing.T) {
 	// arrange
 	ctrl := gomock.NewController(t)
@@ -287,6 +299,19 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 	stubPrimaryRegion := "primaryregion"
 
 	deployTrackStub := map[string]tracks.Output{
+		"_pretrack": {
+			Name:                       "_pretrack",
+			PrimaryStepOutputVariables: stubPrimaryStepOutputVars,
+			Executions: []tracks.RegionExecution{
+				{
+					Output: tracks.ExecutionOutput{
+						StepOutputVariables: stubPrimaryStepOutputVars,
+					},
+					Region:           stubPrimaryRegion,
+					RegionDeployType: steps.PrimaryRegionDeployType,
+				},
+			},
+		},
 		"track-a": {
 			Name:                       "track-a",
 			PrimaryStepOutputVariables: stubPrimaryStepOutputVars,
@@ -346,7 +371,7 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 	require.NotNil(t, mockExecution)
 
 	for _, executionSpy := range deployTrackExecutionSpy {
-		require.Contains(t, []string{"track-a", "track-b"}, executionSpy.Output.Name, "Should execute correct tracks")
+		require.Contains(t, []string{"_pretrack", "track-a", "track-b"}, executionSpy.Output.Name, "Should execute correct tracks")
 	}
 	require.Equal(t, stubPrimaryStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[steps.PrimaryRegionDeployType.String()+"-"+stubPrimaryRegion], "Should pass primary step output vars to destroy")
 	require.Equal(t, stubRegionalStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[steps.RegionalRegionDeployType.String()+"-"+stubRegionalRegion], "Should pass regional region specific step output vars to destroy")
