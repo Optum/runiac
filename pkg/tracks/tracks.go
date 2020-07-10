@@ -316,6 +316,15 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 		output.Tracks[preTrack.Name] = preTrack
 		tracker.Log.Debug("Pre track finished")
 		tracker.Log.Debugf("Pre track output: %+v", preTrack.Output)
+		for _, exec := range preTrackOutput.Executions {
+			for _, step := range exec.Output.Steps {
+				if step.Output.Status == steps.Fail {
+					tracker.Log.Debugf("Step: %s failed", step.Name)
+					tracker.Log.Debug("A step in the pretrack failed. Cannot continue.")
+					return
+				}
+			}
+		}
 		// TODO: Exit early if pretrack fails
 		// TODO: Track number reporting
 	}
@@ -454,32 +463,6 @@ func AppendTrackOutput(trackOutputVariables map[string]map[string]string, output
 }
 
 func AppendPreTrackOutputsToDefaultStepOutputVariables(defaultStepOutputVariables map[string]map[string]string, preTrackOutput *Output, regionDeployType steps.RegionDeployType, region string) map[string]map[string]string {
-	//// Always add primary step outputs from the pretrack
-	//for step, outputVarMap := range preTrackOutput.PrimaryStepOutputVariables {
-	//	for outVarName, outVarVal := range outputVarMap {
-	//		key := fmt.Sprintf("pretrack-%s", step)
-	//
-	//		// Check if the key already exists
-	//		if _, ok := defaultStepOutputVariables[key]; ok {
-	//			defaultStepOutputVariables[key][outVarName] = outVarVal
-	//		} else {
-	//			defaultStepOutputVariables[key] = map[string]string{
-	//				outVarName: outVarVal,
-	//			}
-	//		}
-	//	}
-	//}
-	//
-	//// For regional deploys, also add the outputs from regional steps
-	//if regionDeployType == steps.RegionalRegionDeployType {
-	//	for _, execution := range preTrackOutput.Executions {
-	//		if execution.RegionDeployType == steps.RegionalRegionDeployType && execution.Region == region {
-	//			preTrackOutput.Executions[0].Logger.Debugf("Regional execution output: %+v", execution.Output.StepOutputVariables)
-	//
-	//		}
-	//	}
-	//}
-
 	for _, execution := range preTrackOutput.Executions {
 		if execution.RegionDeployType == regionDeployType && execution.Region == region {
 			for step, outputVarMap := range execution.Output.StepOutputVariables {
