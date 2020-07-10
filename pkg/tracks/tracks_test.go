@@ -190,7 +190,7 @@ func TestGetTracksWithTargetAll_ShouldReturnCorrectTracks(t *testing.T) {
 	}
 
 	// Ensures all expected tracks are present
-	require.Contains(t, trackNames, "_pretrack", "The pretrack should be found")
+	require.Contains(t, trackNames, stubPreTrackName, "The pretrack should be found")
 	require.Contains(t, trackNames, stubTrackNameA, "Track A should be found")
 	require.Contains(t, trackNames, stubTrackNameB, "Track B should be found")
 

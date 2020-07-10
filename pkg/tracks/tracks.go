@@ -64,6 +64,7 @@ type Track struct {
 	Output                      Output
 	DestroyOutput               Output
 	IsPreTrack                  bool // If true, this is a PreTrack, meaning it should be run before all other tracks
+	Skipped                     bool // Indicates that the track was skipped. This will be for non-pretrack tracks if the pretrack fails
 }
 
 type Output struct {
@@ -130,7 +131,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 			}
 
 			if t.Name == PRE_TRACK_NAME {
-				tracker.Log.Debug("Pretrack found")
+				tracker.Log.Debug("Pre-track found")
 				t.IsPreTrack = true
 			}
 
@@ -298,7 +299,7 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 
 	// Execute _pretrack if it exists
 	if preTrackExists {
-		tracker.Log.Debug("Pre track found. Must execute before all other tracks")
+		tracker.Log.Debug("Pre-track execution starting")
 
 		preTrackChan := make(chan Output)
 		preTrackExecution := Execution{
@@ -314,19 +315,25 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 		preTrackOutput := <-preTrackChan
 		preTrack.Output = preTrackOutput
 		output.Tracks[preTrack.Name] = preTrack
-		tracker.Log.Debug("Pre track finished")
-		tracker.Log.Debugf("Pre track output: %+v", preTrack.Output)
+		tracker.Log.Debug("Pre-track finished")
+		// If any of the pretrack's executions has a step failure,
+		// the pretrack is considered failed
+		// so we cannot continue with the other tracks
 		for _, exec := range preTrackOutput.Executions {
 			for _, step := range exec.Output.Steps {
 				if step.Output.Status == steps.Fail {
-					tracker.Log.Debugf("Step: %s failed", step.Name)
-					tracker.Log.Debug("A step in the pretrack failed. Cannot continue.")
+					tracker.Log.Error("Pre-track failed, subsequent tracks will not be executed")
+					// Mark all other tracks as skipped
+					for _, track := range output.Tracks {
+						if track.Name != PRE_TRACK_NAME {
+							track.Skipped = true
+							output.Tracks[track.Name] = track
+						}
+					}
 					return
 				}
 			}
 		}
-		// TODO: Exit early if pretrack fails
-		// TODO: Track number reporting
 	}
 
 	// Execute non pre/post tracks in parallel
@@ -409,10 +416,9 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 
 		// Destroy _pretrack if it exists
 		if preTrackExists {
-			tracker.Log.Debug("Pre track found. Must be destroyed after all other tracks")
+			tracker.Log.Debug("Pre-track destroying")
 			executionStepOutputVariables := map[string]map[string]map[string]string{}
 
-			tracker.Log.Debugf("Pretrack executions: %+v", output.Tracks[preTrack.Name].Output.Executions)
 			for _, exec := range output.Tracks[preTrack.Name].Output.Executions {
 				executionStepOutputVariables[fmt.Sprintf("%s-%s", exec.RegionDeployType, exec.Region)] = exec.Output.StepOutputVariables
 			}
@@ -431,10 +437,7 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			// indicating the track has been destroyed.
 			preTrackDestroyOutput := <-destroyPreTrackChan
 			preTrack.DestroyOutput = preTrackDestroyOutput
-			tracker.Log.Debug("Pre track destroy finished")
-			tracker.Log.Debugf("Pre track destroy output: %+v", preTrack.Output)
-			// TODO: Exit early if pretrack fails
-			// TODO: Track number reporting
+			tracker.Log.Debug("Pre-track destroy finished")
 		}
 	}
 
@@ -523,9 +526,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 	// Add step outputs for primary steps
 	// from the pretrack
 	if execution.PreTrackOutput != nil {
-		logger.Debug("Adding pretrack step outputs to primary region execution")
 		primaryRegionExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(primaryRegionExecution.DefaultStepOutputVariables, execution.PreTrackOutput, primaryRegionExecution.RegionDeployType, primaryRegionExecution.Region)
-		logger.Debugf("PrimaryRegionExecution DefaultStepOutputVariables are: %+v", primaryRegionExecution.DefaultStepOutputVariables)
 	}
 
 	go DeployTrackRegion(primaryInChan, primaryOutChan)
@@ -585,13 +586,10 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 			PrimaryOutput:              primaryTrackExecution.Output,
 		}
 
-		// Add step outputs for primary steps
-		// from the pretrack and also the regional
-		// outputs from the pretrack
+		// Add step outputs for regional steps
+		// from the pretrack
 		if execution.PreTrackOutput != nil {
-			logger.Debugf("Adding pretrack step outputs to %s region execution", regionalRegionExecution.Region)
 			regionalRegionExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(regionalRegionExecution.DefaultStepOutputVariables, execution.PreTrackOutput, regionalRegionExecution.RegionDeployType, regionalRegionExecution.Region)
-			logger.Debugf("RegionalRegionExecution DefaultStepOutputVariables are: %+v", regionalRegionExecution.DefaultStepOutputVariables)
 		}
 
 		regionInChan <- regionalRegionExecution
@@ -658,13 +656,10 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 				DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.RegionalRegionDeployType, reg)],
 			}
 
-			// Add step outputs for primary steps
-			// from the pretrack and also the regional
-			// outputs from the pretrack
+			// Add step outputs for regional steps
+			// from the pretrack
 			if execution.PreTrackOutput != nil {
-				trackLogger.Debugf("Adding pretrack step outputs to %s region destroy", regionExecution.Region)
 				regionExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(regionExecution.DefaultStepOutputVariables, execution.PreTrackOutput, regionExecution.RegionDeployType, regionExecution.Region)
-				trackLogger.Debugf("RegionalRegionExecution DefaultStepOutputVariables for destroy are: %+v", regionExecution.DefaultStepOutputVariables)
 			}
 
 			regionInChan <- regionExecution
@@ -697,9 +692,7 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 	// Add step outputs for primary steps
 	// from the pretrack
 	if execution.PreTrackOutput != nil {
-		trackLogger.Debug("Adding pretrack step outputs to primary region destroy")
 		primaryExecution.DefaultStepOutputVariables = AppendPreTrackOutputsToDefaultStepOutputVariables(primaryExecution.DefaultStepOutputVariables, execution.PreTrackOutput, primaryExecution.RegionDeployType, primaryExecution.Region)
-		trackLogger.Debugf("PrimaryRegionExecution DefaultStepOutputVariables for destroy are: %+v", primaryExecution.DefaultStepOutputVariables)
 	}
 
 	go DestroyTrackRegion(primaryInChan, primaryOutChan)
