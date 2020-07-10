@@ -313,6 +313,7 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 		// indicating the track has completed.
 		preTrackOutput := <-preTrackChan
 		preTrack.Output = preTrackOutput
+		output.Tracks[preTrack.Name] = preTrack
 		tracker.Log.Debug("Pre track finished")
 		tracker.Log.Debugf("Pre track output: %+v", preTrack.Output)
 		// TODO: Exit early if pretrack fails
@@ -395,6 +396,36 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 				t.DestroyOutput = tDestroyOutout
 				output.Tracks[tDestroyOutout.Name] = t
 			}
+		}
+
+		// Destroy _pretrack if it exists
+		if preTrackExists {
+			tracker.Log.Debug("Pre track found. Must be destroyed after all other tracks")
+			executionStepOutputVariables := map[string]map[string]map[string]string{}
+
+			tracker.Log.Debugf("Pretrack executions: %+v", output.Tracks[preTrack.Name].Output.Executions)
+			for _, exec := range output.Tracks[preTrack.Name].Output.Executions {
+				executionStepOutputVariables[fmt.Sprintf("%s-%s", exec.RegionDeployType, exec.Region)] = exec.Output.StepOutputVariables
+			}
+
+			destroyPreTrackChan := make(chan Output)
+			preTrackDestroyExecution := Execution{
+				Logger:                              tracker.Log,
+				Fs:                                  tracker.Fs,
+				Output:                              ExecutionOutput{},
+				StepperFactory:                      stepperFactory,
+				DefaultExecutionStepOutputVariables: executionStepOutputVariables,
+				PreTrackOutput:                      &preTrack.Output,
+			}
+			go DestroyTrack(preTrackDestroyExecution, cfg, preTrack, destroyPreTrackChan)
+			// Wait for the track to contain an item,
+			// indicating the track has been destroyed.
+			preTrackDestroyOutput := <-destroyPreTrackChan
+			preTrack.DestroyOutput = preTrackDestroyOutput
+			tracker.Log.Debug("Pre track destroy finished")
+			tracker.Log.Debugf("Pre track destroy output: %+v", preTrack.Output)
+			// TODO: Exit early if pretrack fails
+			// TODO: Track number reporting
 		}
 	}
 
