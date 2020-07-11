@@ -508,7 +508,7 @@ var executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output Ste
 	}
 
 	// terraform plan
-	_ = retry.DoWithRetry("terraform plan and apply", 0, 10*time.Second, tfOptions.Logger, func(attempt int) error {
+	_ = retry.DoWithRetry("terraform plan and apply", 3, 10*time.Second, tfOptions.Logger, func(attempt int) error {
 
 		retryLogger := tfOptions.Logger.WithField("retryCount", attempt)
 
