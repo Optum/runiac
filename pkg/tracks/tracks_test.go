@@ -278,6 +278,63 @@ func shouldHaveRegionDeployment(s []steps.Step, e string) bool {
 	return false
 }
 
+func TestExecuteTracks_SkipsAllTracksIfPreTrackFails(t *testing.T) {
+	stubPrimaryRegion := "primaryregion"
+
+	deployTrackStub := map[string]tracks.Output{
+		"_pretrack": {
+			Name: "_pretrack",
+			Executions: []tracks.RegionExecution{
+				{
+					Output: tracks.ExecutionOutput{
+						Steps: map[string]steps.Step{
+							"project_provisioning": {
+								Output: steps.StepOutput{
+									Status: steps.Fail,
+								},
+							},
+						},
+					},
+					Region:           stubPrimaryRegion,
+					RegionDeployType: steps.PrimaryRegionDeployType,
+				},
+			},
+		},
+		"track-a": {
+			Name: "track-a",
+		},
+		"track-b": {
+			Name: "track-b",
+		},
+	}
+	deployTrackExecutionSpy := []tracks.Execution{}
+
+	tracks.DeployTrack = func(execution tracks.Execution, cfg config.Config, t tracks.Track, out chan<- tracks.Output) {
+		execution.Output.Name = t.Name
+		deployTrackExecutionSpy = append(deployTrackExecutionSpy, execution)
+		out <- deployTrackStub[t.Name]
+		return
+	}
+
+	// act
+	mockExecution := sut.ExecuteTracks(nil, config.Config{
+		TargetAll:   true,
+		SelfDestroy: true,
+	})
+
+	require.NotNil(t, mockExecution)
+
+	for _, executionSpy := range deployTrackExecutionSpy {
+		require.Contains(t, []string{"_pretrack", "track-a", "track-b"}, executionSpy.Output.Name, "Should find the expected tracks")
+	}
+
+	for _, tr := range mockExecution.Tracks {
+		if tr.Name != tracks.PRE_TRACK_NAME {
+			require.True(t, tr.Skipped, "All other tracks should be skipped")
+		}
+	}
+}
+
 func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariables(t *testing.T) {
 	// arrange
 	ctrl := gomock.NewController(t)
