@@ -37,18 +37,22 @@ A configuration file can exist in either a track's or step's directory.
 enabled: <true|false> # This determines whether the step will be executed
 execute_when: # This will conduct a runtime evaluation on whether the step should be executed
   region_in: # By matching the `var.region` input variable
-  - "region-1" 
+    - "region-1"
 ```
 
 ## Overview
 
 ### Tracks
 
-1. All _Tracks_ will be executed in parallel at the same time
+1. All _Tracks_ beside the [pre-track](#pre-track) will be executed in parallel
 
 - By definition **tracks do not have depedencies on each other**. If they do, treat them as one track with multiple steps
 
-2. For a track to be executed at least one _Step_ has to be defined within it
+2. For a track to be executed, at least one _Step_ has to be defined within it
+
+#### Pre-track
+
+A pre-track is a track that runs before **all** other tracks. After this track completes, the remaining tracks are executed in parallel. If the pre-track execution fails, no other tracks will be attempted. To create a pre-track, create a directory called `_pretrack` in the `tracks` directory.
 
 ### Steps
 
@@ -150,6 +154,15 @@ variable "s3_bucket-producer_assume_role_arn" {
 }
 ```
 
+If a pre-track exists, all the step output variables from the pre-track will be available as input variables to other steps. These pre-track output variables can be used in other steps by declaring a variable as `pretrack-{pretrack_step_name}-{output_variable_name}`. For example:
+
+```hcl-terraform
+variable pretrack-project_creation-project_name {
+  type        = string
+  description = "Variable from the project_creation step in the pre-track"
+}
+```
+
 ##### Regional Variables
 
 When working in a regional context, additional passed variables are available from prior step's regional deployments.
@@ -162,6 +175,15 @@ To access previous step's regional output variables one can do so by adding `-re
 variable "s3_bucket-regional-producer_assume_role_arn" {
   type        = string
   description = "Variable from step1_s3_bucket"
+}
+```
+
+If a pre-track exists, you can also access the regional output variables from the pre-track steps by declaring a variable as `pretrack-resource_groups-regional-resource_group_name`. For example:
+
+```hcl-terraform
+variable pretrack-resource_groups-regional-resource_group_name {
+  type        = string
+  description = "Variable from the resource_groups regional step in the pre-track"
 }
 ```
 
@@ -321,13 +343,13 @@ If defining local, the terraform will be executed "fresh" each time. This works 
 
 Supported variables for dynamic [`key`](https://www.terraform.io/docs/backends/types/s3.html#key), [`bucket`](https://www.terraform.io/docs/backends/types/s3.html#role_arn) or [`role_arn`](https://www.terraform.io/docs/backends/types/s3.html#bucket) configuration:
 
-- `${var.gaia_region_deploy_type}`: **required** in `key` 
+- `${var.gaia_region_deploy_type}`: **required** in `key`
 - `${var.region}`: **required** in `key`
 - `${var.gaia_step}`
 - `${var.core_account_ids_map}`
 - `${var.gaia_target_account_id}`
 - `${var.gaia_deployment_ring}`
-- `${local.namespace-}` (temporary backwards compatibility variable) 
+- `${local.namespace-}` (temporary backwards compatibility variable)
 
 Example Usage:
 
@@ -405,7 +427,7 @@ The most common and terraform friendly to implement deployment specific configur
 
 #### Override Files
 
-The alternative option is using terraform's [override feature](https://www.terraform.io/docs/configuration/override.html).  Gaia handles this based on the `override` directory within a step.
+The alternative option is using terraform's [override feature](https://www.terraform.io/docs/configuration/override.html). Gaia handles this based on the `override` directory within a step.
 
 For example, in the following step when deploying to:
 
@@ -432,12 +454,12 @@ For example, in `main.tf`:
 # super important resource that cannot be deleted
 resource "aws_s3_bucket" "centralized_logging_master_bucket" {
   bucket        = "log-compliance-data"
-  
+
   lifecycle {
     prevent_destroy = true
   }
 }
-```  
+```
 
 And then for ephemeral environments (e.g. local development), `ring_local_override.tf`:
 
@@ -448,7 +470,7 @@ resource "aws_s3_bucket" "centralized_logging_master_bucket" {
     prevent_destroy = false
   }
 }
-```  
+```
 
 This has the benefit of not introducing the subtle complexities of "toggling" between two different resources with `count`
 
