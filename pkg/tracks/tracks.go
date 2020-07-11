@@ -438,6 +438,10 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			preTrackDestroyOutput := <-destroyPreTrackChan
 			preTrack.DestroyOutput = preTrackDestroyOutput
 			tracker.Log.Debug("Pre-track destroy finished")
+			if t, ok := output.Tracks[preTrackDestroyOutput.Name]; ok {
+				t.DestroyOutput = preTrackDestroyOutput
+				output.Tracks[preTrackDestroyOutput.Name] = t
+			}
 		}
 	}
 
