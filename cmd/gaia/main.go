@@ -3,6 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -13,9 +17,6 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/params"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
-	"os"
-	"strings"
-	"time"
 )
 
 var fs afero.Fs
@@ -91,6 +92,7 @@ func main() {
 
 	if len(failedDestroySteps) > 0 {
 		resultMessage += fmt.Sprintf("  Failed to destroy: %v.", strings.Join(failedDestroySteps, ", "))
+		result = "fail"
 	}
 
 	slog := log.WithFields(logrus.Fields{

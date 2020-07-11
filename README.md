@@ -488,4 +488,4 @@ $ DOCKER_BUILDKIT=1 docker build -t terrascale .
 # Now one can build the child containers (launchpad_core_aws, bedrock_aws, etc)
 ```
 
-> NOTE: Optum Healthcare Public Cloud team, further local instructions are available [here](https://new-wiki.optum.com/display/COMCLDDLV/Gaia%3A+Local+Configuration)
+> NOTE: Optum Healthcare Public Cloud team, further local instructions are available [here](https://new-wiki.optum.com/display/COMCLDDLV/Launchpad%3A+Local+Configuration)
