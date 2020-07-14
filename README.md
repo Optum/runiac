@@ -178,7 +178,7 @@ variable "s3_bucket-regional-producer_assume_role_arn" {
 }
 ```
 
-If a pre-track exists, you can also access the regional output variables from the pre-track steps by declaring a variable as `pretrack-resource_groups-regional-resource_group_name`. For example:
+If a pre-track exists, you can also access the regional output variables from the pre-track steps by declaring a variable as `pretrack-{pretrack_step_name}-regional-{output_variable_name}`. For example:
 
 ```hcl-terraform
 variable pretrack-resource_groups-regional-resource_group_name {

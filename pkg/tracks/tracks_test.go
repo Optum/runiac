@@ -26,7 +26,6 @@ var stepperFactory steps.StepperFactory
 var sut tracks.Tracker
 
 var stubTrackCount int
-var stubStepCount int
 var stubStepTestsCount int
 
 var stubStepWithTests steps.Step
@@ -45,10 +44,6 @@ func TestMain(m *testing.M) {
 
 	DefaultStubAccountID = "1"
 	StubVersion = "v0.0.5"
-
-	stubTrackCount = 3
-	stubStepCount = 5
-	stubStepTestsCount = 0
 
 	tracks.DestroyTrack = tracks.ExecuteDestroyTrack
 	tracks.DeployTrack = tracks.ExecuteDeployTrack
@@ -128,6 +123,9 @@ func TestMain(m *testing.M) {
 			},
 		},
 	}
+
+	stubTrackCount = len(stubTracks)
+	stubStepTestsCount = 0
 
 	for key, track := range stubTracks {
 		track.Dir = fmt.Sprintf("tracks/%s", track.Name)
