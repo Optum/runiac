@@ -192,10 +192,10 @@ func TestGetTracksWithTargetAll_ShouldReturnCorrectTracks(t *testing.T) {
 	require.Contains(t, trackNames, stubTrackNameA, "Track A should be found")
 	require.Contains(t, trackNames, stubTrackNameB, "Track B should be found")
 
-	// Spot check one of the tracks
-	require.Equal(t, 2, mockTracks[trackAIndex].StepProgressionsCount, "StepProgressionsCount should be derived correctly based on steps")
-	require.Equal(t, 2, len(mockTracks[trackAIndex].OrderedSteps[1]), "Track A Step Progression 1 should have 2 step(s)")
-	require.Equal(t, 1, len(mockTracks[trackAIndex].OrderedSteps[2]), "Track A Step Progression 2 should have 1 step(s)")
+	// Spot check one of the tracks (Track A)
+	require.Equal(t, len(stubTracks[stubTrackNameA].OrderedSteps), mockTracks[trackAIndex].StepProgressionsCount, "StepProgressionsCount should be derived correctly based on steps")
+	require.Equal(t, len(stubTracks[stubTrackNameA].OrderedSteps[1]), len(mockTracks[trackAIndex].OrderedSteps[1]), "Track A Step Progression 1 should have 2 step(s)")
+	require.Equal(t, len(stubTracks[stubTrackNameA].OrderedSteps[2]), len(mockTracks[trackAIndex].OrderedSteps[2]), "Track A Step Progression 2 should have 1 step(s)")
 
 	for _, track := range mockTracks {
 		totalStepSteps := 0
