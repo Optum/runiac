@@ -39,12 +39,17 @@ func main() {
 	trackCount := len(output.Tracks)
 	failedSteps := []string{}
 	skippedSteps := []string{}
+	skippedTracks := []string{}
 	failedDestroySteps := []string{}
 	stepCount := 0
 	executedStepCount := 0
 	failedTestCount := 0
 
 	for _, t := range output.Tracks {
+		if t.Skipped {
+			skippedTracks = append(skippedTracks, t.Name)
+		}
+
 		for _, tExecution := range t.Output.Executions {
 			executedStepCount += tExecution.Output.ExecutedCount
 			stepCount += tExecution.Output.ExecutedCount + tExecution.Output.SkippedCount
@@ -71,7 +76,7 @@ func main() {
 	failedStepCount := len(failedSteps)
 
 	resultMessage := fmt.Sprintf("Executed %v/%v steps successfully with %v test failure(s) across %v track(s).",
-		executedStepCount-failedStepCount, stepCount, failedTestCount, trackCount)
+		executedStepCount-failedStepCount, stepCount, failedTestCount, trackCount-len(skippedTracks))
 
 	result := "success"
 

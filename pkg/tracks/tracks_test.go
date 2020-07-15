@@ -26,11 +26,11 @@ var stepperFactory steps.StepperFactory
 var sut tracks.Tracker
 
 var stubTrackCount int
-var stubStepCount int
 var stubStepTestsCount int
 
 var stubStepWithTests steps.Step
 var stubTracks map[string]tracks.Track
+var stubPreTrackName string
 var stubTrackNameA string
 var stubTrackNameB string
 
@@ -44,10 +44,6 @@ func TestMain(m *testing.M) {
 
 	DefaultStubAccountID = "1"
 	StubVersion = "v0.0.5"
-
-	stubTrackCount = 2
-	stubStepCount = 5
-	stubStepTestsCount = 0
 
 	tracks.DestroyTrack = tracks.ExecuteDestroyTrack
 	tracks.DeployTrack = tracks.ExecuteDeployTrack
@@ -68,10 +64,25 @@ func TestMain(m *testing.M) {
 		RegionalResourcesExist: true,
 	}
 
+	stubPreTrackName = tracks.PRE_TRACK_NAME
 	stubTrackNameA = "track-a"
 	stubTrackNameB = "track-b"
 
 	stubTracks = map[string]tracks.Track{
+		stubPreTrackName: {
+			Name:                  stubPreTrackName,
+			StepProgressionsCount: 1,
+			OrderedSteps: map[int][]steps.Step{
+				1: {
+					stubStepWithTests,
+					{
+						Name:             "pretrackstep",
+						TestsExist:       false,
+						ProgressionLevel: 1,
+					},
+				},
+			},
+		},
 		stubTrackNameA: {
 			Name:                  stubTrackNameA,
 			StepProgressionsCount: 2,
@@ -112,6 +123,9 @@ func TestMain(m *testing.M) {
 			},
 		},
 	}
+
+	stubTrackCount = len(stubTracks)
+	stubStepTestsCount = 0
 
 	for key, track := range stubTracks {
 		track.Dir = fmt.Sprintf("tracks/%s", track.Name)
@@ -161,16 +175,35 @@ func TestGetTracksWithTargetAll_ShouldReturnCorrectTracks(t *testing.T) {
 	})
 
 	// assert
-	assert.Equal(t, stubTrackCount, len(mockTracks), "Two tracks should have been gathered")
-	assert.Equal(t, stubTrackNameA, mockTracks[0].Name, "tracks should be correctly derived from directory")
-	assert.Equal(t, 2, mockTracks[0].StepProgressionsCount, "StepProgressionsCount should be derived correctly based on steps")
-	assert.Equal(t, 2, len(mockTracks[0].OrderedSteps[1]), "Track A Step Progression 1 should have 2 step(s)")
-	assert.Equal(t, 1, len(mockTracks[0].OrderedSteps[2]), "Track A Step Progression 2 should have 1 step(s)")
-	assert.Contains(t, stubTrackNameB, mockTracks[1].Name)
+	require.Equal(t, stubTrackCount, len(mockTracks), "Three tracks should have been gathered")
+
+	// Gather all track names
+	var trackNames []string
+	var trackAIndex int
+	for index, track := range mockTracks {
+		trackNames = append(trackNames, track.Name)
+		if track.Name == stubTrackNameA {
+			trackAIndex = index
+		}
+	}
+
+	// Ensures all expected tracks are present
+	require.Contains(t, trackNames, stubPreTrackName, "The pretrack should be found")
+	require.Contains(t, trackNames, stubTrackNameA, "Track A should be found")
+	require.Contains(t, trackNames, stubTrackNameB, "Track B should be found")
+
+	// Spot check one of the tracks (Track A)
+	require.Equal(t, len(stubTracks[stubTrackNameA].OrderedSteps), mockTracks[trackAIndex].StepProgressionsCount, "StepProgressionsCount should be derived correctly based on steps")
+	require.Equal(t, len(stubTracks[stubTrackNameA].OrderedSteps[1]), len(mockTracks[trackAIndex].OrderedSteps[1]), "Track A Step Progression 1 should have 2 step(s)")
+	require.Equal(t, len(stubTracks[stubTrackNameA].OrderedSteps[2]), len(mockTracks[trackAIndex].OrderedSteps[2]), "Track A Step Progression 2 should have 1 step(s)")
 
 	for _, track := range mockTracks {
 		totalStepSteps := 0
 		totalStepsWithTestsCount := 0
+
+		if track.Name == stubPreTrackName {
+			require.True(t, track.IsPreTrack, "A track with the name _pretrack should be identified as a pretrack")
+		}
 
 		for progressionLevel, steps := range track.OrderedSteps {
 			for _, step := range steps {
@@ -243,6 +276,63 @@ func shouldHaveRegionDeployment(s []steps.Step, e string) bool {
 	return false
 }
 
+func TestExecuteTracks_SkipsAllTracksIfPreTrackFails(t *testing.T) {
+	stubPrimaryRegion := "primaryregion"
+
+	deployTrackStub := map[string]tracks.Output{
+		"_pretrack": {
+			Name: "_pretrack",
+			Executions: []tracks.RegionExecution{
+				{
+					Output: tracks.ExecutionOutput{
+						Steps: map[string]steps.Step{
+							"project_provisioning": {
+								Output: steps.StepOutput{
+									Status: steps.Fail,
+								},
+							},
+						},
+					},
+					Region:           stubPrimaryRegion,
+					RegionDeployType: steps.PrimaryRegionDeployType,
+				},
+			},
+		},
+		"track-a": {
+			Name: "track-a",
+		},
+		"track-b": {
+			Name: "track-b",
+		},
+	}
+	deployTrackExecutionSpy := []tracks.Execution{}
+
+	tracks.DeployTrack = func(execution tracks.Execution, cfg config.Config, t tracks.Track, out chan<- tracks.Output) {
+		execution.Output.Name = t.Name
+		deployTrackExecutionSpy = append(deployTrackExecutionSpy, execution)
+		out <- deployTrackStub[t.Name]
+		return
+	}
+
+	// act
+	mockExecution := sut.ExecuteTracks(nil, config.Config{
+		TargetAll:   true,
+		SelfDestroy: true,
+	})
+
+	require.NotNil(t, mockExecution)
+
+	for _, executionSpy := range deployTrackExecutionSpy {
+		require.Contains(t, []string{"_pretrack", "track-a", "track-b"}, executionSpy.Output.Name, "Should find the expected tracks")
+	}
+
+	for _, tr := range mockExecution.Tracks {
+		if tr.Name != tracks.PRE_TRACK_NAME {
+			require.True(t, tr.Skipped, "All other tracks should be skipped")
+		}
+	}
+}
+
 func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariables(t *testing.T) {
 	// arrange
 	ctrl := gomock.NewController(t)
@@ -264,6 +354,19 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 	stubPrimaryRegion := "primaryregion"
 
 	deployTrackStub := map[string]tracks.Output{
+		"_pretrack": {
+			Name:                       "_pretrack",
+			PrimaryStepOutputVariables: stubPrimaryStepOutputVars,
+			Executions: []tracks.RegionExecution{
+				{
+					Output: tracks.ExecutionOutput{
+						StepOutputVariables: stubPrimaryStepOutputVars,
+					},
+					Region:           stubPrimaryRegion,
+					RegionDeployType: steps.PrimaryRegionDeployType,
+				},
+			},
+		},
 		"track-a": {
 			Name:                       "track-a",
 			PrimaryStepOutputVariables: stubPrimaryStepOutputVars,
@@ -323,7 +426,7 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 	require.NotNil(t, mockExecution)
 
 	for _, executionSpy := range deployTrackExecutionSpy {
-		require.Contains(t, []string{"track-a", "track-b"}, executionSpy.Output.Name, "Should execute correct tracks")
+		require.Contains(t, []string{"_pretrack", "track-a", "track-b"}, executionSpy.Output.Name, "Should execute correct tracks")
 	}
 	require.Equal(t, stubPrimaryStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[steps.PrimaryRegionDeployType.String()+"-"+stubPrimaryRegion], "Should pass primary step output vars to destroy")
 	require.Equal(t, stubRegionalStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[steps.RegionalRegionDeployType.String()+"-"+stubRegionalRegion], "Should pass regional region specific step output vars to destroy")
@@ -444,6 +547,146 @@ func TestAddToTrackOutput(t *testing.T) {
 
 	require.Equal(t, "my-cool-resource", mockPrevStepVars[stepOutput.StepName]["resource_name"], "The track output should have the correct key and value set")
 	require.Equal(t, "resource/my-cool-resource", mockPrevStepVars[stepOutput.StepName]["resource_id"], "The track output should have the correct key and value set")
+}
+
+func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsPrimaryRegionExecutionsFromPreTrackToVars(t *testing.T) {
+	// Mock existing step output vars
+	defaultStepOutputVariables := make(map[string]map[string]string)
+	defaultStepOutputVariables["iam"] = map[string]string{
+		"var1": "out1",
+	}
+
+	preTrackOutputs := &tracks.Output{
+		Name: tracks.PRE_TRACK_NAME,
+		PrimaryStepOutputVariables: map[string]map[string]string{
+			"account": {
+				"name": "new-account",
+			},
+		},
+		Executions: []tracks.RegionExecution{
+			{
+				RegionDeployType: steps.PrimaryRegionDeployType,
+				Region:           "centralus",
+				Output: tracks.ExecutionOutput{
+					StepOutputVariables: map[string]map[string]string{
+						"account": {
+							"name": "new-account",
+						},
+					},
+				},
+			},
+			{
+				RegionDeployType: steps.RegionalRegionDeployType,
+				Region:           "centralus",
+				Output: tracks.ExecutionOutput{
+					StepOutputVariables: map[string]map[string]string{
+						"account": {
+							"group": "new-group",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	regionDeployType := steps.PrimaryRegionDeployType
+	region := "centralus"
+
+	newDefaultStepOutputVariables := tracks.AppendPreTrackOutputsToDefaultStepOutputVariables(defaultStepOutputVariables, preTrackOutputs, regionDeployType, region)
+	require.NotEmpty(t, newDefaultStepOutputVariables, "The new map should not be empty")
+	require.Equal(t, 2, len(newDefaultStepOutputVariables), "The map should contain the expected number of keys")
+
+	// Existing step output vars should remain
+	iamStepOutVarMap, iamKeyExists := newDefaultStepOutputVariables["iam"]
+	require.True(t, iamKeyExists, "The map should still contain the original iam key")
+	require.Equal(t, 1, len(iamStepOutVarMap), "The iam step should have the expected number of out vars")
+	var1Value, iamKeyVar1KeyExists := iamStepOutVarMap["var1"]
+	require.True(t, iamKeyVar1KeyExists, "The original key in iam should still exist")
+	require.Equal(t, "out1", var1Value, "The output in the iam step for var1 should be the expected value")
+
+	// Pretrack outputs from the primary region only (since this was a primary region deployment) should be added
+	preTrackAccountStepOutVarMap, preTrackKeyExists := newDefaultStepOutputVariables["pretrack-account"]
+	require.True(t, preTrackKeyExists, "There should be a key for the pretrack in the expected naming format")
+	require.Equal(t, 1, len(preTrackAccountStepOutVarMap), "The pre track account step should have the expected number of out vars")
+	accountKeyVal, accountKeyExists := preTrackAccountStepOutVarMap["name"]
+	require.True(t, accountKeyExists, "The name output var from the pretrack account step should be added")
+	require.Equal(t, "new-account", accountKeyVal, "The name output var from the pretrack account step should have the expected value")
+}
+
+func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsRegionalExecutionsFromPreTrackToVars(t *testing.T) {
+	// Mock existing step output vars
+	defaultStepOutputVariables := make(map[string]map[string]string)
+	defaultStepOutputVariables["iam"] = map[string]string{
+		"var1": "out1",
+	}
+
+	preTrackOutputs := &tracks.Output{
+		Name: tracks.PRE_TRACK_NAME,
+		PrimaryStepOutputVariables: map[string]map[string]string{
+			"account": {
+				"name": "new-account",
+			},
+		},
+		Executions: []tracks.RegionExecution{
+			{
+				RegionDeployType: steps.PrimaryRegionDeployType,
+				Region:           "centralus",
+				Output: tracks.ExecutionOutput{
+					StepOutputVariables: map[string]map[string]string{
+						"account": {
+							"name": "new-account",
+						},
+					},
+				},
+			},
+			{
+				RegionDeployType: steps.RegionalRegionDeployType,
+				Region:           "centralus",
+				Output: tracks.ExecutionOutput{
+					StepOutputVariables: map[string]map[string]string{
+						"account": {
+							"group": "new-group1-1",
+						},
+					},
+				},
+			},
+			{
+				RegionDeployType: steps.RegionalRegionDeployType,
+				Region:           "eastus",
+				Output: tracks.ExecutionOutput{
+					StepOutputVariables: map[string]map[string]string{
+						"account": {
+							"group": "new-group-2",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	regionDeployType := steps.RegionalRegionDeployType
+	region := "centralus"
+
+	newDefaultStepOutputVariables := tracks.AppendPreTrackOutputsToDefaultStepOutputVariables(defaultStepOutputVariables, preTrackOutputs, regionDeployType, region)
+	fmt.Printf("newDefaultStepOutputVariables: %+v\n", newDefaultStepOutputVariables)
+	require.NotEmpty(t, newDefaultStepOutputVariables, "The new map should not be empty")
+	require.Equal(t, 2, len(newDefaultStepOutputVariables), "The map should contain the expected number of keys")
+
+	// Existing step output vars should remain
+	iamStepOutVarMap, iamKeyExists := newDefaultStepOutputVariables["iam"]
+	require.True(t, iamKeyExists, "The map should still contain the original iam key")
+	require.Equal(t, 1, len(iamStepOutVarMap), "The iam step should have the expected number of out vars")
+	var1Value, iamKeyVar1KeyExists := iamStepOutVarMap["var1"]
+	require.True(t, iamKeyVar1KeyExists, "The original key in iam should still exist")
+	require.Equal(t, "out1", var1Value, "The output in the iam step for var1 should be the expected value")
+
+	// Pretrack outputs from the regional deployment (in the same region) should be added
+	preTrackAccountStepOutVarMap, preTrackKeyExists := newDefaultStepOutputVariables["pretrack-account"]
+	require.True(t, preTrackKeyExists, "There should be a key for the pretrack in the expected naming format")
+	require.Equal(t, 1, len(preTrackAccountStepOutVarMap), "The pre track account step should have the expected number of out vars")
+	groupKeyVal, groupKeyExists := preTrackAccountStepOutVarMap["group"]
+	require.True(t, groupKeyExists, "The group output var from the pretrack account step should be added")
+	require.Equal(t, "new-group1-1", groupKeyVal, "The group output var from the pretrack account step should have the expected value")
 }
 
 func TestAppendTrackOutput_WithRegionalStepDeploymentOutput(t *testing.T) {

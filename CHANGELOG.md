@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.2.0 (July 13, 2020)
+
+### ENHANCEMENTS
+
+- Added the option to execute a pre-track before all other tracks
+
 ## 0.1.3 (July 7, 2020)
 
 ### ENHANCEMENTS
@@ -32,13 +38,13 @@
 
 ### BUG FIXES
 
-- Fix when using "just in time" tfvars from param store 
+- Fix when using "just in time" tfvars from param store
 
 ## 0.0.9 (Apr 20, 2020)
 
 ### ENHANCEMENTS
 
-- Added `FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS` environment configuration for users that do not need param store variable injection 
+- Added `FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS` environment configuration for users that do not need param store variable injection
 
 ## 0.0.8 (Apr 17, 2020)
 
