@@ -204,8 +204,6 @@ func TestHandleOverrides_ShouldSetFields(t *testing.T) {
 }
 
 func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
-	t.Parallel()
-
 	// act
 	execDestroy := TerraformStepper{}.ExecuteStepDestroy(ExecutionConfig{
 		GaiaConfig: GaiaConfig{
@@ -221,8 +219,6 @@ func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 }
 
 func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
-	t.Parallel()
-
 	// act
 	exec := TerraformStepper{}.ExecuteStep(ExecutionConfig{
 		GaiaConfig: GaiaConfig{
@@ -238,8 +234,6 @@ func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 }
 
 func TestExecuteStep_ShouldExecuteWhenExecuteWhenUndefined(t *testing.T) {
-	t.Parallel()
-
 	executed := 0
 	executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output StepOutput) {
 		executed++
