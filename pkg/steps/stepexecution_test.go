@@ -2,9 +2,10 @@ package steps
 
 import (
 	"fmt"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"strings"
 	"testing"
+
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -200,6 +201,23 @@ func TestHandleOverrides_ShouldSetFields(t *testing.T) {
 	// assert
 	require.Equal(t, "src/override/ring_ring_override.tf", mockSrc, "src should be set to overrides directory")
 	require.Equal(t, "src/ring_ring_override.tf", mockDst, "src should be set to execution directory")
+}
+
+func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
+	t.Parallel()
+
+	// act
+	execDestroy := TerraformStepper{}.ExecuteStepDestroy(ExecutionConfig{
+		GaiaConfig: GaiaConfig{
+			ExecuteWhen: GaiaConfigExecuteWhen{
+				RegionIn: []string{"stub-region"},
+			}},
+		Region: "not-stub-region",
+		Logger: logger,
+	})
+
+	// assert
+	require.Equal(t, Na, execDestroy.Status, "Status should be skipped")
 }
 
 func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
