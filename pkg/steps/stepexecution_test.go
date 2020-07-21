@@ -2,9 +2,10 @@ package steps
 
 import (
 	"fmt"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"strings"
 	"testing"
+
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -202,9 +203,22 @@ func TestHandleOverrides_ShouldSetFields(t *testing.T) {
 	require.Equal(t, "src/ring_ring_override.tf", mockDst, "src should be set to execution directory")
 }
 
-func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
-	t.Parallel()
+func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
+	// act
+	execDestroy := TerraformStepper{}.ExecuteStepDestroy(ExecutionConfig{
+		GaiaConfig: GaiaConfig{
+			ExecuteWhen: GaiaConfigExecuteWhen{
+				RegionIn: []string{"stub-region"},
+			}},
+		Region: "not-stub-region",
+		Logger: logger,
+	})
 
+	// assert
+	require.Equal(t, Na, execDestroy.Status, "Status should be skipped")
+}
+
+func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 	// act
 	exec := TerraformStepper{}.ExecuteStep(ExecutionConfig{
 		GaiaConfig: GaiaConfig{
@@ -220,8 +234,6 @@ func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 }
 
 func TestExecuteStep_ShouldExecuteWhenExecuteWhenUndefined(t *testing.T) {
-	t.Parallel()
-
 	executed := 0
 	executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output StepOutput) {
 		executed++

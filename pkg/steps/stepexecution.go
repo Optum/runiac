@@ -372,23 +372,9 @@ func (stepper TerraformStepper) ExecuteStepDestroy(exec ExecutionConfig) StepOut
 	return executeTerraformInDir(exec, true)
 }
 
+// ExecuteStep deploys a step
 func (stepper TerraformStepper) ExecuteStep(exec ExecutionConfig) StepOutput {
-
-	inRegions := exec.GaiaConfig.ExecuteWhen.RegionIn
-	if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
-		exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
-		return StepOutput{
-			Status:           Na,
-			RegionDeployType: exec.RegionDeployType,
-			Region:           exec.Region,
-			StepName:         exec.StepName,
-			StreamOutput:     "",
-			Err:              nil,
-			OutputVariables:  nil,
-		}
-	}
 	output := executeTerraformInDir(exec, false)
-
 	postStep(exec, output)
 
 	return output
@@ -470,6 +456,8 @@ func postStep(exec ExecutionConfig, output StepOutput) {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, output.Err)
 	} else if output.Status == Fail {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
+	} else if output.Status == Unstable {
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
 	} else {
 		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions)
 	}
@@ -489,6 +477,21 @@ var executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output Ste
 	output.Status = Fail // assume failure
 	var resp string
 	var tfOptions *terraform.Options
+
+	// Check if the step is filtered in the configuration
+	inRegions := exec.GaiaConfig.ExecuteWhen.RegionIn
+	if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
+		exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
+		return StepOutput{
+			Status:           Na,
+			RegionDeployType: exec.RegionDeployType,
+			Region:           exec.Region,
+			StepName:         exec.StepName,
+			StreamOutput:     "",
+			Err:              nil,
+			OutputVariables:  nil,
+		}
+	}
 
 	// terraform init
 	tfOptions, output.Err = getCommonTfOptions2(exec)

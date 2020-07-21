@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.2.1 (July 21, 2020)
+
+### BUG FIX 
+
+- Include `gaia.yml` configuration check for `execute_when.region_in` for destroy step executions, filtered steps previously were still being attempted to be destroyed.
+
 ## 0.2.0 (July 13, 2020)
 
 ### ENHANCEMENTS
