@@ -456,7 +456,9 @@ func postStep(exec ExecutionConfig, output StepOutput) {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, output.Err)
 	} else if output.Status == Fail {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
-	} else if output.Status == Success {
+	} else if output.Status == Unstable {
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
+	} else {
 		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions)
 	}
 }
