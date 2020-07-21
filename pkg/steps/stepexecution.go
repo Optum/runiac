@@ -374,21 +374,7 @@ func (stepper TerraformStepper) ExecuteStepDestroy(exec ExecutionConfig) StepOut
 
 // ExecuteStep deploys a step
 func (stepper TerraformStepper) ExecuteStep(exec ExecutionConfig) StepOutput {
-	// inRegions := exec.GaiaConfig.ExecuteWhen.RegionIn
-	// if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
-	// 	exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
-	// 	return StepOutput{
-	// 		Status:           Na,
-	// 		RegionDeployType: exec.RegionDeployType,
-	// 		Region:           exec.Region,
-	// 		StepName:         exec.StepName,
-	// 		StreamOutput:     "",
-	// 		Err:              nil,
-	// 		OutputVariables:  nil,
-	// 	}
-	// }
 	output := executeTerraformInDir(exec, false)
-
 	postStep(exec, output)
 
 	return output
