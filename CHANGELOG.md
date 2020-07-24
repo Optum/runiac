@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.2.2 (July 27, 2020)
+
+### ENHANCEMENTS
+
+- Added support for `destory_*ring*_override.tf` files for deployments that are `Self-Destroy`.
+
 ## 0.2.1 (July 21, 2020)
 
 ### BUG FIX 

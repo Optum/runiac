@@ -211,7 +211,10 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 	}
 }
 
-func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs, regionDeployType RegionDeployType, region string, defaultStepOutputVariables map[string]map[string]string) (ExecutionConfig, error) {
+func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
+	regionDeployType RegionDeployType, region string,
+	defaultStepOutputVariables map[string]map[string]string) (
+	ExecutionConfig, error) {
 	exec := NewExecution(s, logger, fs, regionDeployType, region, defaultStepOutputVariables)
 
 	// set and create execution directory to enable safe concurrency
@@ -348,6 +351,12 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs, regionDeployType 
 
 	HandleOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
 
+	// Handle the destroy overrides here as long as the execution is to
+	// destroy the steps
+	if s.DeployConfig.SelfDestroy {
+		HandleDestroyOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
+	}
+
 	return exec, nil
 }
 
@@ -364,6 +373,27 @@ func HandleOverrides(logger *logrus.Entry, execDir string, deploymentRing string
 
 	if err != nil && !os.IsNotExist(err) {
 		logger.WithError(err).Errorf("Overrides were not successfully set targeting %s", ringOverrideFile)
+	}
+}
+
+// HandleDestroyOverrides copy destroy override configurations into the
+// execution working directory
+func HandleDestroyOverrides(logger *logrus.Entry, execDir string,
+	deploymentRing string) {
+	destroyOverrideFile := fmt.Sprintf("destroy_%s_override.tf",
+		strings.ToLower(deploymentRing))
+
+	src := filepath.Join(execDir, "override", destroyOverrideFile)
+	dst := filepath.Join(execDir, destroyOverrideFile)
+
+	logger.Infof("Attempting to copy %s to %s", src, dst)
+
+	err := CopyFile(src, dst)
+
+	if err != nil && !os.IsNotExist(err) {
+		logger.WithError(err).Errorf(
+			"Overrides were not successfully set targeting %s",
+			destroyOverrideFile)
 	}
 }
 
