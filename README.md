@@ -429,6 +429,15 @@ The most common and terraform friendly to implement deployment specific configur
 
 The alternative option is using terraform's [override feature](https://www.terraform.io/docs/configuration/override.html). Gaia handles this based on the `override` directory within a step.
 
+The supported override files are below:
+
+- `override.tf` - file will be added for all deployment rings and deployments, including Self-Destroy.
+- `ring_*ring-name*_override.tf` - file will be added for the specified deployment ring and deployments, including Self-Destroy.
+- `destroy_override.tf` - file will be added for all deployment rings and Self-Destroy deployments.
+- `destroy_ring_*ring-name*_override.tf` - file will be added for the specified deployment ring and Self-Destroy deployments.
+
+---
+
 For example, in the following step when deploying to:
 
 - `local` deployment ring: the `ring_local_override.tf` file will be added to the executed terraform
@@ -474,7 +483,7 @@ resource "aws_s3_bucket" "centralized_logging_master_bucket" {
 
 This has the benefit of not introducing the subtle complexities of "toggling" between two different resources with `count`
 
-**NOTE**: Terraform recommends using this feature sparingly as it is not noticable the value is overridden in the main terraform files.
+**NOTE**: Terraform recommends using this feature sparingly as it is not noticeable the value is overridden in the main terraform files.
 A common use case for this feature is controlling terraform `lifecycle` parameters for ephemeral environments while keeping the main terraform files defined for production.
 
 ## Contributing

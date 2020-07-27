@@ -349,10 +349,11 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 
 	exec.TFBackend = GetBackendConfig(exec, ParseTFBackend)
 
-	HandleOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
+	// Handle any override files in the step and deployment ring. Deploy
+	// overrides will always copied over and they destroy overrides will be
+	// copied over only on Self-Destroy.
+	HandleDeployOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
 
-	// Handle the destroy overrides here as long as the execution is to
-	// destroy the steps
 	if s.DeployConfig.SelfDestroy {
 		HandleDestroyOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
 	}
@@ -360,31 +361,9 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	return exec, nil
 }
 
-// copy override configuration into execution working directory
-func HandleOverrides(logger *logrus.Entry, execDir string, deploymentRing string) {
-	ringOverrideFile := fmt.Sprintf("ring_%s_override.tf", strings.ToLower(deploymentRing))
-
-	src := filepath.Join(execDir, "override", ringOverrideFile)
-	dst := filepath.Join(execDir, ringOverrideFile)
-
-	logger.Infof("Attempting to copy %s to %s", src, dst)
-
-	err := CopyFile(src, dst)
-
-	if err != nil && !os.IsNotExist(err) {
-		logger.WithError(err).Errorf("Overrides were not successfully set targeting %s", ringOverrideFile)
-	}
-}
-
-// HandleDestroyOverrides copy destroy override configurations into the
-// execution working directory
-func HandleDestroyOverrides(logger *logrus.Entry, execDir string,
-	deploymentRing string) {
-	destroyOverrideFile := fmt.Sprintf("destroy_%s_override.tf",
-		strings.ToLower(deploymentRing))
-
-	src := filepath.Join(execDir, "override", destroyOverrideFile)
-	dst := filepath.Join(execDir, destroyOverrideFile)
+func handleOverride(logger *logrus.Entry, execDir string, fileName string) {
+	src := filepath.Join(execDir, "override", fileName)
+	dst := filepath.Join(execDir, fileName)
 
 	logger.Infof("Attempting to copy %s to %s", src, dst)
 
@@ -392,9 +371,32 @@ func HandleDestroyOverrides(logger *logrus.Entry, execDir string,
 
 	if err != nil && !os.IsNotExist(err) {
 		logger.WithError(err).Errorf(
-			"Overrides were not successfully set targeting %s",
-			destroyOverrideFile)
+			"Overrides were not successfully set targeting %s", fileName)
 	}
+}
+
+// HandleDeployOverrides copy deploy override configurations into the
+// execution working directory
+func HandleDeployOverrides(logger *logrus.Entry, execDir string,
+	deploymentRing string) {
+	overrideFile := "override.tf"
+	ringOverrideFile := fmt.Sprintf("ring_%s_override.tf",
+		strings.ToLower(deploymentRing))
+
+	handleOverride(logger, execDir, overrideFile)
+	handleOverride(logger, execDir, ringOverrideFile)
+}
+
+// HandleDestroyOverrides copy destroy override configurations into the
+// execution working directory
+func HandleDestroyOverrides(logger *logrus.Entry, execDir string,
+	deploymentRing string) {
+	destroyOverrideFile := "destroy_override.tf"
+	destroyRingOverrideFile := fmt.Sprintf("destroy_ring_%s_override.tf",
+		strings.ToLower(deploymentRing))
+
+	handleOverride(logger, execDir, destroyOverrideFile)
+	handleOverride(logger, execDir, destroyRingOverrideFile)
 }
 
 // ExecuteStepDestroy destroys a step

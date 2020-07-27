@@ -4,7 +4,10 @@
 
 ### ENHANCEMENTS
 
-- Added support for `destroy_*ring*_override.tf` files for deployments that are `Self-Destroy`.
+- Additional support for override files for deployments.
+  - `override.tf` files will be supported to all deployments, including Self-Destroy.
+  - `destroy_override.tf` files will be supported to Self-Destroy deployments.
+  - `destroy_ring_*ring-name*_override.tf` files will be added to Self-Destroy deployments for the specified deployment ring.
 
 ## 0.2.1 (July 21, 2020)
 
