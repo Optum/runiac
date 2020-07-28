@@ -185,22 +185,68 @@ func TestGetBackendConfig_ShouldReturnSameValueForKeyAsStepAsNoKey(t *testing.T)
 }
 
 func TestHandleOverrides_ShouldSetFields(t *testing.T) {
-	t.Parallel()
-
-	var mockSrc string
-	var mockDst string
+	var overrideSrc, overrideDst string
 
 	CopyFile = func(src, dst string) (err error) {
-		mockSrc = src
-		mockDst = dst
+		overrideSrc = src
+		overrideDst = dst
 		return nil
 	}
+
 	// act
-	HandleOverrides(logger, "src", "ring")
+	handleOverride(logger, "src", "test.tf")
 
 	// assert
-	require.Equal(t, "src/override/ring_ring_override.tf", mockSrc, "src should be set to overrides directory")
-	require.Equal(t, "src/ring_ring_override.tf", mockDst, "src should be set to execution directory")
+	require.Equal(t, "src/override/test.tf", overrideSrc, "src should be set to overrides directory")
+	require.Equal(t, "src/test.tf", overrideDst, "src should be set to execution directory")
+}
+
+func TestHandleDeployOverrides_ShouldSetFields(t *testing.T) {
+	var deploySrc, deployDst, deployRingSrc, deployRingDst string
+
+	CopyFile = func(src, dst string) (err error) {
+		if deploySrc == "" {
+			deploySrc = src
+			deployDst = dst
+		} else {
+			deployRingSrc = src
+			deployRingDst = dst
+		}
+		return nil
+	}
+
+	// act
+	HandleDeployOverrides(logger, "src", "test")
+
+	// assert
+	require.Equal(t, "src/override/override.tf", deploySrc, "src should be set to overrides directory")
+	require.Equal(t, "src/override.tf", deployDst, "src should be set to execution directory")
+	require.Equal(t, "src/override/ring_test_override.tf", deployRingSrc, "src should be set to overrides directory")
+	require.Equal(t, "src/ring_test_override.tf", deployRingDst, "src should be set to execution directory")
+}
+
+func TestHandleDestroyOverrides_ShouldSetFields(t *testing.T) {
+	var destroySrc, destroyDst, destroyRingSrc, destroyRingDst string
+
+	CopyFile = func(src, dst string) (err error) {
+		if destroySrc == "" {
+			destroySrc = src
+			destroyDst = dst
+		} else {
+			destroyRingSrc = src
+			destroyRingDst = dst
+		}
+		return nil
+	}
+
+	// act
+	HandleDestroyOverrides(logger, "src", "test")
+
+	// assert
+	require.Equal(t, "src/override/destroy_override.tf", destroySrc, "src should be set to overrides directory")
+	require.Equal(t, "src/destroy_override.tf", destroyDst, "src should be set to execution directory")
+	require.Equal(t, "src/override/destroy_ring_test_override.tf", destroyRingSrc, "src should be set to overrides directory")
+	require.Equal(t, "src/destroy_ring_test_override.tf", destroyRingDst, "src should be set to execution directory")
 }
 
 func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {

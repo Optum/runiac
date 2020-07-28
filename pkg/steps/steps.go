@@ -4,8 +4,9 @@ package steps
 
 import (
 	"fmt"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"strings"
+
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 )
 
 // StepperFactory is a modular abstraction for determining step implementation
