@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.3.0 (October 5, 2020)
+
+### ENHANCEMENTS
+
+- Updated Terraform to `0.13.4`
+
 ## 0.2.2 (July 27, 2020)
 
 ### ENHANCEMENTS
@@ -11,7 +17,7 @@
 
 ## 0.2.1 (July 21, 2020)
 
-### BUG FIX 
+### BUG FIX
 
 - Include `gaia.yml` configuration check for `execute_when.region_in` for destroy step executions, filtered steps previously were still being attempted to be destroyed.
 
