@@ -810,6 +810,7 @@ func interpolateString(exec ExecutionConfig, s string) string {
 func getCommonTfOptions2(exec ExecutionConfig) (tfOptions *terraform.Options, err error) {
 	tfOptions = &terraform.Options{
 		TerraformDir:             exec.Dir,
+		EnvVars:                  map[string]string{},
 		Logger:                   exec.Logger,
 		NoColor:                  true,
 		RetryableTerraformErrors: map[string]string{".*": "General Terraform error occurred."},
