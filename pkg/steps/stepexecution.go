@@ -809,11 +809,7 @@ func interpolateString(exec ExecutionConfig, s string) string {
 
 func getCommonTfOptions2(exec ExecutionConfig) (tfOptions *terraform.Options, err error) {
 	tfOptions = &terraform.Options{
-		TerraformDir:   exec.Dir,
-		PluginCacheDir: "$HOME/.terraform.d/plugin-cache",
-		EnvVars: map[string]string{
-			"TF_PLUGIN_CACHE_DIR": "$HOME/.terraform.d/plugin-cache",
-		},
+		TerraformDir:             exec.Dir,
 		Logger:                   exec.Logger,
 		NoColor:                  true,
 		RetryableTerraformErrors: map[string]string{".*": "General Terraform error occurred."},

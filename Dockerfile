@@ -61,10 +61,9 @@ COPY --from=builder /usr/local/bin/gotestsum /usr/local/bin/gotestsum
 # Shared scripts
 COPY ./scripts/ /app/scripts/
 
+COPY .terraformrc $HOME/.terraformrc
 RUN mkdir -p $HOME/.terraform.d/plugin-cache
-# COPY .terraformrc $HOME/.terraformrc
 
-ENV TF_PLUGIN_CACHE_DIR "$HOME/.terraform.d/plugin-cache"
 ENV TF_IN_AUTOMATION true
 ENV GOVERSION ${GOVERSION} # https://github.com/gotestyourself/gotestsum/blob/782abf290e3d93b9c1a48f9aa76b70d65cae66ed/internal/junitxml/report.go#L126
 
