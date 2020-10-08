@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.2.3 (October 8, 2020)
+
+### BUG FIX
+
+- Fixed the backend key interpolation for the core account ids map. Previously this was not interpolating the key correctly when there were references to multiple core accounts, e.g. `bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate`
+
 ## 0.2.2 (July 27, 2020)
 
 ### ENHANCEMENTS
@@ -11,7 +17,7 @@
 
 ## 0.2.1 (July 21, 2020)
 
-### BUG FIX 
+### BUG FIX
 
 - Include `gaia.yml` configuration check for `execute_when.region_in` for destroy step executions, filtered steps previously were still being attempted to be destroyed.
 

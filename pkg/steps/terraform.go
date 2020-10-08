@@ -268,26 +268,6 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 	return
 }
 
-func TranslateCoreAccountMapVariable(logger *logrus.Entry, accountVariable string, executionConfig ExecutionConfig) (string, error) {
-	// check for variable arn:aws:iam::${var.core_account_ids_map.logging_final_destination}:role/OrganizationAccountAccessRole
-	checkForVariable := strings.Split(accountVariable, "var.core_account_ids_map.")
-
-	if len(checkForVariable) > 1 {
-		// parse out variable key ${var.core_account_ids_map.logging_final_destination}
-		accountIDKey := strings.Split(checkForVariable[1], "}")[0]
-
-		if val, ok := executionConfig.CoreAccounts[accountIDKey]; ok {
-			return val.ID, nil
-		} else {
-			logger.Errorf(`Did not find match for variable "%v" while parsing %s. Possible options include: %v`, accountVariable, accountIDKey, KeysString(executionConfig.CoreAccounts))
-		}
-	} else {
-		return "", errors.New(fmt.Sprintf("Unsupported variable: %v. Unable to find core_account_ids_map.", accountVariable))
-	}
-
-	return "", errors.New("Unable to correctly set AssumeRoleAccount from provider.tf assume role override")
-}
-
 // Plan is the top-level representation of the json format of a plan. It includes
 // the complete config and current state.
 type plan struct {
