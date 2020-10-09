@@ -1,6 +1,10 @@
 # Terrascale
 
-## 0.2.3 (October 8, 2020)
+## 0.2.3 (October 9, 2020)
+
+### ENHANCEMENTS
+
+- Added the default region groups for GCP to the `GetDefaultRegionGroups` function and added the missing `EU` region groups to AWS and Azure
 
 ### BUG FIX
 
