@@ -122,11 +122,17 @@ func GetDefaultRegionGroups() map[string]map[string][]string {
 		"azu": {
 			"us": []string{"centralus"},
 			"uk": []string{"uksouth"},
+			"eu": []string{"eu-north-1"},
 		},
 		"aws": {
 			"us": []string{"us-east-1"},
-
 			"uk": []string{"eu-west-2"},
+			"eu": []string{"northeurope"},
+		},
+		"gcp": {
+			"us": []string{"us-central1"},
+			"uk": []string{"europe-west2"},
+			"eu": []string{"europe-north1"},
 		},
 	}
 }

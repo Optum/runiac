@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -791,16 +792,34 @@ func interpolateString(exec ExecutionConfig, s string) string {
 			"${var.gaia_step}", exec.StepName)
 	}
 
+	// Replace all ${var.core_account_ids_map instances.
+	// There could be multiple ${var.core_account_ids_map references in the string,
+	// e.g. "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate"
 	if strings.Contains(s, "${var.core_account_ids_map") {
-		accountID, err := TranslateCoreAccountMapVariable(exec.Logger, s, exec)
+		regexForAllCoreAccountIdsMap := regexp.MustCompile(`(?m)\${var\.core_account_ids_map\..*?}`)
+		matches := regexForAllCoreAccountIdsMap.FindAllString(s, -1)
 
-		if err == nil {
-			tfVar := strings.Split(s, "${")
-			tfVar2 := strings.Split(tfVar[1], "}")
-			fullVariableNameToTranslate := tfVar2[0]
-			s = strings.ReplaceAll(s, fmt.Sprintf("${%s}", fullVariableNameToTranslate), accountID)
-		} else {
-			exec.Logger.WithError(err).Error("Error translating backend.tf ${var.core_account_ids_map} variable to account id")
+		for _, match := range matches {
+			// Expected match will look like: ${var.core_account_ids_map.logging_bridge_gcp}
+			splitOnCoreAccountIdsMap := strings.Split(match, "${var.core_account_ids_map.")
+			if len(splitOnCoreAccountIdsMap) != 2 {
+				exec.Logger.Errorf("Error translating core_account_ids_map map for regex match: %s. Unexpected split on core_account_ids_map.", match)
+				continue
+			}
+
+			coreAccountNameWithClosingCurlyBracket := splitOnCoreAccountIdsMap[1]
+			splitOnClosingCurlyBracket := strings.Split(coreAccountNameWithClosingCurlyBracket, "}")
+			if len(splitOnClosingCurlyBracket) != 2 {
+				exec.Logger.Errorf("Error translating core_account_ids_map map for regex match: %s. Unexpected split on closing }.", match)
+				continue
+			}
+
+			coreAccountName := splitOnClosingCurlyBracket[0]
+			if coreAccount, coreAccountExists := exec.CoreAccounts[coreAccountName]; coreAccountExists {
+				s = strings.ReplaceAll(s, match, coreAccount.ID)
+			} else {
+				exec.Logger.Errorf("Did not find %s in the core accounts map. Core accounts map keys are: %+v", coreAccountName, KeysString(exec.CoreAccounts))
+			}
 		}
 	}
 
