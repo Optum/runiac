@@ -506,6 +506,16 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 			regionType:  PrimaryRegionDeployType,
 			expect:      "bootstrap-launchpad-projectId/deploymentring.tfstate",
 		},
+		"ShouldSubstituteAllInstancesOfCoreAccountIdsMaps": {
+			stubParsedBackend: TerraformBackend{
+				Key:  "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate",
+				Type: S3Backend,
+			},
+			environment: "prod",
+			region:      "us-east-1",
+			regionType:  PrimaryRegionDeployType,
+			expect:      "bootstrap-launchpad-projectId2/projectId/deploymentring.tfstate",
+		},
 	}
 
 	fs := afero.NewMemMapFs()
@@ -532,6 +542,9 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 				CoreAccounts: map[string]config.Account{
 					"gcp_core_project": {
 						ID: "projectId",
+					},
+					"logging_bridge_gcp": {
+						ID: "projectId2",
 					},
 				},
 			}

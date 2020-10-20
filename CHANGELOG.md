@@ -6,6 +6,16 @@
 
 - Updated Terraform to `0.13.4`
 
+## 0.2.3 (October 9, 2020)
+
+### ENHANCEMENTS
+
+- Added the default region groups for GCP to the `GetDefaultRegionGroups` function and added the missing `EU` region groups to AWS and Azure
+
+### BUG FIX
+
+- Fixed the backend key interpolation for the core account ids map. Previously this was not interpolating the key correctly when there were references to multiple core accounts, e.g. `bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate`
+
 ## 0.2.2 (July 27, 2020)
 
 ### ENHANCEMENTS
