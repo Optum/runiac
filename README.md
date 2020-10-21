@@ -27,7 +27,7 @@ Configuration for executing Terrascale is done through environment variables. Fo
 
 - `GAIA_STEP_WHITELIST`
 
-##### Configuration File
+##### Configuration Files
 
 A configuration file can exist in either a track's or step's directory.
 
@@ -38,6 +38,14 @@ enabled: <true|false> # This determines whether the step will be executed
 execute_when: # This will conduct a runtime evaluation on whether the step should be executed
   region_in: # By matching the `var.region` input variable
     - "region-1"
+```
+
+Also required is a file named `version.json` in the root of the directory structure, with at least a `version` element:
+
+```json
+{
+  "version": "v0.0.1"
+}
 ```
 
 ## Overview
