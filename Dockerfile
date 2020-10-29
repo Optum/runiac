@@ -1,10 +1,10 @@
-# syntax = docker/dockerfile:experimental
+# syntax = docker-hub.repo1.uhc.com/docker/dockerfile:experimental
 
 ARG http_proxy
 ARG https_proxy
-ARG GOVERSION=1.12.12
+ARG GOVERSION=1.14
  
-FROM golang:${GOVERSION} as builder
+FROM docker-hub.repo1.uhc.com/golang:${GOVERSION} as builder
 
 RUN apt-get update && apt-get upgrade -y ca-certificates && apt-get install -y bash && apt-get install -y unzip
 
@@ -16,7 +16,7 @@ RUN curl -Lo go.zip "https://github.com/golang/go/archive/go1.13.5.zip" && \
     mv test2json /usr/local/bin/test2json && \
     rm -rf /go-go1.13.5
 
-RUN curl -L -o gotestsum.tgz "https://github.com/gotestyourself/gotestsum/releases/download/v0.4.0/gotestsum_0.4.0_linux_amd64.tar.gz" && \
+RUN curl -L -o gotestsum.tgz "https://github.com/gotestyourself/gotestsum/releases/download/v0.5.2/gotestsum_0.5.2_linux_amd64.tar.gz" && \
     tar -C /usr/local/bin -xzf gotestsum.tgz && \
     rm gotestsum.tgz && \
     rm /usr/local/bin/LICENSE && \
