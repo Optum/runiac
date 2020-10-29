@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.2.4 (October 29, 2020)
+
+### ENHANCEMENTS
+
+- Upgrade Golang builder from 1.12.12 to 1.14 and point to Docker Hub-optimized UHG Artifactory endpoint
+
 ## 0.2.3 (October 9, 2020)
 
 ### ENHANCEMENTS
