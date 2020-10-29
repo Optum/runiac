@@ -1,6 +1,6 @@
 # Terrascale
 
-## 0.2.4 (October 29, 2020)
+## 0.3.1 (October 29, 2020)
 
 ### ENHANCEMENTS
 
