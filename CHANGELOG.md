@@ -6,6 +6,17 @@
 
 - Upgrade Golang builder from 1.12.12 to 1.14 and point to Docker Hub-optimized UHG Artifactory endpoint
 
+## 0.3.0 (October 21, 2020)
+
+### ENHANCEMENTS
+
+- Updated Terraform to `0.13.4`. Please see the documentation [here](https://www.terraform.io/upgrade-guides/0-13.html) for upgrading to Terraform `v0.13`
+
+### BREAKING CHANGES
+
+- Projects upgrading to this version of Terrascale will need to update their filesystem layout for local copies of providers as stated [here](https://www.terraform.io/upgrade-guides/0-13.html#new-filesystem-layout-for-local-copies-of-providers)
+- Projects are now fully responsible for creating the directories they will be use for plugin caching and their own [.terraformrc](https://www.terraform.io/docs/commands/cli-config.html) file
+
 ## 0.2.3 (October 9, 2020)
 
 ### ENHANCEMENTS

@@ -27,7 +27,7 @@ Configuration for executing Terrascale is done through environment variables. Fo
 
 - `GAIA_STEP_WHITELIST`
 
-##### Configuration File
+##### Configuration Files
 
 A configuration file can exist in either a track's or step's directory.
 
@@ -39,6 +39,18 @@ execute_when: # This will conduct a runtime evaluation on whether the step shoul
   region_in: # By matching the `var.region` input variable
     - "region-1"
 ```
+
+Also required is a file named `version.json` in the root of the directory structure, with at least a `version` element:
+
+```json
+{
+  "version": "v0.0.1"
+}
+```
+
+### Provider Plugin Caching
+
+Terrascale uses [provider plugin caching](https://www.terraform.io/docs/commands/cli-config.html#provider-plugin-cache). Projects that use Terrascale are responsible for creating the directories that are used for provider caching and also creating their own [.terraformrc](https://www.terraform.io/docs/commands/cli-config.html) file. Please note that with the upgrade to Terraform `v0.13`, projects will need to update their filesystem layout for local copies of providers as stated [here](https://www.terraform.io/upgrade-guides/0-13.html#new-filesystem-layout-for-local-copies-of-providers).
 
 ## Overview
 
