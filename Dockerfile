@@ -1,3 +1,5 @@
+# syntax = docker-hub.repo1.uhc.com/docker/dockerfile:experimental
+
 ARG http_proxy
 ARG https_proxy
 ARG GOVERSION=1.14
