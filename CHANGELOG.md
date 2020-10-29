@@ -5,6 +5,7 @@
 ### ENHANCEMENTS
 
 - Upgrade Golang builder from 1.12.12 to 1.14 and point to Docker Hub-optimized UHG Artifactory endpoint
+- Upgrade `gotestsum` to latest v0.5.2
 
 ## 0.3.0 (October 21, 2020)
 
