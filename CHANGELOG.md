@@ -1,5 +1,11 @@
 # Terrascale
 
+## 0.3.2 (November 2, 2020)
+
+### ENHANCEMENTS
+
+- Upgraded Terraform image to point to Docker Hub-optimized UHG Artifactory endpoint
+
 ## 0.3.1 (October 29, 2020)
 
 ### ENHANCEMENTS
