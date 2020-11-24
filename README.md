@@ -510,3 +510,4 @@ $ DOCKER_BUILDKIT=1 docker build -t terrascale .
 ```
 
 > NOTE: Optum Healthcare Public Cloud team, further local instructions are available [here](https://new-wiki.optum.com/display/COMCLDDLV/Launchpad%3A+Local+Configuration)
+
