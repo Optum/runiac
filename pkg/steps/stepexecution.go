@@ -242,7 +242,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	}
 
 	accounts := map[string]config.Account{
-		"gaia_target_account_id": {
+		"terrascale_target_account_id": {
 			ID:               exec.GaiaTargetAccountID,
 			CredsID:          exec.CredsID,
 			CSP:              exec.CSP,
@@ -310,16 +310,16 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	var rgs map[string]map[string][]string = s.DeployConfig.RegionGroups
 
 	// Add Gaia variables to step params
-	params["gaia_target_account_id"] = exec.GaiaTargetAccountID
-	params["gaia_deployment_ring"] = exec.DeploymentRing
-	params["gaia_stage"] = strings.ToLower(exec.Stage)
-	params["gaia_track"] = strings.ToLower(exec.TrackName)
-	params["gaia_step"] = strings.ToLower(exec.StepName)
-	params["gaia_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
-	params["gaia_region_group"] = strings.ToLower(exec.RegionGroup)
-	params["gaia_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.GaiaTargetRegions), " ", ",", -1)
-	params["gaia_primary_region"] = exec.PrimaryRegion
-	params["gaia_region_groups"] = terraformer.OutputToString(rgs)
+	params["terrascale_target_account_id"] = exec.GaiaTargetAccountID
+	params["terrascale_deployment_ring"] = exec.DeploymentRing
+	params["terrascale_stage"] = strings.ToLower(exec.Stage)
+	params["terrascale_track"] = strings.ToLower(exec.TrackName)
+	params["terrascale_step"] = strings.ToLower(exec.StepName)
+	params["terrascale_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
+	params["terrascale_region_group"] = strings.ToLower(exec.RegionGroup)
+	params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.GaiaTargetRegions), " ", ",", -1)
+	params["terrascale_primary_region"] = exec.PrimaryRegion
+	params["terrascale_region_groups"] = terraformer.OutputToString(rgs)
 
 	// TODO: pre-step param store plugin for integrating "just-in-time" variables from param store
 	if s.DeployConfig.StepParameters != nil {
@@ -690,10 +690,10 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	stateAccountIDDirectory := exec.AccountID
 
 	// accountID (account being deployed to) has been overridden by terraform,
-	// leverage the gaia target account id for state directory if it exists.
+	// leverage the terrascale target account id for state directory if it exists.
 	// Example use case: Looping through customer accounts to apply customer specific resources in a single core account
-	// Statefile needs to be unique per each customer account (the gaia target account ID),
-	// therefore we store the state in the gaia target account id
+	// Statefile needs to be unique per each customer account (the terrascale target account ID),
+	// therefore we store the state in the terrascale target account id
 	if exec.GaiaTargetAccountID != "" && exec.AccountID != exec.GaiaTargetAccountID {
 		stateAccountIDDirectory = exec.GaiaTargetAccountID
 	}
@@ -752,23 +752,23 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 }
 
 func interpolateString(exec ExecutionConfig, s string) string {
-	if strings.Contains(s, "${var.gaia_deployment_ring}") {
-		s = strings.ReplaceAll(s, "${var.gaia_deployment_ring}", exec.DeploymentRing)
+	if strings.Contains(s, "${var.terrascale_deployment_ring}") {
+		s = strings.ReplaceAll(s, "${var.terrascale_deployment_ring}", exec.DeploymentRing)
 	}
 
-	if strings.Contains(s, "${var.gaia_target_account_id}") {
+	if strings.Contains(s, "${var.terrascale_target_account_id}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
+			"${var.terrascale_target_account_id}", exec.GaiaTargetAccountID)
 	}
 
-	if strings.Contains(s, "${var.gaia_step}") {
+	if strings.Contains(s, "${var.terrascale_step}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_step}", exec.StepName)
+			"${var.terrascale_step}", exec.StepName)
 	}
 
-	if strings.Contains(s, "${var.gaia_region_deploy_type}") {
+	if strings.Contains(s, "${var.terrascale_region_deploy_type}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_region_deploy_type}", exec.RegionDeployType.String())
+			"${var.terrascale_region_deploy_type}", exec.RegionDeployType.String())
 	}
 
 	if strings.Contains(s, "${var.region}") {
@@ -789,12 +789,12 @@ func interpolateString(exec ExecutionConfig, s string) string {
 
 	if strings.Contains(s, "${var.region}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_step}", exec.StepName)
+			"${var.terrascale_step}", exec.StepName)
 	}
 
 	// Replace all ${var.core_account_ids_map instances.
 	// There could be multiple ${var.core_account_ids_map references in the string,
-	// e.g. "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate"
+	// e.g. "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate"
 	if strings.Contains(s, "${var.core_account_ids_map") {
 		regexForAllCoreAccountIdsMap := regexp.MustCompile(`(?m)\${var\.core_account_ids_map\..*?}`)
 		matches := regexForAllCoreAccountIdsMap.FindAllString(s, -1)

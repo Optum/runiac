@@ -1,7 +1,7 @@
 application:
-  name: "gaia"
+  name: "terrascale"
 pipeline:
-  gaia:
+  terrascale:
     rings:
       pr:
         account: "346166872260"

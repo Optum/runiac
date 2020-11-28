@@ -33,37 +33,37 @@ type Config struct {
 	GaiaTargetAccountID                         string   `envconfig:"ACCOUNT_ID"`                                                  // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
 	CredsID                                     string   `envconfig:"CREDS_ID"`                                                    // The identifier that determines which set of credentials to use (for which tenant)
 	GaiaReleaseDeploymentID                     string   `envconfig:"CODEPIPELINE_EXECUTION_ID"`                                   // The execution id of the CodePipeline that triggered these tasks
-	GaiaRingDeploymentID                        string   `envconfig:"GAIA_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
+	GaiaRingDeploymentID                        string   `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
 	UpdateStatusLambda                          string   `envconfig:"UPDATE_STATUS_LAMBDA"`                                        // The name of the Lambda that is invoke to update the deployment status
-	GaiaTargetRegions                           []string `envconfig:"GAIA_TARGET_REGIONS"`                                         // Gaia will apply regional step deployments across these regions
-	GaiaRegionGroup                             string   `envconfig:"GAIA_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
-	GaiaRegionGroupRegions                      []string `envconfig:"GAIA_REGION_GROUP_REGIONS"`                                   // Gaia will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `GAIA_TARGET_REGIONS`
+	GaiaTargetRegions                           []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Gaia will apply regional step deployments across these regions
+	GaiaRegionGroup                             string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
+	GaiaRegionGroupRegions                      []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Gaia will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
 	FargateTaskID                               string
 	CSP                                         string   `required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
 	DeploymentRing                              string   `envconfig:"DEPLOYMENT_RING"`
-	SelfDestroy                                 bool     `envconfig:"GAIA_SELF_DESTROY"`   // Destroy will automatically execute Terraform Destroy after running deployments & tests
-	DryRun                                      bool     `envconfig:"GAIA_DRY_RUN"`        // DryRun will only execute up to Terraform plan, describing what will happen if deployed
-	StepWhitelist                               []string `envconfig:"GAIA_STEP_WHITELIST"` // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
-	TargetAll                                   bool     `envconfig:"GAIA_TARGET_ALL"`     // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
-	CommonRegion                                string   `envconfig:"GAIA_COMMON_REGION" default:"us-east-1"`
+	SelfDestroy                                 bool     `envconfig:"TERRASCALE_SELF_DESTROY"`   // Destroy will automatically execute Terraform Destroy after running deployments & tests
+	DryRun                                      bool     `envconfig:"TERRASCALE_DRY_RUN"`        // DryRun will only execute up to Terraform plan, describing what will happen if deployed
+	StepWhitelist                               []string `envconfig:"TERRASCALE_STEP_WHITELIST"` // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
+	TargetAll                                   bool     `envconfig:"TERRASCALE_TARGET_ALL"`     // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
+	CommonRegion                                string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
 	AccountOwnerMSID                            string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
 	Version                                     string
 	LogLevel                                    string `envconfig:"LOG_LEVEL" default:"info"`
 	GaiaPrimaryRegionOverride                   string
-	CoreAccounts                                CoreAccountsMap `envconfig:"GAIA_CORE_ACCOUNTS"`
-	RegionGroups                                RegionGroupsMap `envconfig:"GAIA_REGION_GROUPS"`
-	FeatureToggleDisableCreds                   bool            `envconfig:"GAIA_FEATURE_DISABLE_CREDS"`                      // Disables the "auto pulling" of creds based on accts CREDS_ID.  This would be true if you'd like to use creds passed into container
-	FeatureToggleDisableBackendDefaultBucket    bool            `envconfig:"GAIA_FEATURE_DISABLE_S3_BACKEND_DEFAULT_BUCKET"`  // Disables setting the backend bucket, utilizing what is set in backend tf file.
-	FeatureToggleDisableS3BackendKeyPrefix      bool            `envconfig:"GAIA_FEATURE_DISABLE_S3_BACKEND_KEY_PREFIX"`      // Disables setting a standardized account key prefix
-	FeatureToggleDisableS3BackendKeyNamespacing bool            `envconfig:"GAIA_FEATURE_DISABLE_S3_BACKEND_KEY_NAMESPACING"` // Disables the usage of namespace, region, and region deploy type to automatically create state file
+	CoreAccounts                                CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
+	RegionGroups                                RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
+	FeatureToggleDisableCreds                   bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_CREDS"`                      // Disables the "auto pulling" of creds based on accts CREDS_ID.  This would be true if you'd like to use creds passed into container
+	FeatureToggleDisableBackendDefaultBucket    bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_DEFAULT_BUCKET"`  // Disables setting the backend bucket, utilizing what is set in backend tf file.
+	FeatureToggleDisableS3BackendKeyPrefix      bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_KEY_PREFIX"`      // Disables setting a standardized account key prefix
+	FeatureToggleDisableS3BackendKeyNamespacing bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_KEY_NAMESPACING"` // Disables the usage of namespace, region, and region deploy type to automatically create state file
 	FeatureToggleDisableParamStoreVars          bool            `envconfig:"FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS"`
 	// Set at task definition creation
 	Namespace        string `required:"true" envconfig:"NAMESPACE"`                                   // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
 	Environment      string `required:"true" validate:"eq=prod|eq=pr|eq=nonprod|eq=local|eq=jenkins"` // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
-	ReporterDynamodb bool   `envconfig:"GAIA_REPORTER_DYNAMODB"`
+	ReporterDynamodb bool   `envconfig:"TERRASCALE_REPORTER_DYNAMODB"`
 	Authenticator    auth.Authenticator
 	StepParameters   params.StepParameters
-	Stage            string `envconfig:"GAIA_STAGE"`
+	Stage            string `envconfig:"TERRASCALE_STAGE"`
 }
 
 type RegionGroupsMap map[string]map[string][]string
@@ -160,7 +160,7 @@ func GetConfig() (config Config, err error) {
 	}
 
 	// backwards compatibility
-	if os.Getenv("GAIA_SELF_DESTROY") == "" && os.Getenv("BR_AUTO_DESTROY") == "true" {
+	if os.Getenv("TERRASCALE_SELF_DESTROY") == "" && os.Getenv("BR_AUTO_DESTROY") == "true" {
 		config.SelfDestroy = true
 	}
 
@@ -241,7 +241,7 @@ func InputValidation(sl validator.StructLevel) {
 
 	if input.ReporterDynamodb {
 		if input.GaiaRingDeploymentID == "" {
-			sl.ReportError(input.GaiaRingDeploymentID, "GAIA_RING_DEPLOYMENT_ID", "GaiaRingDeploymentID", "required-with-reporter-dynamodb", "")
+			sl.ReportError(input.GaiaRingDeploymentID, "TERRASCALE_RING_DEPLOYMENT_ID", "GaiaRingDeploymentID", "required-with-reporter-dynamodb", "")
 		}
 		if input.UpdateStatusLambda == "" {
 			sl.ReportError(input.UpdateStatusLambda, "UPDATE_STATUS_LAMBDA", "UpdateStatusLambda", "required-with-reporter-dynamodb", "")

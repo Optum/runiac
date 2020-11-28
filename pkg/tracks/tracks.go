@@ -136,12 +136,12 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 			}
 
 			tConfig := viper.New()
-			tConfig.SetConfigName("gaia")               // name of config file (without extension)
+			tConfig.SetConfigName("terrascale")               // name of config file (without extension)
 			tConfig.AddConfigPath(filepath.Join(t.Dir)) // path to look for the config file in
 			if err := tConfig.ReadInConfig(); err != nil {
 				if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 					// Config file not found, don't record or log error as this configuration file is optional.
-					tracker.Log.Debug("Track is not using a gaia.yaml configuration file")
+					tracker.Log.Debug("Track is not using a terrascale.yaml configuration file")
 				} else {
 					tracker.Log.WithError(err).Error("Error reading configuration file")
 				}
@@ -176,12 +176,12 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 						}
 
 						v := viper.New()
-						v.SetConfigName("gaia")                            // name of config file (without extension)
+						v.SetConfigName("terrascale")                            // name of config file (without extension)
 						v.AddConfigPath(filepath.Join(t.Dir, tFolderName)) // path to look for the config file in
 						if err := v.ReadInConfig(); err != nil {
 							if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 								// Config file not found, don't record or log error as this configuration file is optional.
-								tracker.Log.Debug("Step is not using a gaia.yaml configuration file")
+								tracker.Log.Debug("Step is not using a terrascale.yaml configuration file")
 							} else {
 								tracker.Log.WithError(err).Error("Error reading configuration file")
 							}
@@ -203,12 +203,12 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 							highestProgressionLevel = progressionLevel
 						}
 
-						gaiaCfg := &steps.GaiaConfig{}
+						terrascaleCfg := &steps.GaiaConfig{}
 
-						err = v.Unmarshal(gaiaCfg)
+						err = v.Unmarshal(terrascaleCfg)
 
 						if err != nil {
-							tracker.Log.WithError(err).Error("Error unmarshaling gaia config")
+							tracker.Log.WithError(err).Error("Error unmarshaling terrascale config")
 						}
 
 						step := steps.Step{
@@ -218,7 +218,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 							DeployConfig:     config,
 							TrackName:        t.Name,
 							ID:               stepID,
-							GaiaConfig:       *gaiaCfg,
+							GaiaConfig:       *terrascaleCfg,
 						}
 
 						step.TestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "tests/tests.test"))

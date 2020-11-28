@@ -114,7 +114,7 @@ func main() {
 func initFunc() {
 	// Log as JSON instead of the default ASCII formatter.
 	logger := logrus.New()
-	if os.Getenv("LOG_FORMAT") == "gaia" {
+	if os.Getenv("LOG_FORMAT") == "terrascale" {
 		logger.SetFormatter(&logging.GaiaFormatter{
 			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
 		})
@@ -151,14 +151,14 @@ func initFunc() {
 		"credsID":                 deployment.Config.CredsID,
 		"csp":                     deployment.Config.CSP,
 		"stage":                   deployment.Config.Stage,
-		"gaiaTargetAccountID":     deployment.Config.GaiaTargetAccountID,
-		"gaiaRingDeploymentID":    deployment.Config.GaiaRingDeploymentID,
-		"gaiaReleaseDeploymentID": deployment.Config.GaiaReleaseDeploymentID,
+		"terrascaleTargetAccountID":     deployment.Config.GaiaTargetAccountID,
+		"terrascaleRingDeploymentID":    deployment.Config.GaiaRingDeploymentID,
+		"terrascaleReleaseDeploymentID": deployment.Config.GaiaReleaseDeploymentID,
 		"environment":             deployment.Config.Environment,
 		"namespace":               deployment.Config.Namespace,
 		"regionGroup":             deployment.Config.GaiaRegionGroup,
 		"lpclagg":                 deployment.Config.GaiaRingDeploymentID,
-		"lpcltype":                "gaia",
+		"lpcltype":                "terrascale",
 	})
 
 	deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")

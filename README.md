@@ -25,13 +25,13 @@ Configuration for executing Terrascale is done through environment variables. Fo
 
 ##### Environment Variables
 
-- `GAIA_STEP_WHITELIST`
+- `TERRASCALE_STEP_WHITELIST`
 
 ##### Configuration Files
 
 A configuration file can exist in either a track's or step's directory.
 
-- `gaia.yaml`
+- `terrascale.yaml`
 
 ```yaml
 enabled: <true|false> # This determines whether the step will be executed
@@ -135,7 +135,7 @@ stages/customer/tracks/network
 
 ##### Regional
 
-Regional deployments represent all terraform in the `/regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `-e GAIA_TARGET_REGIONS` configuration.
+Regional deployments represent all terraform in the `/regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `-e TERRASCALE_TARGET_REGIONS` configuration.
 
 ```bash
 stages/customer/tracks/network
@@ -246,49 +246,49 @@ variable "core_account_ids_map" {
 
 # The initial use case for this variable is to know which account is the original target after overriding
 # provider.assume_role.arn in terraform.
-variable "gaia_target_account_id" {
+variable "terrascale_target_account_id" {
   type        = string
   description = "The account id that the step function told the fargate task to deploy to"
 }
 
-variable "gaia_deployment_ring" {
+variable "terrascale_deployment_ring" {
   type = string
   description = "The deployment ring currently being executed in"
 }
 
-variable "gaia_stage" {
+variable "terrascale_stage" {
   type = string
   description = "The stage currently being executed in"
 }
 
-variable "gaia_track" {
+variable "terrascale_track" {
   type = string
   description = "The track currently being executed in"
 }
 
-variable "gaia_step" {
+variable "terrascale_step" {
   type = string
   description = "The step currently being executed in"
 }
 
-variable "gaia_region_deploy_type" {
+variable "terrascale_region_deploy_type" {
   type = string
   description = "The step deployment type, either primary or regional"
 }
 
-variable "gaia_region_group" {
+variable "terrascale_region_group" {
   type = string
   description = "The region group being deployed in, supported: 'us'"
 }
 
-variable "gaia_primary_region" {
+variable "terrascale_primary_region" {
   type = string
-  description = "The primary region of the gaia_region_group"
+  description = "The primary region of the terrascale_region_group"
 }
 
-variable "gaia_region_group_regions" {
+variable "terrascale_region_group_regions" {
   type = string
-  description = "The list of regions within the gaia_region_group.  This list represents the regions that will be used to execute the `regional` directory within a step."
+  description = "The list of regions within the terrascale_region_group.  This list represents the regions that will be used to execute the `regional` directory within a step."
 }
 ```
 
@@ -355,12 +355,12 @@ If defining local, the terraform will be executed "fresh" each time. This works 
 
 Supported variables for dynamic [`key`](https://www.terraform.io/docs/backends/types/s3.html#key), [`bucket`](https://www.terraform.io/docs/backends/types/s3.html#role_arn) or [`role_arn`](https://www.terraform.io/docs/backends/types/s3.html#bucket) configuration:
 
-- `${var.gaia_region_deploy_type}`: **required** in `key`
+- `${var.terrascale_region_deploy_type}`: **required** in `key`
 - `${var.region}`: **required** in `key`
-- `${var.gaia_step}`
+- `${var.terrascale_step}`
 - `${var.core_account_ids_map}`
-- `${var.gaia_target_account_id}`
-- `${var.gaia_deployment_ring}`
+- `${var.terrascale_target_account_id}`
+- `${var.terrascale_deployment_ring}`
 - `${local.namespace-}` (temporary backwards compatibility variable)
 
 Example Usage:
@@ -368,9 +368,9 @@ Example Usage:
 ```hcl-terraform
 terraform {
   backend "s3" {
-    key      = "${var.gaia_target_account_id}/${local.namespace-}${var.gaia_step}/${var.gaia_region_deploy_type}-${var.region}.tfstate"
-    bucket   = "launchpad-tfstate-${var.core_account_ids_map.gaia_deploy}"
-    role_arn = "arn:aws:iam::${var.core_account_ids_map.gaia_deploy}:role/StateRole"
+    key      = "${var.terrascale_target_account_id}/${local.namespace-}${var.terrascale_step}/${var.terrascale_region_deploy_type}-${var.region}.tfstate"
+    bucket   = "launchpad-tfstate-${var.core_account_ids_map.terrascale_deploy}"
+    role_arn = "arn:aws:iam::${var.core_account_ids_map.terrascale_deploy}:role/StateRole"
     acl      = "bucket-owner-full-control"
     region   = "us-east-1"
     encrypt  = true
@@ -405,7 +405,7 @@ When using this functionality, you can only specifiy an account in the `core_acc
 
 ###### Supported parameters
 
-The `gaia_target_account_id` and any key available in the `core_account_ids_map` input variable can be used in the `provider.assume_role.role_arn` value. For example, to deploy infrastructure only the AWS Bridge Logging accounts the configuration would minimally need to include:
+The `terrascale_target_account_id` and any key available in the `core_account_ids_map` input variable can be used in the `provider.assume_role.role_arn` value. For example, to deploy infrastructure only the AWS Bridge Logging accounts the configuration would minimally need to include:
 
 ```hcl
 provider "aws" {
@@ -435,7 +435,7 @@ See the appropriate unit tests for how this works [here](pkg/params/params_test.
 
 ##### Count
 
-The most common and terraform friendly to implement deployment specific configuration is via `count` and simple `if` statements in the terraform code based on the passed in `var.gaia_deployment_ring` value.
+The most common and terraform friendly to implement deployment specific configuration is via `count` and simple `if` statements in the terraform code based on the passed in `var.terrascale_deployment_ring` value.
 
 #### Override Files
 

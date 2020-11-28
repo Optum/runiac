@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ./gaia ./cmd/gaia/
+    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ./terrascale ./cmd/terrascale/
 
 FROM docker-hub.repo1.uhc.com/hashicorp/terraform:0.13.4
 
@@ -52,7 +52,7 @@ RUN apk add bash \
     && rm -rf /var/cache/apk/*
 
 # Grab from builder
-COPY --from=builder /app/gaia /usr/local/bin
+COPY --from=builder /app/terrascale /usr/local/bin
 COPY --from=builder /usr/local/bin/test2json /usr/local/bin/test2json
 COPY --from=builder /usr/local/bin/gotestsum /usr/local/bin/gotestsum
 
@@ -62,4 +62,4 @@ COPY ./scripts/ /app/scripts/
 ENV TF_IN_AUTOMATION true
 ENV GOVERSION ${GOVERSION} # https://github.com/gotestyourself/gotestsum/blob/782abf290e3d93b9c1a48f9aa76b70d65cae66ed/internal/junitxml/report.go#L126
 
-ENTRYPOINT [ "gaia" ]
+ENTRYPOINT [ "terrascale" ]

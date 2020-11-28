@@ -62,7 +62,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/aws/core/logging/${var.gaia_deployment_ring}-consumeraas_aws.tfstate"
+		key         = "/aws/core/logging/${var.terrascale_deployment_ring}-consumeraas_aws.tfstate"
 		role_arn    = "arn:aws:iam::${var.core_account_ids_map.logging_bridge_aws}:role/OrganizationAccountAccessRole"
 	  }
 	}
@@ -86,7 +86,7 @@ func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		bucket      = "${var.gaia_deployment_ring}-bucket"
+		bucket      = "${var.terrascale_deployment_ring}-bucket"
 	  }
 	}
 	`), 0644)
@@ -108,7 +108,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/aws/core/logging/${var.gaia_step}-consumeraas_aws.tfstate"
+		key         = "/aws/core/logging/${var.terrascale_step}-consumeraas_aws.tfstate"
 	  }
 	}
 	`), 0644)
@@ -396,7 +396,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 		},
 		"ShouldVarSubstituteGaiaDeploymentRing": {
 			stubParsedBackend: TerraformBackend{
-				Key:  "/${var.gaia_deployment_ring}/key",
+				Key:  "/${var.terrascale_deployment_ring}/key",
 				Type: S3Backend,
 			},
 			environment: "prod",
@@ -498,7 +498,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 	}{
 		"ShouldVarSubstituteGaiaDeploymentRingAndCoreAccountIds": {
 			stubParsedBackend: TerraformBackend{
-				Key:  "bootstrap-launchpad-${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate",
+				Key:  "bootstrap-launchpad-${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
 				Type: S3Backend,
 			},
 			environment: "prod",
@@ -508,7 +508,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 		},
 		"ShouldSubstituteAllInstancesOfCoreAccountIdsMaps": {
 			stubParsedBackend: TerraformBackend{
-				Key:  "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate",
+				Key:  "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
 				Type: S3Backend,
 			},
 			environment: "prod",
@@ -569,27 +569,27 @@ func TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccou
 
 	getBackendTests := map[string]struct {
 		accountID           string
-		gaiaTargetAccountID string
+		terrascaleTargetAccountID string
 		expectedAccountID   string
 		message             string
 	}{
 		"ShouldSetCorrectlyWithMatchingValues": {
 			accountID:           "12",
-			gaiaTargetAccountID: "12",
+			terrascaleTargetAccountID: "12",
 			expectedAccountID:   "12",
 			message:             "Should set correctly when both values the same",
 		},
 		"ShouldPreferGaiaTargetAccountIDWithDifferingValues": {
 			accountID:           "13",
-			gaiaTargetAccountID: "12",
+			terrascaleTargetAccountID: "12",
 			expectedAccountID:   "12",
-			message:             "Should prefer gaia target account id when both values set and differ",
+			message:             "Should prefer terrascale target account id when both values set and differ",
 		},
 		"ShouldPreferAccountIDWhenGaiaTargetAccountIDNotSet": {
 			accountID:           "12",
-			gaiaTargetAccountID: "",
+			terrascaleTargetAccountID: "",
 			expectedAccountID:   "12",
-			message:             "Should account id when gaia target account id is not set",
+			message:             "Should account id when terrascale target account id is not set",
 		},
 	}
 
@@ -613,7 +613,7 @@ func TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccou
 				CredsID:                    "creds",
 				Environment:                "environment",
 				AccountID:                  tc.accountID,
-				GaiaTargetAccountID:        tc.gaiaTargetAccountID,
+				GaiaTargetAccountID:        tc.terrascaleTargetAccountID,
 				StepName:                   "step1_deploy",
 				Dir:                        "/tracks/step1_deploy",
 				DefaultStepOutputVariables: map[string]map[string]string{},

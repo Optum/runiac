@@ -209,7 +209,7 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 
 			// check for variable arn:aws:iam::${var.core_account_ids_map.logging_final_destination}:role/OrganizationAccountAccessRole
 			checkForCoreAccount := strings.Split(accountID, "var.core_account_ids_map.")
-			checkForTargetAccount := strings.Contains(accountID, "var.gaia_target_account_id")
+			checkForTargetAccount := strings.Contains(accountID, "var.terrascale_target_account_id")
 
 			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", strings.Join(checkForCoreAccount, ", ")))
 
@@ -219,7 +219,7 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 				accountIDKey = strings.Split(checkForCoreAccount[1], "}")[0]
 
 			} else if checkForTargetAccount {
-				accountIDKey = "gaia_target_account_id"
+				accountIDKey = "terrascale_target_account_id"
 			}
 
 			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountIDKey))
