@@ -53,7 +53,7 @@ def withAssumedAccessSh(String account, Closure code) {
             set +x
             export AWS_ACCESS_KEY_ID=${AWS_MASTER_KEY} &>/dev/null
             export AWS_SECRET_ACCESS_KEY=${AWS_MASTER_SECRET} &>/dev/null
-            creds=`aws sts assume-role --role-arn arn:aws:iam::${account}:role/GaiaDeployRole --role-session-name Gaia-Deploy-${account} --output json | jq '{ accessKeyId: .Credentials.AccessKeyId, secretAccessKey: .Credentials.SecretAccessKey, sessionToken: .Credentials.SessionToken }'` &>/dev/null
+            creds=`aws sts assume-role --role-arn arn:aws:iam::${account}:role/TerrascaleDeployRole --role-session-name Terrascale-Deploy-${account} --output json | jq '{ accessKeyId: .Credentials.AccessKeyId, secretAccessKey: .Credentials.SecretAccessKey, sessionToken: .Credentials.SessionToken }'` &>/dev/null
             export AWS_ACCESS_KEY_ID=\$(echo \$creds | jq -r '.accessKeyId') &>/dev/null
             export AWS_SECRET_ACCESS_KEY=\$(echo \$creds | jq -r '.secretAccessKey' ) &>/dev/null
             export AWS_SESSION_TOKEN=\$(echo \$creds | jq -r '.sessionToken') &>/dev/null

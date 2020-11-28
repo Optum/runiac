@@ -30,14 +30,14 @@ var validate = validator.New()
 type Config struct {
 	// Set by container overrides
 	AccountID                                   string   `envconfig:"ACCOUNT_ID"`                                                  // The subscription id to deploy to
-	GaiaTargetAccountID                         string   `envconfig:"ACCOUNT_ID"`                                                  // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
+	TerrascaleTargetAccountID                         string   `envconfig:"ACCOUNT_ID"`                                                  // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
 	CredsID                                     string   `envconfig:"CREDS_ID"`                                                    // The identifier that determines which set of credentials to use (for which tenant)
-	GaiaReleaseDeploymentID                     string   `envconfig:"CODEPIPELINE_EXECUTION_ID"`                                   // The execution id of the CodePipeline that triggered these tasks
-	GaiaRingDeploymentID                        string   `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
+	TerrascaleReleaseDeploymentID                     string   `envconfig:"CODEPIPELINE_EXECUTION_ID"`                                   // The execution id of the CodePipeline that triggered these tasks
+	TerrascaleRingDeploymentID                        string   `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
 	UpdateStatusLambda                          string   `envconfig:"UPDATE_STATUS_LAMBDA"`                                        // The name of the Lambda that is invoke to update the deployment status
-	GaiaTargetRegions                           []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Gaia will apply regional step deployments across these regions
-	GaiaRegionGroup                             string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
-	GaiaRegionGroupRegions                      []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Gaia will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
+	TerrascaleTargetRegions                           []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Terrascale will apply regional step deployments across these regions
+	TerrascaleRegionGroup                             string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
+	TerrascaleRegionGroupRegions                      []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
 	FargateTaskID                               string
 	CSP                                         string   `required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
 	DeploymentRing                              string   `envconfig:"DEPLOYMENT_RING"`
@@ -49,7 +49,7 @@ type Config struct {
 	AccountOwnerMSID                            string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
 	Version                                     string
 	LogLevel                                    string `envconfig:"LOG_LEVEL" default:"info"`
-	GaiaPrimaryRegionOverride                   string
+	TerrascalePrimaryRegionOverride                   string
 	CoreAccounts                                CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
 	RegionGroups                                RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
 	FeatureToggleDisableCreds                   bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_CREDS"`                      // Disables the "auto pulling" of creds based on accts CREDS_ID.  This would be true if you'd like to use creds passed into container
@@ -106,15 +106,15 @@ type Account struct {
 // GetPrimaryRegionByCSP retrieves the primary region by CSP
 func (cfg Config) GetPrimaryRegionByCSP(csp string) string {
 	// support adhoc targeting of other primary regions, ie pull requests and local environments
-	if strings.ToLower(csp) == strings.ToLower(cfg.CSP) && cfg.GaiaPrimaryRegionOverride != "" {
-		return cfg.GaiaPrimaryRegionOverride
+	if strings.ToLower(csp) == strings.ToLower(cfg.CSP) && cfg.TerrascalePrimaryRegionOverride != "" {
+		return cfg.TerrascalePrimaryRegionOverride
 	}
 
 	if cfg.RegionGroups == nil {
 		cfg.RegionGroups = GetDefaultRegionGroups()
 	}
 
-	return cfg.RegionGroups[strings.ToLower(csp)][strings.ToLower(cfg.GaiaRegionGroup)][0]
+	return cfg.RegionGroups[strings.ToLower(csp)][strings.ToLower(cfg.TerrascaleRegionGroup)][0]
 }
 
 func GetDefaultRegionGroups() map[string]map[string][]string {
@@ -147,7 +147,7 @@ func GetConfig() (config Config, err error) {
 		return
 	}
 
-	config.GaiaRegionGroup = strings.ToLower(config.GaiaRegionGroup)
+	config.TerrascaleRegionGroup = strings.ToLower(config.TerrascaleRegionGroup)
 
 	// if not set externally, set to legacy defaults
 	if len(config.RegionGroups) == 0 {
@@ -155,8 +155,8 @@ func GetConfig() (config Config, err error) {
 	}
 
 	// if not regions specifically targeted, default to primary region
-	if len(config.GaiaTargetRegions) == 0 {
-		config.GaiaTargetRegions = []string{config.GetPrimaryRegionByCSP(config.CSP)}
+	if len(config.TerrascaleTargetRegions) == 0 {
+		config.TerrascaleTargetRegions = []string{config.GetPrimaryRegionByCSP(config.CSP)}
 	}
 
 	// backwards compatibility
@@ -164,8 +164,8 @@ func GetConfig() (config Config, err error) {
 		config.SelfDestroy = true
 	}
 
-	if config.GaiaRingDeploymentID == "" {
-		config.GaiaRingDeploymentID = os.Getenv("STEP_FUNCTION_NAME")
+	if config.TerrascaleRingDeploymentID == "" {
+		config.TerrascaleRingDeploymentID = os.Getenv("STEP_FUNCTION_NAME")
 	}
 
 	err = validate.Struct(config)
@@ -240,8 +240,8 @@ func InputValidation(sl validator.StructLevel) {
 	}
 
 	if input.ReporterDynamodb {
-		if input.GaiaRingDeploymentID == "" {
-			sl.ReportError(input.GaiaRingDeploymentID, "TERRASCALE_RING_DEPLOYMENT_ID", "GaiaRingDeploymentID", "required-with-reporter-dynamodb", "")
+		if input.TerrascaleRingDeploymentID == "" {
+			sl.ReportError(input.TerrascaleRingDeploymentID, "TERRASCALE_RING_DEPLOYMENT_ID", "TerrascaleRingDeploymentID", "required-with-reporter-dynamodb", "")
 		}
 		if input.UpdateStatusLambda == "" {
 			sl.ReportError(input.UpdateStatusLambda, "UPDATE_STATUS_LAMBDA", "UpdateStatusLambda", "required-with-reporter-dynamodb", "")

@@ -27,8 +27,8 @@ var stubConfig = config.Config{}
 func TestMain(m *testing.M) {
 	logger = logrus.NewEntry(logrus.New())
 	fs = afero.NewMemMapFs()
-	stubConfig.GaiaRegionGroup = "us"
-	stubConfig.GaiaTargetRegions = []string{"us-east-1", "us-east-2", "us-west-2"}
+	stubConfig.TerrascaleRegionGroup = "us"
+	stubConfig.TerrascaleTargetRegions = []string{"us-east-1", "us-east-2", "us-west-2"}
 	stubConfig.CSP = "csp"
 	stubConfig.Stage = "stage"
 	stubConfig.FargateTaskID = "fargatetaskid"
@@ -62,16 +62,16 @@ func TestFlushTracks_ShouldReturnCorrectSuccessesWithMultipleTracks(t *testing.T
 		for i := 0; i < stubStepCount; i++ {
 			stubStep := fmt.Sprintf("%s-%d", stubStepPrefix, i)
 			// primary start
-			cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.FargateTaskID, stubConfig.GaiaRingDeploymentID, stubConfig.GaiaReleaseDeploymentID, stubConfig.Stage, stubConfig.GaiaTargetRegions)
+			cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.FargateTaskID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
 
 			// primary end
-			cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.FargateTaskID, stubConfig.Stage, stubConfig.GaiaTargetRegions)
+			cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.FargateTaskID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
 
 			// regional deploys
-			for _, reg := range stubConfig.GaiaTargetRegions {
-				cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.FargateTaskID, stubConfig.GaiaRingDeploymentID, stubConfig.GaiaReleaseDeploymentID, stubConfig.Stage, stubConfig.GaiaTargetRegions)
+			for _, reg := range stubConfig.TerrascaleTargetRegions {
+				cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.FargateTaskID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
 
-				cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.FargateTaskID, stubConfig.Stage, stubConfig.GaiaTargetRegions)
+				cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.FargateTaskID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
 			}
 		}
 	}

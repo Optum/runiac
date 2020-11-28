@@ -203,7 +203,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 							highestProgressionLevel = progressionLevel
 						}
 
-						terrascaleCfg := &steps.GaiaConfig{}
+						terrascaleCfg := &steps.TerrascaleConfig{}
 
 						err = v.Unmarshal(terrascaleCfg)
 
@@ -218,7 +218,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 							DeployConfig:     config,
 							TrackName:        t.Name,
 							ID:               stepID,
-							GaiaConfig:       *terrascaleCfg,
+							TerrascaleConfig:       *terrascaleCfg,
 						}
 
 						step.TestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "tests/tests.test"))
@@ -553,7 +553,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		return
 	}
 
-	targetRegions := cfg.GaiaTargetRegions
+	targetRegions := cfg.TerrascaleTargetRegions
 	targetRegionsCount := len(targetRegions)
 	regionOutChan := make(chan RegionExecution, targetRegionsCount)
 	regionInChan := make(chan RegionExecution, targetRegionsCount)
@@ -638,8 +638,8 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		regionOutChan := make(chan RegionExecution)
 		regionInChan := make(chan RegionExecution)
 
-		targetRegions := cfg.GaiaTargetRegions
-		targetRegionsCount := len(cfg.GaiaTargetRegions)
+		targetRegions := cfg.TerrascaleTargetRegions
+		targetRegionsCount := len(cfg.TerrascaleTargetRegions)
 
 		for i := 0; i < targetRegionsCount; i++ {
 			go DestroyTrackRegion(regionInChan, regionOutChan)

@@ -2,7 +2,7 @@
 
 ACCOUNTID="346166872260"
 NAMESPACE=""
-AWSPROFILE="GaiaDeploy"
+AWSPROFILE="TerrascaleDeploy"
 
 # Args
 while test $# -gt 0; do
@@ -53,11 +53,11 @@ if [ "$AWSPROFILE" != "static" ]; then
   else
     # This unfortunately needs to be here as we cannot use below assume role command with above aws-vault command
     # https://github.com/99designs/aws-vault/issues/455
-    export $(export AWS_DEFAULT_REGION=us-east-1 && aws-vault exec "GaiaDeployLocal" -- env | grep ^AWS | xargs);
+    export $(export AWS_DEFAULT_REGION=us-east-1 && aws-vault exec "TerrascaleDeployLocal" -- env | grep ^AWS | xargs);
   fi
 else
   # If relevant, utilize the ephemeral role to authenticate to ecr
-  creds=$(aws sts assume-role --role-arn "arn:aws:iam::$ACCOUNTID:role/GaiaDeployRole" --role-session-name "Gaia-Deploy-$ACCOUNTID" --output json | jq '{ accessKeyId: .Credentials.AccessKeyId, secretAccessKey: .Credentials.SecretAccessKey, sessionToken: .Credentials.SessionToken }') &>/dev/null
+  creds=$(aws sts assume-role --role-arn "arn:aws:iam::$ACCOUNTID:role/TerrascaleDeployRole" --role-session-name "Terrascale-Deploy-$ACCOUNTID" --output json | jq '{ accessKeyId: .Credentials.AccessKeyId, secretAccessKey: .Credentials.SecretAccessKey, sessionToken: .Credentials.SessionToken }') &>/dev/null
 
   export AWS_ACCESS_KEY_ID=$(echo "$creds" | jq -r '.accessKeyId') &>/dev/null
   export AWS_SECRET_ACCESS_KEY=$(echo "$creds" | jq -r '.secretAccessKey' ) &>/dev/null

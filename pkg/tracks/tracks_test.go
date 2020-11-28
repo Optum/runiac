@@ -508,8 +508,8 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 				Output:         tracks.ExecutionOutput{},
 				StepperFactory: stubStepperFactory,
 			}, config.Config{
-				GaiaTargetRegions: test.stubTargetRegions,
-				GaiaRegionGroup:   test.regionGroup,
+				TerrascaleTargetRegions: test.stubTargetRegions,
+				TerrascaleRegionGroup:   test.regionGroup,
 				CSP:               "aws",
 			}, tracks.Track{
 				RegionalDeployment: test.stubRegionalDeployment,

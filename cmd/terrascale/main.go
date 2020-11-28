@@ -115,7 +115,7 @@ func initFunc() {
 	// Log as JSON instead of the default ASCII formatter.
 	logger := logrus.New()
 	if os.Getenv("LOG_FORMAT") == "terrascale" {
-		logger.SetFormatter(&logging.GaiaFormatter{
+		logger.SetFormatter(&logging.TerrascaleFormatter{
 			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
 		})
 	} else {
@@ -151,13 +151,13 @@ func initFunc() {
 		"credsID":                 deployment.Config.CredsID,
 		"csp":                     deployment.Config.CSP,
 		"stage":                   deployment.Config.Stage,
-		"terrascaleTargetAccountID":     deployment.Config.GaiaTargetAccountID,
-		"terrascaleRingDeploymentID":    deployment.Config.GaiaRingDeploymentID,
-		"terrascaleReleaseDeploymentID": deployment.Config.GaiaReleaseDeploymentID,
+		"terrascaleTargetAccountID":     deployment.Config.TerrascaleTargetAccountID,
+		"terrascaleRingDeploymentID":    deployment.Config.TerrascaleRingDeploymentID,
+		"terrascaleReleaseDeploymentID": deployment.Config.TerrascaleReleaseDeploymentID,
 		"environment":             deployment.Config.Environment,
 		"namespace":               deployment.Config.Namespace,
-		"regionGroup":             deployment.Config.GaiaRegionGroup,
-		"lpclagg":                 deployment.Config.GaiaRingDeploymentID,
+		"regionGroup":             deployment.Config.TerrascaleRegionGroup,
+		"lpclagg":                 deployment.Config.TerrascaleRingDeploymentID,
 		"lpcltype":                "terrascale",
 	})
 

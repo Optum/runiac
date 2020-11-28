@@ -32,7 +32,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 			DeploymentRing:    "stubDeploymentRing",
 			Stage:             "stubStage",
 			DryRun:            true,
-			GaiaTargetRegions: []string{"stub"},
+			TerrascaleTargetRegions: []string{"stub"},
 			FargateTaskID:     "stubFargateTaskID",
 		},
 		TrackName: "stubTrackName",
@@ -51,7 +51,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.DeployConfig.DryRun, mock.DryRun, "DryRun should match stub value")
 	require.Equal(t, stubStep.TrackName, mock.TrackName, "TrackName should match stub value")
 	require.Equal(t, stubStep.DeployConfig.FargateTaskID, mock.FargateTaskID, "FargateTaskID should match stub value")
-	require.Equal(t, stubStep.DeployConfig.GaiaTargetRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
+	require.Equal(t, stubStep.DeployConfig.TerrascaleTargetRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
 
 }
 
@@ -252,8 +252,8 @@ func TestHandleDestroyOverrides_ShouldSetFields(t *testing.T) {
 func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 	// act
 	execDestroy := TerraformStepper{}.ExecuteStepDestroy(ExecutionConfig{
-		GaiaConfig: GaiaConfig{
-			ExecuteWhen: GaiaConfigExecuteWhen{
+		TerrascaleConfig: TerrascaleConfig{
+			ExecuteWhen: TerrascaleConfigExecuteWhen{
 				RegionIn: []string{"stub-region"},
 			}},
 		Region: "not-stub-region",
@@ -267,8 +267,8 @@ func TestExecuteStepDestroy_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 func TestExecuteStep_ShouldSkipWhenRegionNotInExecuteWhen(t *testing.T) {
 	// act
 	exec := TerraformStepper{}.ExecuteStep(ExecutionConfig{
-		GaiaConfig: GaiaConfig{
-			ExecuteWhen: GaiaConfigExecuteWhen{
+		TerrascaleConfig: TerrascaleConfig{
+			ExecuteWhen: TerrascaleConfigExecuteWhen{
 				RegionIn: []string{"stub-region"},
 			}},
 		Region: "not-stub-region",
@@ -394,7 +394,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			namespace:   "namespace",
 			expect:      "bootstrap-launchpad-accountID/directory/namespace-state/regional-us-east-1",
 		},
-		"ShouldVarSubstituteGaiaDeploymentRing": {
+		"ShouldVarSubstituteTerrascaleDeploymentRing": {
 			stubParsedBackend: TerraformBackend{
 				Key:  "/${var.terrascale_deployment_ring}/key",
 				Type: S3Backend,
@@ -462,7 +462,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 				Environment:                tc.environment,
 				Namespace:                  tc.namespace,
 				AccountID:                  "accountID",
-				GaiaTargetAccountID:        "accountID",
+				TerrascaleTargetAccountID:        "accountID",
 				DeploymentRing:             "deploymentring",
 				RegionGroup:                "us",
 				Dir:                        "/tracks/step1_deploy",
@@ -496,7 +496,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 		expectNil         bool
 		namespace         string
 	}{
-		"ShouldVarSubstituteGaiaDeploymentRingAndCoreAccountIds": {
+		"ShouldVarSubstituteTerrascaleDeploymentRingAndCoreAccountIds": {
 			stubParsedBackend: TerraformBackend{
 				Key:  "bootstrap-launchpad-${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
 				Type: S3Backend,
@@ -532,7 +532,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 				Environment:                              tc.environment,
 				Namespace:                                tc.namespace,
 				AccountID:                                "accountID",
-				GaiaTargetAccountID:                      "accountID",
+				TerrascaleTargetAccountID:                      "accountID",
 				DeploymentRing:                           "deploymentring",
 				RegionGroup:                              "us",
 				Dir:                                      "/tracks/step1_deploy",
@@ -564,7 +564,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 	}
 }
 
-func TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccountDirectory2(t *testing.T) {
+func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrectAccountDirectory2(t *testing.T) {
 	t.Parallel()
 
 	getBackendTests := map[string]struct {
@@ -579,13 +579,13 @@ func TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccou
 			expectedAccountID:   "12",
 			message:             "Should set correctly when both values the same",
 		},
-		"ShouldPreferGaiaTargetAccountIDWithDifferingValues": {
+		"ShouldPreferTerrascaleTargetAccountIDWithDifferingValues": {
 			accountID:           "13",
 			terrascaleTargetAccountID: "12",
 			expectedAccountID:   "12",
 			message:             "Should prefer terrascale target account id when both values set and differ",
 		},
-		"ShouldPreferAccountIDWhenGaiaTargetAccountIDNotSet": {
+		"ShouldPreferAccountIDWhenTerrascaleTargetAccountIDNotSet": {
 			accountID:           "12",
 			terrascaleTargetAccountID: "",
 			expectedAccountID:   "12",
@@ -613,7 +613,7 @@ func TestGetBackendConfigWithGaiaTargetAccountID_ShouldHandleSettingCorrectAccou
 				CredsID:                    "creds",
 				Environment:                "environment",
 				AccountID:                  tc.accountID,
-				GaiaTargetAccountID:        tc.terrascaleTargetAccountID,
+				TerrascaleTargetAccountID:        tc.terrascaleTargetAccountID,
 				StepName:                   "step1_deploy",
 				Dir:                        "/tracks/step1_deploy",
 				DefaultStepOutputVariables: map[string]map[string]string{},

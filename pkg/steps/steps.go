@@ -23,12 +23,12 @@ func (f TerraformOnlyStepperFactory) Get(s Step) (stepper Stepper) {
 	return TerraformStepper{}
 }
 
-type GaiaConfig struct {
+type TerrascaleConfig struct {
 	Enabled     bool                  `mapstructure:"enabled"`
-	ExecuteWhen GaiaConfigExecuteWhen `mapstructure:"execute_when"`
+	ExecuteWhen TerrascaleConfigExecuteWhen `mapstructure:"execute_when"`
 }
 
-type GaiaConfigExecuteWhen struct {
+type TerrascaleConfigExecuteWhen struct {
 	RegionIn []string `mapstructure:"region_in"`
 }
 
@@ -48,7 +48,7 @@ type Step struct {
 	TestOutput             StepTestOutput
 	TFProvider             TerraformProvider
 	TFBackend              TerraformBackend
-	GaiaConfig             GaiaConfig
+	TerrascaleConfig             TerrascaleConfig
 }
 
 // StepTestOutput represents the output of a step's test
@@ -74,10 +74,10 @@ type RegionDeployType int
 
 const (
 	// Primary region typedeploys to the designated primary region, this usually consists of global resources such as IAM
-	// In Gaia world, this means it would only deploy the step's parent directory resources
+	// In Terrascale world, this means it would only deploy the step's parent directory resources
 	PrimaryRegionDeployType RegionDeployType = iota
 	// Regional region type deploys to each of the targeted regions, this consists of region specific resources and does not include global resources such as IAM
-	// In Gaia world, this means it would only deploy the step's /regional/ directory resources to each of the targeted regions
+	// In Terrascale world, this means it would only deploy the step's /regional/ directory resources to each of the targeted regions
 	RegionalRegionDeployType
 )
 
