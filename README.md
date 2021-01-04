@@ -26,6 +26,8 @@ Configuration for executing Terrascale is done through environment variables. Fo
 ##### Environment Variables
 
 - `TERRASCALE_STEP_WHITELIST`
+- `TERRASCALE_MAX_RETRIES`: non-zero number indicating how many times Terrascale will retry a failed step execution (default: `3`).
+- `TERRASCALE_MAX_TEST_RETRIES`: non-zero number indicating how many times Terrascale will retry a failed test (default: `2`).
 
 ##### Configuration Files
 
@@ -346,8 +348,10 @@ By convention the backend type will be automatically configured.
 
 Supported Types:
 
-- Local
 - S3
+- AzureRM
+- GCS
+- Local
 
 If defining local, the terraform will be executed "fresh" each time. This works very well when the step is only executing scripts/binaries through `local-exec`
 
@@ -361,6 +365,7 @@ Supported variables for dynamic [`key`](https://www.terraform.io/docs/backends/t
 - `${var.core_account_ids_map}`
 - `${var.terrascale_target_account_id}`
 - `${var.terrascale_deployment_ring}`
+- `${var.environment}`
 - `${local.namespace-}` (temporary backwards compatibility variable)
 
 Example Usage:
@@ -374,6 +379,30 @@ terraform {
     acl      = "bucket-owner-full-control"
     region   = "us-east-1"
     encrypt  = true
+  }
+}
+```
+
+##### GCS
+
+Supported variables for dynamic [`bucket and/or prefix`](https://www.terraform.io/docs/backends/types/gcs.html#configuration-variables) configuration:
+
+- `${var.gaia_region_deploy_type}`
+- `${var.region}`
+- `${var.gaia_step}`
+- `${var.core_account_ids_map}`
+- `${var.gaia_target_account_id}`
+- `${var.gaia_deployment_ring}`
+- `${var.environment}`
+- `${local.namespace-}` (temporary backwards compatibility variable)
+
+Example Usage:
+
+```hcl-terraform
+terraform { 
+  backend "gcs" {
+    bucket  = "df-${var.environment}-tfstate"
+    prefix  = "infra/${var.gaia_deployment_ring}/${var.gaia_region_deploy_type}/${var.region}/${local.namespace-}infra.tfstate"
   }
 }
 ```

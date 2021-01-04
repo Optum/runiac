@@ -42,6 +42,8 @@ type ExecutionConfig struct {
 	CredsID                                     string `json:"creds_id"`
 	AccountID                                   string `json:"account_id"`
 	AccountOwnerID                              string `json:"account_owner_msid"`
+	MaxRetries                                  int 
+	MaxTestRetries                              int 
 	CoreAccounts                                map[string]config.Account
 	RegionGroups                                config.RegionGroupsMap
 	Namespace                                   string
@@ -196,6 +198,8 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		CSP:                                      s.DeployConfig.CSP,
 		DeploymentRing:                           s.DeployConfig.DeploymentRing,
 		DryRun:                                   s.DeployConfig.DryRun,
+		MaxRetries:                               s.DeployConfig.MaxRetries,
+		MaxTestRetries:                           s.DeployConfig.MaxTestRetries,
 		Stage:                                    s.DeployConfig.Stage,
 		TrackName:                                s.TrackName,
 		RegionGroupRegions:                       s.DeployConfig.TerrascaleTargetRegions,
@@ -460,7 +464,7 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 		}
 	}
 
-	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), 2, 20*time.Second, exec.Logger, func(retryCount int) error {
+	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), exec.MaxTestRetries, 20*time.Second, exec.Logger, func(retryCount int) error {
 		retryLogger := exec.Logger.WithField("retryCount", retryCount)
 		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s-%s", exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
 		cmd := shell.Command{
@@ -544,7 +548,7 @@ var executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output Ste
 	}
 
 	// terraform plan
-	_ = retry.DoWithRetry("terraform plan and apply", 3, 10*time.Second, tfOptions.Logger, func(attempt int) error {
+	_ = retry.DoWithRetry("terraform plan and apply", tfOptions.MaxRetries, 10*time.Second, tfOptions.Logger, func(attempt int) error {
 
 		retryLogger := tfOptions.Logger.WithField("retryCount", attempt)
 
@@ -703,6 +707,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	backendConfig := map[string]map[string]interface{}{
 		"s3":      s3Config,
 		"azurerm": {},
+		"gcs":     {},
 		"local":   {},
 	}
 
@@ -744,7 +749,19 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	if declaredBackend.S3Bucket != "" {
 		b["bucket"] = interpolateString(exec, declaredBackend.S3Bucket)
 
-		exec.Logger.Debugf("Declared bucket: %s", b["bucket"])
+		exec.Logger.Debugf("Declared S3 bucket: %s", b["bucket"])
+	}
+
+	if declaredBackend.GCSBucket != "" {
+		b["bucket"] = interpolateString(exec, declaredBackend.GCSBucket)
+
+		exec.Logger.Debugf("Declared GCS bucket: %s", b["bucket"])
+	}
+
+	if declaredBackend.GCSPrefix != "" {
+		b["prefix"] = interpolateString(exec, declaredBackend.GCSPrefix)
+
+		exec.Logger.Debugf("Declared GCS prefix: %s", b["prefix"])
 	}
 
 	if declaredBackend.AZUResourceGroupName != "" {
@@ -847,7 +864,7 @@ func getCommonTfOptions2(exec ExecutionConfig) (tfOptions *terraform.Options, er
 		Logger:                   exec.Logger,
 		NoColor:                  true,
 		RetryableTerraformErrors: map[string]string{".*": "General Terraform error occurred."},
-		MaxRetries:               3,
+		MaxRetries:               exec.MaxRetries,
 		TimeBetweenRetries:       5 * time.Second,
 	}
 

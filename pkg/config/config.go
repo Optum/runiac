@@ -48,6 +48,8 @@ type Config struct {
 	CommonRegion                                string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
 	AccountOwnerMSID                            string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
 	Version                                     string
+	MaxRetries                                  int      `envconfig:"GAIA_MAX_RETRIES" default:"3"`
+	MaxTestRetries                              int      `envconfig:"GAIA_MAX_TEST_RETRIES" default:"2"`
 	LogLevel                                    string `envconfig:"LOG_LEVEL" default:"info"`
 	TerrascalePrimaryRegionOverride                   string
 	CoreAccounts                                CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`

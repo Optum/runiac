@@ -34,6 +34,8 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 			DryRun:            true,
 			TerrascaleTargetRegions: []string{"stub"},
 			FargateTaskID:     "stubFargateTaskID",
+			MaxRetries:        3,
+			MaxTestRetries:    2,
 		},
 		TrackName: "stubTrackName",
 	}
@@ -52,6 +54,8 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.TrackName, mock.TrackName, "TrackName should match stub value")
 	require.Equal(t, stubStep.DeployConfig.FargateTaskID, mock.FargateTaskID, "FargateTaskID should match stub value")
 	require.Equal(t, stubStep.DeployConfig.TerrascaleTargetRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
+	require.Equal(t, stubStep.DeployConfig.MaxRetries, mock.MaxRetries, "MaxRetries should match stub value")
+	require.Equal(t, stubStep.DeployConfig.MaxTestRetries, mock.MaxTestRetries, "MaxTestRetries should match stub value")
 
 }
 
@@ -99,6 +103,50 @@ func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
 	}, ParseTFBackend)
 
 	require.Equal(t, "fake-bucket", mockResult.Config["bucket"])
+}
+
+func TestGetBackendConfig_ShouldInterpolateResourceGroupNameField(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "azurerm" {
+		resource_group_name  = "rg-${var.terrascale_deployment_ring}"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:                                       fs,
+		Logger:                                   logger,
+		DeploymentRing:                           "fake",
+		FeatureToggleDisableBackendDefaultBucket: true,
+	}, ParseTFBackend)
+
+	require.Equal(t, "rg-fake", mockResult.Config["resource_group_name"])
+}
+
+func TestGetBackendConfig_ShouldInterpolateStorageAccountNameField(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+	terraform {
+	  backend "azurerm" {
+		storage_account_name  = "st-${var.terrascale_deployment_ring}"
+	  }
+	}
+	`), 0644)
+
+	mockResult := GetBackendConfig(ExecutionConfig{
+		Fs:                                       fs,
+		Logger:                                   logger,
+		DeploymentRing:                           "fake",
+		FeatureToggleDisableBackendDefaultBucket: true,
+	}, ParseTFBackend)
+
+	require.Equal(t, "st-fake", mockResult.Config["storage_account_name"])
 }
 
 func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
@@ -446,6 +494,16 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			regionType:  RegionalRegionDeployType,
 			expectNil:   true,
 		},
+		"ShouldCorrectlyParseGCSBackend": {
+			stubParsedBackend: TerraformBackend{
+				GCSPrefix: "",
+				Type:      GCSBackend,
+			},
+			environment: "prod",
+			region:      "us-central1",
+			regionType:  PrimaryRegionDeployType,
+			expectNil:   true,
+		},
 	}
 
 	fs := afero.NewMemMapFs()
@@ -479,6 +537,64 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			} else {
 				require.Equal(t, tc.expect, received.Config["key"])
 			}
+			require.Equal(t, tc.stubParsedBackend.Type, received.Type)
+		})
+	}
+}
+
+func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
+	t.Parallel()
+
+	getBackendTests := map[string]struct {
+		stubParsedBackend TerraformBackend
+		environment       string
+		region            string
+		regionType        RegionDeployType
+		expectBucket      string
+		expectPrefix      string
+		namespace         string
+	}{
+		"ShouldCorrectlyParseGCSBackend": {
+			stubParsedBackend: TerraformBackend{
+				GCSBucket: "test-${var.environment}-tfstate",
+				GCSPrefix: "test/${var.terrascale_deployment_ring}/${var.terrascale_region_deploy_type}/${var.region}/${local.namespace-}test.tfstate",
+				Type:      GCSBackend,
+			},
+			environment: "prod",
+			region:      "us-central1",
+			regionType:  PrimaryRegionDeployType,
+			expectBucket:      "test-prod-tfstate",
+			expectPrefix:      "test/deploymentring/primary/us-central1/test.tfstate",
+		},
+	}
+
+	fs := afero.NewMemMapFs()
+
+	for name, tc := range getBackendTests {
+		t.Run(name, func(t *testing.T) {
+			exec := ExecutionConfig{
+				RegionDeployType:           tc.regionType,
+				Region:                     tc.region,
+				Logger:                     logger,
+				Fs:                         fs,
+				DefaultStepOutputVariables: map[string]map[string]string{},
+				CredsID:                    "creds",
+				Environment:                tc.environment,
+				Namespace:                  tc.namespace,
+				AccountID:                  "accountID",
+				DeploymentRing:             "deploymentring",
+				RegionGroup:                "us",
+				Dir:                        "/tracks/step1_deploy",
+				StepName:                   "step1_deploy",
+			}
+
+			stubParseTFBackend := func(fs afero.Fs, log *logrus.Entry, file string) TerraformBackend {
+				return tc.stubParsedBackend
+			}
+			received := GetBackendConfig(exec, stubParseTFBackend)
+
+			require.Equal(t, tc.expectBucket, received.Config["bucket"])
+			require.Equal(t, tc.expectPrefix, received.Config["prefix"])
 			require.Equal(t, tc.stubParsedBackend.Type, received.Type)
 		})
 	}

@@ -52,6 +52,8 @@ const (
 	S3Backend TFBackendType = iota
 	// Azure Storage Account backend
 	AzureStorageAccount
+	// Google Cloud Storage backend
+	GCSBackend
 	// LocalBackend backend
 	LocalBackend
 	// UnknownBackend represents an unknown backend
@@ -59,7 +61,7 @@ const (
 )
 
 func (b TFBackendType) String() string {
-	return [...]string{"s3", "azurerm", "local", "unknown"}[b]
+	return [...]string{"s3", "azurerm", "gcs", "local", "unknown"}[b]
 }
 
 // StringToBackendType converts a string to a ProviderType
@@ -67,6 +69,7 @@ func StringToBackendType(s string) (TFBackendType, error) {
 	backends := map[string]TFBackendType{
 		"s3":      S3Backend,
 		"azurerm": AzureStorageAccount,
+		"gcs":     GCSBackend,
 		"local":   LocalBackend,
 	}
 
@@ -92,6 +95,8 @@ type TerraformBackend struct {
 	S3Bucket  string
 	AZUResourceGroupName      string
 	AZUStorageAccountName string
+	GCSBucket string
+	GCSPrefix string
 	Config    map[string]interface{}
 }
 
@@ -154,7 +159,19 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 	bucketMatch := bRegex.FindStringSubmatch(s)
 
 	if len(bucketMatch) > 0 {
-		backend.S3Bucket = bucketMatch[1]
+		if backendType == S3Backend {
+			backend.S3Bucket = bucketMatch[1]
+		} else if backendType == GCSBackend {
+			backend.GCSBucket = bucketMatch[1]
+		}
+	}
+
+	// Prefix
+	pRegex, _ := regexp.Compile(`prefix\s*=\s*"(.+)"`)
+	prefixMatch := pRegex.FindStringSubmatch(s)
+
+	if backendType == GCSBackend && len(prefixMatch) > 0 {
+		backend.GCSPrefix = prefixMatch[1]
 	}
 
 	// Resource group (Azure)

@@ -25,11 +25,9 @@ var deployment config.Deployment
 var log *logrus.Entry
 
 func main() {
-	fmt.Printf("ok\n")
 	initFunc()
-	fmt.Printf("init done\n")
 
-	log.Debugf("Beginning AWS Account Deployment: %s with %s CREDS_ID...", deployment.Config.AccountID, deployment.Config.CredsID)
+	log.Debugf("Beginning Account Deployment: %s with %s CREDS_ID...", deployment.Config.AccountID, deployment.Config.CredsID)
 
 	log.Debug("Executing tracks...")
 
