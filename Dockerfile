@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ./terrascale ./cmd/terrascale/
 
-FROM docker-hub.repo1.uhc.com/hashicorp/terraform:0.13.4
+FROM docker-hub.repo1.uhc.com/hashicorp/terraform:0.13.5
 
 RUN apk update
 
@@ -50,6 +50,9 @@ RUN apk add bash \
     && apk add curl \
     && apk add ca-certificates \
     && rm -rf /var/cache/apk/*
+
+RUN mkdir -p $HOME/.terraform.d/plugins/linux_amd64
+RUN mkdir -p $HOME/.terraform.d/plugin-cache
 
 # Grab from builder
 COPY --from=builder /app/terrascale /usr/local/bin

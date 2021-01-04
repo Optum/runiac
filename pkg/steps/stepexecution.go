@@ -28,7 +28,7 @@ type ExecutionConfig struct {
 	Region                                      string `json:"region"`
 	Logger                                      *logrus.Entry
 	Fs                                          afero.Fs
-	FargateTaskID                               string
+	UniqueExternalExecutionID                   string
 	RegionGroupRegions                          []string
 	TerrascaleTargetAccountID                         string
 	RegionGroup                                 string
@@ -203,7 +203,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		Stage:                                    s.DeployConfig.Stage,
 		TrackName:                                s.TrackName,
 		RegionGroupRegions:                       s.DeployConfig.TerrascaleTargetRegions,
-		FargateTaskID:                            s.DeployConfig.FargateTaskID,
+		UniqueExternalExecutionID:                s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:                             s.DeployConfig.RegionGroups,
 		TerrascaleConfig:                               s.TerrascaleConfig,
 		FeatureToggleDisableS3BackendKeyPrefix:   s.DeployConfig.FeatureToggleDisableS3BackendKeyPrefix,
@@ -347,7 +347,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 			params[k] = terraform.OutputToString(v)
 		}
 	} else {
-		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.FargateTaskID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Stage, s.DeployConfig.TerrascaleTargetRegions)
+		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Stage, s.DeployConfig.TerrascaleTargetRegions)
 	}
 
 	exec.OptionalStepParams = stepParams
@@ -490,19 +490,19 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 
 func postStep(exec ExecutionConfig, output StepOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, output.Err)
 	} else if output.Status == Fail {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
 	} else if output.Status == Unstable {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
 	} else {
-		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions)
+		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions)
 	}
 }
 
 func postStepTest(exec ExecutionConfig, output StepTestOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, output.Err)
 	}
 }
 

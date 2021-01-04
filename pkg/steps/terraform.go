@@ -22,12 +22,14 @@ const (
 	AWSProvider TFProviderType = iota
 	// AzurermProvider is the Azurerm TF provider
 	AzurermProvider
+	// Google Provider is the Google TF provider
+	GoogleProvider
 	// UnknownProvider represents a provider that could not be determined
 	UnknownProvider
 )
 
 func (p TFProviderType) String() string {
-	return [...]string{"aws", "azurerm", "unknown"}[p]
+	return [...]string{"aws", "azurerm", "google", "unknown"}[p]
 }
 
 // StringToProviderType converts a string to a ProviderType
@@ -35,6 +37,7 @@ func StringToProviderType(s string) (TFProviderType, error) {
 	providers := map[string]TFProviderType{
 		"aws":     AWSProvider,
 		"azurerm": AzurermProvider,
+		"google":  GoogleProvider,
 	}
 
 	val, exists := providers[s]

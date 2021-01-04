@@ -28,14 +28,14 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 		Dir:  "stub",
 		Name: "stubName",
 		DeployConfig: config.Config{
-			CSP:               "stubCSP",
-			DeploymentRing:    "stubDeploymentRing",
-			Stage:             "stubStage",
-			DryRun:            true,
-			TerrascaleTargetRegions: []string{"stub"},
-			FargateTaskID:     "stubFargateTaskID",
-			MaxRetries:        3,
-			MaxTestRetries:    2,
+			CSP:                       "stubCSP",
+			DeploymentRing:            "stubDeploymentRing",
+			Stage:                     "stubStage",
+			DryRun:                    true,
+			TerrascaleTargetRegions:   []string{"stub"},
+			UniqueExternalExecutionID: "stubFargateTaskID",
+			MaxRetries:                3,
+			MaxTestRetries:            2,
 		},
 		TrackName: "stubTrackName",
 	}
@@ -52,7 +52,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.DeployConfig.Stage, mock.Stage, "Stage should match stub value")
 	require.Equal(t, stubStep.DeployConfig.DryRun, mock.DryRun, "DryRun should match stub value")
 	require.Equal(t, stubStep.TrackName, mock.TrackName, "TrackName should match stub value")
-	require.Equal(t, stubStep.DeployConfig.FargateTaskID, mock.FargateTaskID, "FargateTaskID should match stub value")
+	require.Equal(t, stubStep.DeployConfig.UniqueExternalExecutionID, mock.UniqueExternalExecutionID, "UniqueExternalExecutionID should match stub value")
 	require.Equal(t, stubStep.DeployConfig.TerrascaleTargetRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxRetries, mock.MaxRetries, "MaxRetries should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxTestRetries, mock.MaxTestRetries, "MaxTestRetries should match stub value")

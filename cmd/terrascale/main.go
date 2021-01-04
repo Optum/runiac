@@ -162,7 +162,11 @@ func initFunc() {
 	})
 
 	deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")
-	deployment.Config.Version = deployment.DeployMetadata.Version
+	
+	// override the version, if not already explicitly provided via configuration
+	if len(deployment.Config.Version) == 0 {
+		deployment.Config.Version = deployment.DeployMetadata.Version
+	}
 
 	if err != nil {
 		log.WithError(err).Fatal(err.Error())
@@ -172,18 +176,12 @@ func initFunc() {
 		"version": deployment.DeployMetadata.Version,
 	})
 
-	deployment.Config.FargateTaskID, err = config.GetRunningFargateTaskID(deployment.Config.Environment)
-
-	if err != nil {
-		log.WithError(err).Fatal(err.Error())
-	}
-
 	j, _ := json.Marshal(deployment)
 
 	log.Infof("Parsed configuration: %s", string(j))
 
 	log = log.WithFields(logrus.Fields{
-		"fargateTaskID": deployment.Config.FargateTaskID,
+		"fargateTaskID": deployment.Config.UniqueExternalExecutionID,
 	})
 
 	// init tracker last to ensure log configuration is set correctly

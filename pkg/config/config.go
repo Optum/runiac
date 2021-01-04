@@ -15,12 +15,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
-	uuid "github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
-var FargateTaskMetadataEndpoint = "http://169.254.170.2/v2/metadata"
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // use a single instance of Validate, it caches struct info
@@ -38,7 +36,7 @@ type Config struct {
 	TerrascaleTargetRegions                           []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Terrascale will apply regional step deployments across these regions
 	TerrascaleRegionGroup                             string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
 	TerrascaleRegionGroupRegions                      []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
-	FargateTaskID                               string
+	UniqueExternalExecutionID                   string
 	CSP                                         string   `required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
 	DeploymentRing                              string   `envconfig:"DEPLOYMENT_RING"`
 	SelfDestroy                                 bool     `envconfig:"TERRASCALE_SELF_DESTROY"`   // Destroy will automatically execute Terraform Destroy after running deployments & tests
@@ -47,7 +45,7 @@ type Config struct {
 	TargetAll                                   bool     `envconfig:"TERRASCALE_TARGET_ALL"`     // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
 	CommonRegion                                string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
 	AccountOwnerMSID                            string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
-	Version                                     string
+	Version                                     string   `envconfig:"VERSION"`       // Version override
 	MaxRetries                                  int      `envconfig:"GAIA_MAX_RETRIES" default:"3"`
 	MaxTestRetries                              int      `envconfig:"GAIA_MAX_TEST_RETRIES" default:"2"`
 	LogLevel                                    string `envconfig:"LOG_LEVEL" default:"info"`
@@ -61,7 +59,7 @@ type Config struct {
 	FeatureToggleDisableParamStoreVars          bool            `envconfig:"FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS"`
 	// Set at task definition creation
 	Namespace        string `required:"true" envconfig:"NAMESPACE"`                                   // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
-	Environment      string `required:"true" validate:"eq=prod|eq=pr|eq=nonprod|eq=local|eq=jenkins"` // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
+	Environment      string `required:"true"`                       // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
 	ReporterDynamodb bool   `envconfig:"TERRASCALE_REPORTER_DYNAMODB"`
 	Authenticator    auth.Authenticator
 	StepParameters   params.StepParameters
@@ -195,38 +193,6 @@ func GetVersionJSON(log *logrus.Entry, fs afero.Fs, file string) (versionJSON De
 	}
 
 	return
-}
-
-type FargateTaskMetadata struct {
-	TaskARN string
-}
-
-func GetRunningFargateTaskID(environment string) (string, error) {
-	if environment == "local" || environment == "jenkins" {
-		u, _ := uuid.NewV4()
-		return u.String(), nil
-	}
-
-	req, err := http.NewRequest("GET", FargateTaskMetadataEndpoint, nil)
-
-	req.Header.Add("cache-control", "no-cache")
-
-	taskMetadata := &FargateTaskMetadata{}
-	err = getJson(FargateTaskMetadataEndpoint, taskMetadata)
-	if err != nil {
-		return "", err
-	}
-	return strings.Split(taskMetadata.TaskARN, ":task/")[1], err
-}
-
-func getJson(url string, target interface{}) error {
-	r, err := httpClient.Get(url)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-
-	return json.NewDecoder(r.Body).Decode(target)
 }
 
 func InputValidation(sl validator.StructLevel) {
