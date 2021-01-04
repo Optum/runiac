@@ -520,7 +520,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 				Environment:                tc.environment,
 				Namespace:                  tc.namespace,
 				AccountID:                  "accountID",
-				TerrascaleTargetAccountID:        "accountID",
+				TerrascaleTargetAccountID:  "accountID",
 				DeploymentRing:             "deploymentring",
 				RegionGroup:                "us",
 				Dir:                        "/tracks/step1_deploy",
@@ -560,11 +560,11 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 				GCSPrefix: "test/${var.terrascale_deployment_ring}/${var.terrascale_region_deploy_type}/${var.region}/${local.namespace-}test.tfstate",
 				Type:      GCSBackend,
 			},
-			environment: "prod",
-			region:      "us-central1",
-			regionType:  PrimaryRegionDeployType,
-			expectBucket:      "test-prod-tfstate",
-			expectPrefix:      "test/deploymentring/primary/us-central1/test.tfstate",
+			environment:  "prod",
+			region:       "us-central1",
+			regionType:   PrimaryRegionDeployType,
+			expectBucket: "test-prod-tfstate",
+			expectPrefix: "test/deploymentring/primary/us-central1/test.tfstate",
 		},
 	}
 
@@ -648,7 +648,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 				Environment:                              tc.environment,
 				Namespace:                                tc.namespace,
 				AccountID:                                "accountID",
-				TerrascaleTargetAccountID:                      "accountID",
+				TerrascaleTargetAccountID:                "accountID",
 				DeploymentRing:                           "deploymentring",
 				RegionGroup:                              "us",
 				Dir:                                      "/tracks/step1_deploy",
@@ -684,28 +684,28 @@ func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrec
 	t.Parallel()
 
 	getBackendTests := map[string]struct {
-		accountID           string
+		accountID                 string
 		terrascaleTargetAccountID string
-		expectedAccountID   string
-		message             string
+		expectedAccountID         string
+		message                   string
 	}{
 		"ShouldSetCorrectlyWithMatchingValues": {
-			accountID:           "12",
+			accountID:                 "12",
 			terrascaleTargetAccountID: "12",
-			expectedAccountID:   "12",
-			message:             "Should set correctly when both values the same",
+			expectedAccountID:         "12",
+			message:                   "Should set correctly when both values the same",
 		},
 		"ShouldPreferTerrascaleTargetAccountIDWithDifferingValues": {
-			accountID:           "13",
+			accountID:                 "13",
 			terrascaleTargetAccountID: "12",
-			expectedAccountID:   "12",
-			message:             "Should prefer terrascale target account id when both values set and differ",
+			expectedAccountID:         "12",
+			message:                   "Should prefer terrascale target account id when both values set and differ",
 		},
 		"ShouldPreferAccountIDWhenTerrascaleTargetAccountIDNotSet": {
-			accountID:           "12",
+			accountID:                 "12",
 			terrascaleTargetAccountID: "",
-			expectedAccountID:   "12",
-			message:             "Should account id when terrascale target account id is not set",
+			expectedAccountID:         "12",
+			message:                   "Should account id when terrascale target account id is not set",
 		},
 	}
 
@@ -729,7 +729,7 @@ func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrec
 				CredsID:                    "creds",
 				Environment:                "environment",
 				AccountID:                  tc.accountID,
-				TerrascaleTargetAccountID:        tc.terrascaleTargetAccountID,
+				TerrascaleTargetAccountID:  tc.terrascaleTargetAccountID,
 				StepName:                   "step1_deploy",
 				Dir:                        "/tracks/step1_deploy",
 				DefaultStepOutputVariables: map[string]map[string]string{},

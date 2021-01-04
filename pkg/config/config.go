@@ -27,15 +27,15 @@ var validate = validator.New()
 // Config struct is a representation of the environment variables passed into the container
 type Config struct {
 	// Set by container overrides
-	AccountID                                   string   `envconfig:"ACCOUNT_ID"`                                                  // The subscription id to deploy to
-	TerrascaleTargetAccountID                         string   `envconfig:"ACCOUNT_ID"`                                                  // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
-	CredsID                                     string   `envconfig:"CREDS_ID"`                                                    // The identifier that determines which set of credentials to use (for which tenant)
-	TerrascaleReleaseDeploymentID                     string   `envconfig:"CODEPIPELINE_EXECUTION_ID"`                                   // The execution id of the CodePipeline that triggered these tasks
-	TerrascaleRingDeploymentID                        string   `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
-	UpdateStatusLambda                          string   `envconfig:"UPDATE_STATUS_LAMBDA"`                                        // The name of the Lambda that is invoke to update the deployment status
-	TerrascaleTargetRegions                           []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Terrascale will apply regional step deployments across these regions
-	TerrascaleRegionGroup                             string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
-	TerrascaleRegionGroupRegions                      []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
+	AccountID                                   string   `envconfig:"ACCOUNT_ID"`                                                        // The subscription id to deploy to
+	TerrascaleTargetAccountID                   string   `envconfig:"ACCOUNT_ID"`                                                        // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
+	CredsID                                     string   `envconfig:"CREDS_ID"`                                                          // The identifier that determines which set of credentials to use (for which tenant)
+	TerrascaleReleaseDeploymentID               string   `envconfig:"CODEPIPELINE_EXECUTION_ID"`                                         // The execution id of the CodePipeline that triggered these tasks
+	TerrascaleRingDeploymentID                  string   `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
+	UpdateStatusLambda                          string   `envconfig:"UPDATE_STATUS_LAMBDA"`                                              // The name of the Lambda that is invoke to update the deployment status
+	TerrascaleTargetRegions                     []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Terrascale will apply regional step deployments across these regions
+	TerrascaleRegionGroup                       string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
+	TerrascaleRegionGroupRegions                []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
 	UniqueExternalExecutionID                   string
 	CSP                                         string   `required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
 	DeploymentRing                              string   `envconfig:"DEPLOYMENT_RING"`
@@ -48,8 +48,8 @@ type Config struct {
 	Version                                     string   `envconfig:"VERSION"`       // Version override
 	MaxRetries                                  int      `envconfig:"GAIA_MAX_RETRIES" default:"3"`
 	MaxTestRetries                              int      `envconfig:"GAIA_MAX_TEST_RETRIES" default:"2"`
-	LogLevel                                    string `envconfig:"LOG_LEVEL" default:"info"`
-	TerrascalePrimaryRegionOverride                   string
+	LogLevel                                    string   `envconfig:"LOG_LEVEL" default:"info"`
+	TerrascalePrimaryRegionOverride             string
 	CoreAccounts                                CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
 	RegionGroups                                RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
 	FeatureToggleDisableCreds                   bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_CREDS"`                      // Disables the "auto pulling" of creds based on accts CREDS_ID.  This would be true if you'd like to use creds passed into container
@@ -58,7 +58,7 @@ type Config struct {
 	FeatureToggleDisableS3BackendKeyNamespacing bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_KEY_NAMESPACING"` // Disables the usage of namespace, region, and region deploy type to automatically create state file
 	FeatureToggleDisableParamStoreVars          bool            `envconfig:"FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS"`
 	// Set at task definition creation
-	Namespace        string `required:"true" envconfig:"NAMESPACE"`                                   // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
+	Namespace        string `required:"true" envconfig:"NAMESPACE"` // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
 	Environment      string `required:"true"`                       // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
 	ReporterDynamodb bool   `envconfig:"TERRASCALE_REPORTER_DYNAMODB"`
 	Authenticator    auth.Authenticator

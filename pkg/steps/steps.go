@@ -24,7 +24,7 @@ func (f TerraformOnlyStepperFactory) Get(s Step) (stepper Stepper) {
 }
 
 type TerrascaleConfig struct {
-	Enabled     bool                  `mapstructure:"enabled"`
+	Enabled     bool                        `mapstructure:"enabled"`
 	ExecuteWhen TerrascaleConfigExecuteWhen `mapstructure:"execute_when"`
 }
 
@@ -48,7 +48,7 @@ type Step struct {
 	TestOutput             StepTestOutput
 	TFProvider             TerraformProvider
 	TFBackend              TerraformBackend
-	TerrascaleConfig             TerrascaleConfig
+	TerrascaleConfig       TerrascaleConfig
 }
 
 // StepTestOutput represents the output of a step's test

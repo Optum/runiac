@@ -510,7 +510,7 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 			}, config.Config{
 				TerrascaleTargetRegions: test.stubTargetRegions,
 				TerrascaleRegionGroup:   test.regionGroup,
-				CSP:               "aws",
+				CSP:                     "aws",
 			}, tracks.Track{
 				RegionalDeployment: test.stubRegionalDeployment,
 			}, trackChan)

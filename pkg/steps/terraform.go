@@ -92,15 +92,15 @@ type TerraformProvider struct {
 
 // TerraformBackend is a structure that represents a terraform backend file
 type TerraformBackend struct {
-	Type      TFBackendType
-	Key       string
-	S3RoleArn string
-	S3Bucket  string
-	AZUResourceGroupName      string
+	Type                  TFBackendType
+	Key                   string
+	S3RoleArn             string
+	S3Bucket              string
+	AZUResourceGroupName  string
 	AZUStorageAccountName string
-	GCSBucket string
-	GCSPrefix string
-	Config    map[string]interface{}
+	GCSBucket             string
+	GCSPrefix             string
+	Config                map[string]interface{}
 }
 
 // TFBackendParser is a function type that handles parsing a backend.tf file

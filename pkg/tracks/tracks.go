@@ -136,7 +136,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 			}
 
 			tConfig := viper.New()
-			tConfig.SetConfigName("terrascale")               // name of config file (without extension)
+			tConfig.SetConfigName("terrascale")         // name of config file (without extension)
 			tConfig.AddConfigPath(filepath.Join(t.Dir)) // path to look for the config file in
 			if err := tConfig.ReadInConfig(); err != nil {
 				if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -176,7 +176,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 						}
 
 						v := viper.New()
-						v.SetConfigName("terrascale")                            // name of config file (without extension)
+						v.SetConfigName("terrascale")                      // name of config file (without extension)
 						v.AddConfigPath(filepath.Join(t.Dir, tFolderName)) // path to look for the config file in
 						if err := v.ReadInConfig(); err != nil {
 							if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -218,7 +218,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 							DeployConfig:     config,
 							TrackName:        t.Name,
 							ID:               stepID,
-							TerrascaleConfig:       *terrascaleCfg,
+							TerrascaleConfig: *terrascaleCfg,
 						}
 
 						step.TestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "tests/tests.test"))

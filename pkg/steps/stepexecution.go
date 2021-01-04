@@ -30,7 +30,7 @@ type ExecutionConfig struct {
 	Fs                                          afero.Fs
 	UniqueExternalExecutionID                   string
 	RegionGroupRegions                          []string
-	TerrascaleTargetAccountID                         string
+	TerrascaleTargetAccountID                   string
 	RegionGroup                                 string
 	PrimaryRegion                               string
 	Dir                                         string
@@ -42,8 +42,8 @@ type ExecutionConfig struct {
 	CredsID                                     string `json:"creds_id"`
 	AccountID                                   string `json:"account_id"`
 	AccountOwnerID                              string `json:"account_owner_msid"`
-	MaxRetries                                  int 
-	MaxTestRetries                              int 
+	MaxRetries                                  int
+	MaxTestRetries                              int
 	CoreAccounts                                map[string]config.Account
 	RegionGroups                                config.RegionGroupsMap
 	Namespace                                   string
@@ -54,7 +54,7 @@ type ExecutionConfig struct {
 	Stage                                       string
 	TrackName                                   string
 	DryRun                                      bool
-	TerrascaleConfig                                  TerrascaleConfig
+	TerrascaleConfig                            TerrascaleConfig
 	FeatureToggleDisableBackendDefaultBucket    bool // TODO: tech debt remove consumption model that requires these feature toggles
 	FeatureToggleDisableS3BackendKeyPrefix      bool
 	FeatureToggleDisableS3BackendKeyNamespacing bool
@@ -180,7 +180,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		RegionDeployType:                         regionDeployType,
 		Region:                                   region,
 		Fs:                                       fs,
-		TerrascaleTargetAccountID:                      s.DeployConfig.TerrascaleTargetAccountID,
+		TerrascaleTargetAccountID:                s.DeployConfig.TerrascaleTargetAccountID,
 		RegionGroup:                              s.DeployConfig.TerrascaleRegionGroup,
 		DefaultStepOutputVariables:               defaultStepOutputVariables,
 		Environment:                              s.DeployConfig.Environment,
@@ -205,7 +205,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		RegionGroupRegions:                       s.DeployConfig.TerrascaleTargetRegions,
 		UniqueExternalExecutionID:                s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:                             s.DeployConfig.RegionGroups,
-		TerrascaleConfig:                               s.TerrascaleConfig,
+		TerrascaleConfig:                         s.TerrascaleConfig,
 		FeatureToggleDisableS3BackendKeyPrefix:   s.DeployConfig.FeatureToggleDisableS3BackendKeyPrefix,
 		FeatureToggleDisableBackendDefaultBucket: s.DeployConfig.FeatureToggleDisableBackendDefaultBucket,
 		FeatureToggleDisableS3BackendKeyNamespacing: s.DeployConfig.FeatureToggleDisableS3BackendKeyNamespacing,

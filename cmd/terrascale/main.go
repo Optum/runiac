@@ -147,23 +147,23 @@ func initFunc() {
 	}
 
 	log = logger.WithFields(logrus.Fields{
-		"accountID":               deployment.Config.AccountID,
-		"deploymentRing":          deployment.Config.DeploymentRing,
-		"credsID":                 deployment.Config.CredsID,
-		"csp":                     deployment.Config.CSP,
-		"stage":                   deployment.Config.Stage,
+		"accountID":                     deployment.Config.AccountID,
+		"deploymentRing":                deployment.Config.DeploymentRing,
+		"credsID":                       deployment.Config.CredsID,
+		"csp":                           deployment.Config.CSP,
+		"stage":                         deployment.Config.Stage,
 		"terrascaleTargetAccountID":     deployment.Config.TerrascaleTargetAccountID,
 		"terrascaleRingDeploymentID":    deployment.Config.TerrascaleRingDeploymentID,
 		"terrascaleReleaseDeploymentID": deployment.Config.TerrascaleReleaseDeploymentID,
-		"environment":             deployment.Config.Environment,
-		"namespace":               deployment.Config.Namespace,
-		"regionGroup":             deployment.Config.TerrascaleRegionGroup,
-		"lpclagg":                 deployment.Config.TerrascaleRingDeploymentID,
-		"lpcltype":                "terrascale",
+		"environment":                   deployment.Config.Environment,
+		"namespace":                     deployment.Config.Namespace,
+		"regionGroup":                   deployment.Config.TerrascaleRegionGroup,
+		"lpclagg":                       deployment.Config.TerrascaleRingDeploymentID,
+		"lpcltype":                      "terrascale",
 	})
 
 	deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")
-	
+
 	// override the version, if not already explicitly provided via configuration
 	if len(deployment.Config.Version) == 0 {
 		deployment.Config.Version = deployment.DeployMetadata.Version
@@ -216,8 +216,8 @@ func initFunc() {
 	// prepare basic parameters for executing terraform version
 	// disable checkpoints since we just want to print the version string alone
 	tfOptions := &terraform.Options{
-		TerraformDir:       ".",
-		EnvVars:            map[string]string{
+		TerraformDir: ".",
+		EnvVars: map[string]string{
 			"CHECKPOINT_DISABLE": "true",
 		},
 		Logger:             logger.WithField("terraform", "version"),
