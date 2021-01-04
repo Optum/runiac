@@ -16,6 +16,7 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/logging"
 	"github.optum.com/healthcarecloud/terrascale/pkg/params"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
+	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
 )
 
@@ -212,4 +213,24 @@ func initFunc() {
 		}
 	}
 
+	// prepare basic parameters for executing terraform version
+	// disable checkpoints since we just want to print the version string alone
+	tfOptions := &terraform.Options{
+		TerraformDir:       ".",
+		EnvVars:            map[string]string{
+			"CHECKPOINT_DISABLE": "true",
+		},
+		Logger:             logger.WithField("terraform", "version"),
+		NoColor:            true,
+		MaxRetries:         1,
+		TimeBetweenRetries: 0,
+	}
+
+	terraformer := &terraform.Terraform{}
+	resp, err := terraformer.Version(tfOptions)
+	if err != nil {
+		tfOptions.Logger.WithError(err).Error("Error running terraform version")
+	} else {
+		tfOptions.Logger.Info("Binary: ", resp)
+	}
 }
