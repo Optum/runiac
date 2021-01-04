@@ -701,8 +701,9 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
 
 	backendConfig := map[string]map[string]interface{}{
-		"s3":    s3Config,
-		"local": {},
+		"s3":      s3Config,
+		"azurerm": {},
+		"local":   {},
 	}
 
 	// if user has decided to set a specific backend type, use that and set default values
@@ -744,6 +745,14 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 		b["bucket"] = interpolateString(exec, declaredBackend.S3Bucket)
 
 		exec.Logger.Debugf("Declared bucket: %s", b["bucket"])
+	}
+
+	if declaredBackend.AZUResourceGroupName != "" {
+		b["resource_group_name"] = interpolateString(exec, declaredBackend.AZUResourceGroupName)
+	}
+
+	if declaredBackend.AZUStorageAccountName != "" {
+		b["storage_account_name"] = interpolateString(exec, declaredBackend.AZUStorageAccountName)
 	}
 
 	declaredBackend.Config = b
@@ -790,6 +799,11 @@ func interpolateString(exec ExecutionConfig, s string) string {
 	if strings.Contains(s, "${var.region}") {
 		s = strings.ReplaceAll(s,
 			"${var.terrascale_step}", exec.StepName)
+	}
+
+	if strings.Contains(s, "${var.environment}") {
+		s = strings.ReplaceAll(s,
+			"${var.environment}", exec.Environment)
 	}
 
 	// Replace all ${var.core_account_ids_map instances.

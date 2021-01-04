@@ -4,7 +4,7 @@
 
 ---
 
-An opinionated framework and tool for scaling terraform with ease.
+An opinionated framework and tool for scaling Terraform with ease.
 
 - Quality developer experience
 - Container-based, execute anywhere or use any CI/CD system
@@ -508,6 +508,3 @@ Terrascale is only executed locally via it's unit tests. To execute Terrascale c
 $ DOCKER_BUILDKIT=1 docker build -t terrascale .
 # Now one can build the child containers (launchpad_core_aws, bedrock_aws, etc)
 ```
-
-> NOTE: Optum Healthcare Public Cloud team, further local instructions are available [here](https://new-wiki.optum.com/display/COMCLDDLV/Launchpad%3A+Local+Configuration)
-

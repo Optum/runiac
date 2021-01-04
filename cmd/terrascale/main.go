@@ -25,7 +25,9 @@ var deployment config.Deployment
 var log *logrus.Entry
 
 func main() {
+	fmt.Printf("ok\n")
 	initFunc()
+	fmt.Printf("init done\n")
 
 	log.Debugf("Beginning AWS Account Deployment: %s with %s CREDS_ID...", deployment.Config.AccountID, deployment.Config.CredsID)
 
@@ -114,7 +116,7 @@ func main() {
 func initFunc() {
 	// Log as JSON instead of the default ASCII formatter.
 	logger := logrus.New()
-	if os.Getenv("LOG_FORMAT") == "terrascale" {
+	if os.Getenv("LOG_FORMAT") == "TERRASCALE" {
 		logger.SetFormatter(&logging.TerrascaleFormatter{
 			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
 		})

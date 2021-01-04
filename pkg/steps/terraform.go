@@ -50,6 +50,8 @@ type TFBackendType int
 const (
 	// S3Backend backend
 	S3Backend TFBackendType = iota
+	// Azure Storage Account backend
+	AzureStorageAccount
 	// LocalBackend backend
 	LocalBackend
 	// UnknownBackend represents an unknown backend
@@ -57,14 +59,15 @@ const (
 )
 
 func (b TFBackendType) String() string {
-	return [...]string{"s3", "local", "unknown"}[b]
+	return [...]string{"s3", "azurerm", "local", "unknown"}[b]
 }
 
 // StringToBackendType converts a string to a ProviderType
 func StringToBackendType(s string) (TFBackendType, error) {
 	backends := map[string]TFBackendType{
-		"s3":    S3Backend,
-		"local": LocalBackend,
+		"s3":      S3Backend,
+		"azurerm": AzureStorageAccount,
+		"local":   LocalBackend,
 	}
 
 	val, exists := backends[s]
@@ -87,6 +90,8 @@ type TerraformBackend struct {
 	Key       string
 	S3RoleArn string
 	S3Bucket  string
+	AZUResourceGroupName      string
+	AZUStorageAccountName string
 	Config    map[string]interface{}
 }
 
@@ -150,6 +155,22 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 
 	if len(bucketMatch) > 0 {
 		backend.S3Bucket = bucketMatch[1]
+	}
+
+	// Resource group (Azure)
+	rgRegex, _ := regexp.Compile(`resource_group_name\s*=\s*"(.+)"`)
+	resourceGroupMatch := rgRegex.FindStringSubmatch(s)
+
+	if len(resourceGroupMatch) > 0 {
+		backend.AZUResourceGroupName = resourceGroupMatch[1]
+	}
+
+	// Storage account (Azure)
+	stRegex, _ := regexp.Compile(`storage_account_name\s*=\s*"(.+)"`)
+	storageAccountMatch := stRegex.FindStringSubmatch(s)
+
+	if len(storageAccountMatch) > 0 {
+		backend.AZUStorageAccountName = storageAccountMatch[1]
 	}
 
 	return
