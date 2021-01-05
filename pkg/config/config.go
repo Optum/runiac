@@ -105,7 +105,7 @@ type Account struct {
 
 // GetPrimaryRegionByCSP retrieves the primary region by CSP
 func (cfg Config) GetPrimaryRegionByCSP(csp string) string {
-	// support adhoc targeting of other primary regions, ie pull requests and local environments
+	// support adhoc targeting of other primary regions, in e.g. ephemeral environments
 	if strings.ToLower(csp) == strings.ToLower(cfg.CSP) && cfg.TerrascalePrimaryRegionOverride != "" {
 		return cfg.TerrascalePrimaryRegionOverride
 	}
