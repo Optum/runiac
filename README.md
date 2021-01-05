@@ -416,13 +416,16 @@ Bedrock will then execute `tests.test` after a successful step deployment.
 By convention the backend type will be automatically configured.
 
 Supported Types:
-
 - S3
 - AzureRM
 - GCS
 - Local
 
-If defining local, the terraform will be executed "fresh" each time. This works very well when the step is only executing scripts/binaries through `local-exec`
+If defining local, the terraform will be executed "fresh" each time. This works very well when the step is only executing scripts/binaries through `local-exec`.
+
+While you normally cannot use variable interpolation in typical Terraform backend configurations, Terrascale allows you some more flexibility
+in this area. Depending on which backend provider you are intending to use, the sections below detail which variables can be used in your
+configuration. These variables will be interpolated by Terrascale itself prior to executing Terraform.
 
 ##### S3
 

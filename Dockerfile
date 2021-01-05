@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ./terrascale ./cmd/terrascale/
 
-FROM docker-hub.repo1.uhc.com/hashicorp/terraform:0.13.5
+FROM hashicorp/terraform:0.13.5
 
 RUN apk update
 
