@@ -115,13 +115,13 @@ func main() {
 func initFunc() {
 	// Log as JSON instead of the default ASCII formatter.
 	logger := logrus.New()
-	if os.Getenv("LOG_FORMAT") == "TERRASCALE" {
-		logger.SetFormatter(&logging.TerrascaleFormatter{
-			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
-		})
-	} else {
+	if os.Getenv("LOG_FORMAT") == "JSON" {
 		logger.SetFormatter(&logrus.JSONFormatter{
 			TimestampFormat: time.RFC3339Nano,
+		})
+	} else {
+		logger.SetFormatter(&logging.TerrascaleFormatter{
+			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
 		})
 	}
 	logger.SetReportCaller(true)
