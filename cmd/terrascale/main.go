@@ -160,15 +160,16 @@ func initFunc() {
 		"regionGroup":                   deployment.Config.TerrascaleRegionGroup,
 	})
 
+	// read deployment artifact version string from version.json first, if it exists
 	deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")
-
-	// override the version, if not already explicitly provided via configuration
-	if len(deployment.Config.Version) == 0 {
+	if err != nil {
+		// defer to the VERSION environment variable instead
 		deployment.Config.Version = deployment.DeployMetadata.Version
 	}
 
-	if err != nil {
-		log.WithError(err).Fatal(err.Error())
+	if len(deployment.Config.Version) == 0 {
+		log.Warn("No version.json or VERSION environment variable specified")
+		deployment.Config.Version = ""
 	}
 
 	log = log.WithFields(logrus.Fields{

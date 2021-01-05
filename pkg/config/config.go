@@ -178,7 +178,8 @@ func GetVersionJSON(log *logrus.Entry, fs afero.Fs, file string) (versionJSON De
 	jsonFile, err := fs.Open(file)
 	// if we os.Open returns an error then handle it
 	if err != nil {
-		log.Error(err)
+		log.Debug(err)
+		return
 	}
 
 	// defer the closing of our jsonFile so that we can parse it later on

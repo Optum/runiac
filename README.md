@@ -77,13 +77,19 @@ execute_when: # This will conduct a runtime evaluation on whether the step shoul
     - "region-1"
 ```
 
-Also required is a file named `version.json` in the root of the directory structure, with at least a `version` element:
+##### Versioning
 
+The most flexible way to specify a version string for your deployment artifacts is to use the `VERSION` environment variable. You
+can source your version string however you wish with this approach.
+
+Otherwise, you can create a `version.json` file at the root of the directory structure, with a `version` element:
 ```json
 {
   "version": "v0.0.1"
 }
 ```
+
+If both are present, `version.json` takes precedence over the `VERSION` environment variable.
 
 ### Provider Plugin Caching
 
