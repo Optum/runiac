@@ -19,20 +19,26 @@ An opinionated framework and tool for scaling Terraform with ease.
 
 ### Inputs
 
-Configuration for executing Terrascale is done through environment variables. For a list of options of see the code [here](pkg/config/config.go)
+Configuration for executing Terrascale is done through environment variables. For a list of options, see the code [here](pkg/config/config.go).
 
 #### Choosing which steps to execute
+
+By default, steps will not be executed unless they are explicitly configured to do so.
 
 ##### Environment Variables
 
 - `TERRASCALE_STEP_WHITELIST`: list of step names to include in execution
 
-When providing a list of steps to execute using the `TERRASCALE_STEP_WHITELIST` environment variable, each step should be qualified by its track. 
-The general syntax is as follows:
+When providing a list of steps to execute using the `TERRASCALE_STEP_WHITELIST` environment variable, the general syntax is as follows:
 
-```bash
-#core#TRACK#STEP_NAME,#core#TRACK#ANOTHER_STEP_NAME,
 ```
+#PROJECT[#TRACK]#STEP_NAME,...
+```
+
+Where:
+* `PROJECT` is the value of the `TERRASCALE_PROJECT` environment variable (default to `terrascale` is not specified)
+* `[TRACK]` is the name of the track the step is located under (unless using the default track)
+* `STEP_NAME`: is the name of the step, without the leading `stepX_` prefix
 
 For example, given the following Terrascale directory setup:
 
@@ -48,16 +54,16 @@ tracks/
 If you wanted all three steps to be executed, you would specify them as such:
 
 ```bash
-TERRASCALE_STEP_WHITELIST="#core#infra#sample,#core#shared#sample,#core#shared#another_one"
+TERRASCALE_STEP_WHITELIST="#terrascale#infra#sample,#terrascale#shared#sample,#terrascale#shared#another_one"
 ```
 
 To make things more readable, you can leverage some much nicer Bash syntax as such:
 
 ```bash
 TRACK_STEPS=(
-  "#core#infra#sample"
-  "#core#shared#sample"
-  "#core#shared#another_one"
+  "#terrascale#infra#sample"
+  "#terrascale#shared#sample"
+  "#terrascale#shared#another_one"
 )
 
 TERRASCALE_STEP_WHITELIST=$(printf ",%s", "${TRACK_STEPS[@]}")
@@ -77,7 +83,7 @@ execute_when: # This will conduct a runtime evaluation on whether the step shoul
     - "region-1"
 ```
 
-##### Versioning
+#### Versioning
 
 The most flexible way to specify a version string for your deployment artifacts is to use the `VERSION` environment variable. You
 can source your version string however you wish with this approach.
@@ -105,6 +111,28 @@ Terrascale uses [provider plugin caching](https://www.terraform.io/docs/commands
 
 2. For a track to be executed, at least one _Step_ has to be defined within it
 
+#### Default Track
+
+For projects that are relatively straightforward and don't require multiple tracks, you can opt to organize your steps under a single
+"default" track. The benefit of this approach is a simpler directory hierarchy, and you still have the possibility to scale out with
+multiple tracks down the road.
+
+Be aware that with this simpler approach, you cannot use pre-tracks (see below).
+
+A sample structure from the root directory of your project might look like this:
+
+```bash
+steps/
+├── step1_sample/
+├── step1_another_one/
+```
+
+To whitelist steps for execution when using a default track, omit the track name from the step list, like so:
+
+```bash
+TERRASCALE_STEP_WHITELIST="#terrascale#sample,#terrascale#another_one"
+```
+
 #### Pre-track
 
 A pre-track is a track that runs before **all** other tracks. After this track completes, the remaining tracks are executed in parallel. If the pre-track execution fails, no other tracks will be attempted. To create a pre-track, create a directory called `_pretrack` in the `tracks` directory.
@@ -128,7 +156,7 @@ In the following _Track_ directories:
 ##### Concurrent Steps
 
 ```bash
-stages/customer/tracks/iamsso
+tracks/iamsso
 ├── step1_aws
 └── step1_onprem_adgroups
 ```
@@ -138,7 +166,7 @@ stages/customer/tracks/iamsso
 ##### Sequential Steps
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 └── step2_egress_proxy
 ```
@@ -148,7 +176,7 @@ stages/customer/tracks/network
 ##### Concurrent and Sequential Steps
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 ├── step1_aws
 └── step2_cool_step
@@ -171,7 +199,7 @@ Step deployment types facilitate multi-region deployments. Terrascale will first
 Primary deployments represent all terraform in the top level directory of the executing step. Currently the primary type is executed _once per region group_. For example, in the `us` region group, the primary code would only be executed in the primary region of the `us` region group, `us-east-1`.
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 ├──--- *.tf
 ```
@@ -181,7 +209,7 @@ stages/customer/tracks/network
 Regional deployments represent all terraform in the `/regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `-e TERRASCALE_TARGET_REGIONS` configuration.
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 ├──--- regional
 ├──--------*.tf
