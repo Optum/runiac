@@ -1,10 +1,10 @@
-# syntax = docker-hub.repo1.uhc.com/docker/dockerfile:experimental
+# syntax = docker/dockerfile:experimental
 
 ARG http_proxy
 ARG https_proxy
 ARG GOVERSION=1.14
  
-FROM docker-hub.repo1.uhc.com/golang:${GOVERSION} as builder
+FROM golang:${GOVERSION} as builder
 
 RUN apt-get update && apt-get upgrade -y ca-certificates && apt-get install -y bash && apt-get install -y unzip
 
