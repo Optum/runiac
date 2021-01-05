@@ -158,8 +158,6 @@ func initFunc() {
 		"environment":                   deployment.Config.Environment,
 		"namespace":                     deployment.Config.Namespace,
 		"regionGroup":                   deployment.Config.TerrascaleRegionGroup,
-		"lpclagg":                       deployment.Config.TerrascaleRingDeploymentID,
-		"lpcltype":                      "terrascale",
 	})
 
 	deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")
@@ -182,7 +180,7 @@ func initFunc() {
 	log.Infof("Parsed configuration: %s", string(j))
 
 	log = log.WithFields(logrus.Fields{
-		"fargateTaskID": deployment.Config.UniqueExternalExecutionID,
+		"uniqueExternalExecutionID": deployment.Config.UniqueExternalExecutionID,
 	})
 
 	// init tracker last to ensure log configuration is set correctly
