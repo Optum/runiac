@@ -25,9 +25,44 @@ Configuration for executing Terrascale is done through environment variables. Fo
 
 ##### Environment Variables
 
-- `TERRASCALE_STEP_WHITELIST`
-- `TERRASCALE_MAX_RETRIES`: non-zero number indicating how many times Terrascale will retry a failed step execution (default: `3`).
-- `TERRASCALE_MAX_TEST_RETRIES`: non-zero number indicating how many times Terrascale will retry a failed test (default: `2`).
+- `TERRASCALE_STEP_WHITELIST`: list of step names to include in execution
+
+When providing a list of steps to execute using the `TERRASCALE_STEP_WHITELIST` environment variable, each step should be qualified by its track. 
+The general syntax is as follows:
+
+```bash
+#core#TRACK#STEP_NAME,#core#TRACK#ANOTHER_STEP_NAME,
+```
+
+For example, given the following Terrascale directory setup:
+
+```bash
+tracks/
+├── infra/
+├──── step1_sample/
+├── shared
+├──── step1_sample/
+├──── step1_another_one/
+```
+
+If you wanted all three steps to be executed, you would specify them as such:
+
+```bash
+TERRASCALE_STEP_WHITELIST="#core#infra#sample,#core#shared#sample,#core#shared#another_one"
+```
+
+To make things more readable, you can leverage some much nicer Bash syntax as such:
+
+```bash
+TRACK_STEPS=(
+  "#core#infra#sample"
+  "#core#shared#sample"
+  "#core#shared#another_one"
+)
+
+TERRASCALE_STEP_WHITELIST=$(printf ",%s", "${TRACK_STEPS[@]}")
+TERRASCALE_STEP_WHITELIST=${TERRASCALE_STEP_WHITELIST:1}
+```
 
 ##### Configuration Files
 
@@ -535,5 +570,4 @@ Terrascale is only executed locally via it's unit tests. To execute Terrascale c
 
 ```bash
 $ DOCKER_BUILDKIT=1 docker build -t terrascale .
-# Now one can build the child containers (launchpad_core_aws, bedrock_aws, etc)
 ```
