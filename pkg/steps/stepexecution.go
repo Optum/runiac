@@ -51,7 +51,7 @@ type ExecutionConfig struct {
 	StepName                                    string
 	StepID                                      string
 	DeploymentRing                              string
-	Stage                                       string
+	Project                                     string
 	TrackName                                   string
 	DryRun                                      bool
 	TerrascaleConfig                            TerrascaleConfig
@@ -200,7 +200,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		DryRun:                                   s.DeployConfig.DryRun,
 		MaxRetries:                               s.DeployConfig.MaxRetries,
 		MaxTestRetries:                           s.DeployConfig.MaxTestRetries,
-		Stage:                                    s.DeployConfig.Stage,
+		Project:                                  s.DeployConfig.Project,
 		TrackName:                                s.TrackName,
 		RegionGroupRegions:                       s.DeployConfig.TerrascaleTargetRegions,
 		UniqueExternalExecutionID:                s.DeployConfig.UniqueExternalExecutionID,
@@ -316,7 +316,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	// Add Terrascale variables to step params
 	params["terrascale_target_account_id"] = exec.TerrascaleTargetAccountID
 	params["terrascale_deployment_ring"] = exec.DeploymentRing
-	params["terrascale_stage"] = strings.ToLower(exec.Stage)
+	params["terrascale_project"] = strings.ToLower(exec.Project)
 	params["terrascale_track"] = strings.ToLower(exec.TrackName)
 	params["terrascale_step"] = strings.ToLower(exec.StepName)
 	params["terrascale_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
@@ -327,7 +327,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 
 	// TODO: pre-step param store plugin for integrating "just-in-time" variables from param store
 	if s.DeployConfig.StepParameters != nil {
-		paramStoreParams := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.DeploymentRing)
+		paramStoreParams := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Project, exec.TrackName, exec.StepName, exec.DeploymentRing)
 
 		// Add to params
 		for k, v := range paramStoreParams {
@@ -347,7 +347,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 			params[k] = terraform.OutputToString(v)
 		}
 	} else {
-		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Stage, s.DeployConfig.TerrascaleTargetRegions)
+		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Project, s.DeployConfig.TerrascaleTargetRegions)
 	}
 
 	exec.OptionalStepParams = stepParams
@@ -466,7 +466,7 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 
 	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), exec.MaxTestRetries, 20*time.Second, exec.Logger, func(retryCount int) error {
 		retryLogger := exec.Logger.WithField("retryCount", retryCount)
-		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s-%s", exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
+		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s-%s", exec.CSP, exec.Project, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
 		cmd := shell.Command{
 			Command: "gotestsum",
 			//Command:        "/bin/bash",
@@ -490,19 +490,19 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 
 func postStep(exec ExecutionConfig, output StepOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	} else if output.Status == Fail {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
 	} else if output.Status == Unstable {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
 	} else {
-		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions)
+		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions)
 	}
 }
 
 func postStepTest(exec ExecutionConfig, output StepTestOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Stage, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	}
 }
 

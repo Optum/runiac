@@ -30,7 +30,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 		DeployConfig: config.Config{
 			CSP:                       "stubCSP",
 			DeploymentRing:            "stubDeploymentRing",
-			Stage:                     "stubStage",
+			Project:                   "stubProject",
 			DryRun:                    true,
 			TerrascaleTargetRegions:   []string{"stub"},
 			UniqueExternalExecutionID: "stubFargateTaskID",
@@ -49,7 +49,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubRegionalDeployType, mock.RegionDeployType, "RegionDeployType should match stub value")
 	require.Equal(t, stubStep.DeployConfig.CSP, mock.CSP, "CSP should match stub value")
 	require.Equal(t, stubStep.DeployConfig.DeploymentRing, mock.DeploymentRing, "DeploymentRing should match stub value")
-	require.Equal(t, stubStep.DeployConfig.Stage, mock.Stage, "Stage should match stub value")
+	require.Equal(t, stubStep.DeployConfig.Project, mock.Project, "Project should match stub value")
 	require.Equal(t, stubStep.DeployConfig.DryRun, mock.DryRun, "DryRun should match stub value")
 	require.Equal(t, stubStep.TrackName, mock.TrackName, "TrackName should match stub value")
 	require.Equal(t, stubStep.DeployConfig.UniqueExternalExecutionID, mock.UniqueExternalExecutionID, "UniqueExternalExecutionID should match stub value")

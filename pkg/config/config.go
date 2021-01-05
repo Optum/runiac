@@ -63,7 +63,7 @@ type Config struct {
 	ReporterDynamodb bool   `envconfig:"TERRASCALE_REPORTER_DYNAMODB"`
 	Authenticator    auth.Authenticator
 	StepParameters   params.StepParameters
-	Stage            string `envconfig:"TERRASCALE_STAGE"`
+	Project          string `envconfig:"TERRASCALE_PROJECT" default:"terrascale"`
 }
 
 type RegionGroupsMap map[string]map[string][]string

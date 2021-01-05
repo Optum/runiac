@@ -151,7 +151,7 @@ func initFunc() {
 		"deploymentRing":                deployment.Config.DeploymentRing,
 		"credsID":                       deployment.Config.CredsID,
 		"csp":                           deployment.Config.CSP,
-		"stage":                         deployment.Config.Stage,
+		"project":                       deployment.Config.Project,
 		"terrascaleTargetAccountID":     deployment.Config.TerrascaleTargetAccountID,
 		"terrascaleRingDeploymentID":    deployment.Config.TerrascaleRingDeploymentID,
 		"terrascaleReleaseDeploymentID": deployment.Config.TerrascaleReleaseDeploymentID,

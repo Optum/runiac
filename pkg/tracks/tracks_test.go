@@ -239,7 +239,7 @@ func TestGetTracksWithStepTarget_ShouldReturnCorrectTracks(t *testing.T) {
 	// act
 	mockTracks := sut.GatherTracks(config.Config{
 		StepWhitelist: stubStepWhitelist,
-		Stage:         "core",
+		Project:         "core",
 	})
 
 	// assert

@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 	stubConfig.TerrascaleRegionGroup = "us"
 	stubConfig.TerrascaleTargetRegions = []string{"us-east-1", "us-east-2", "us-west-2"}
 	stubConfig.CSP = "csp"
-	stubConfig.Stage = "stage"
+	stubConfig.Project = "project"
 	stubConfig.UniqueExternalExecutionID = "fargatetaskid"
 	stubConfig.AccountID = "accountID"
 	cloudaccountdeployment.Cfg.ReporterDynamodb = true
@@ -62,16 +62,16 @@ func TestFlushTracks_ShouldReturnCorrectSuccessesWithMultipleTracks(t *testing.T
 		for i := 0; i < stubStepCount; i++ {
 			stubStep := fmt.Sprintf("%s-%d", stubStepPrefix, i)
 			// primary start
-			cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.UniqueExternalExecutionID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
+			cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.UniqueExternalExecutionID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Project, stubConfig.TerrascaleTargetRegions)
 
 			// primary end
-			cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.UniqueExternalExecutionID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
+			cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.UniqueExternalExecutionID, stubConfig.Project, stubConfig.TerrascaleTargetRegions)
 
 			// regional deploys
 			for _, reg := range stubConfig.TerrascaleTargetRegions {
-				cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.UniqueExternalExecutionID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
+				cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.UniqueExternalExecutionID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Project, stubConfig.TerrascaleTargetRegions)
 
-				cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.UniqueExternalExecutionID, stubConfig.Stage, stubConfig.TerrascaleTargetRegions)
+				cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.UniqueExternalExecutionID, stubConfig.Project, stubConfig.TerrascaleTargetRegions)
 			}
 		}
 	}

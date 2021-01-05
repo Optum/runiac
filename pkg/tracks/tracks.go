@@ -167,7 +167,7 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 					// step folder convention is step{progressionLevel}_{stepName}
 					if strings.HasPrefix(tFolderName, stepPrefix) {
 						stepName := tFolderName[len(stepPrefix)+2:]
-						stepID := fmt.Sprintf("#%s#%s#%s", config.Stage, t.Name, stepName)
+						stepID := fmt.Sprintf("#%s#%s#%s", config.Project, t.Name, stepName)
 
 						// if step is not targeted, skip.
 						if !contains(config.StepWhitelist, stepID) && !config.TargetAll {
