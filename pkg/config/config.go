@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -52,11 +51,6 @@ type Config struct {
 	TerrascalePrimaryRegionOverride             string
 	CoreAccounts                                CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
 	RegionGroups                                RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
-	FeatureToggleDisableCreds                   bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_CREDS"`                      // Disables the "auto pulling" of creds based on accts CREDS_ID.  This would be true if you'd like to use creds passed into container
-	FeatureToggleDisableBackendDefaultBucket    bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_DEFAULT_BUCKET"`  // Disables setting the backend bucket, utilizing what is set in backend tf file.
-	FeatureToggleDisableS3BackendKeyPrefix      bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_KEY_PREFIX"`      // Disables setting a standardized account key prefix
-	FeatureToggleDisableS3BackendKeyNamespacing bool            `envconfig:"TERRASCALE_FEATURE_DISABLE_S3_BACKEND_KEY_NAMESPACING"` // Disables the usage of namespace, region, and region deploy type to automatically create state file
-	FeatureToggleDisableParamStoreVars          bool            `envconfig:"FEATURE_TOGGLE_DISABLE_PARAM_STORE_VARS"`
 	// Set at task definition creation
 	Namespace        string `required:"true" envconfig:"NAMESPACE"` // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
 	Environment      string `required:"true"`                       // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project

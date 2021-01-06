@@ -99,7 +99,6 @@ func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
 		Fs:                                       fs,
 		Logger:                                   logger,
 		DeploymentRing:                           "fake",
-		FeatureToggleDisableBackendDefaultBucket: true,
 	}, ParseTFBackend)
 
 	require.Equal(t, "fake-bucket", mockResult.Config["bucket"])
@@ -121,7 +120,6 @@ func TestGetBackendConfig_ShouldInterpolateResourceGroupNameField(t *testing.T) 
 		Fs:                                       fs,
 		Logger:                                   logger,
 		DeploymentRing:                           "fake",
-		FeatureToggleDisableBackendDefaultBucket: true,
 	}, ParseTFBackend)
 
 	require.Equal(t, "rg-fake", mockResult.Config["resource_group_name"])
@@ -143,7 +141,6 @@ func TestGetBackendConfig_ShouldInterpolateStorageAccountNameField(t *testing.T)
 		Fs:                                       fs,
 		Logger:                                   logger,
 		DeploymentRing:                           "fake",
-		FeatureToggleDisableBackendDefaultBucket: true,
 	}, ParseTFBackend)
 
 	require.Equal(t, "st-fake", mockResult.Config["storage_account_name"])
@@ -167,7 +164,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
 		StepName: "fakestep",
 	}, ParseTFBackend)
 
-	require.Equal(t, "fake-/fakestep-stub.tfstate/primary-", mockResult.Config["key"].(string))
+	require.Equal(t, "/fakestep-stub.tfstate", mockResult.Config["key"].(string))
 }
 
 func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorrectly(t *testing.T) {
@@ -189,7 +186,6 @@ func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorr
 			"logging_bridge_aws": {ID: DefaultStubAccountID, CredsID: DefaultStubAccountID, CSP: DefaultStubAccountID, AccountOwnerLabel: DefaultStubAccountID},
 		},
 		AccountID:                              "fun",
-		FeatureToggleDisableS3BackendKeyPrefix: true,
 	}, ParseTFBackend)
 
 	require.True(t, strings.HasPrefix(mockResult.Config["key"].(string), "noprefix"), "%s should have no prefix appended when using FeatureToggleDisableS3BackendKeyPrefix", mockResult.Config["key"].(string))
@@ -343,205 +339,6 @@ func TestExecuteStep_ShouldExecuteWhenExecuteWhenUndefined(t *testing.T) {
 	require.Equal(t, 1, executed, "Step should have executed")
 }
 
-func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
-	t.Parallel()
-
-	getBackendTests := map[string]struct {
-		stubParsedBackend TerraformBackend
-		environment       string
-		region            string
-		regionType        RegionDeployType
-		expect            string
-		expectNil         bool
-		namespace         string
-	}{
-		"ShouldJoinParsedKeyWithNamespace": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "key",
-				Type: S3Backend,
-			},
-			environment: "prod",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "",
-			expect:      "fake-accountID/key",
-		},
-		"ShouldSanitizeDoubleSlash": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/key",
-				Type: S3Backend,
-			},
-			environment: "prod",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			expect:      "fake-accountID/key",
-		},
-		"ShouldNamespaceStateFileAndNotPath": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/directory/state",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/directory/namespace-state",
-		},
-		"ShouldNotNamespaceStateFileWhenNamespaceIsEmpty": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/directory/state",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "",
-			expect:      "fake-accountID/directory/state",
-		},
-		"ShouldIncludeRegionWhenRegional": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/directory/state",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-2",
-			regionType:  RegionalRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/directory/namespace-state/regional-us-east-2",
-		},
-		"ShouldNotIncludeRegionWhenPrimaryAndUsEast1": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/directory/state",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/directory/namespace-state",
-		},
-		"ShouldNotIncludeRegionWhenPrimaryAndNotUsEast1": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/directory/state",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-2",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/directory/namespace-state/primary-us-east-2",
-		},
-		"ShouldIncludeRegionWhenRegionalAndUsEast1": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/directory/state",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-1",
-			regionType:  RegionalRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/directory/namespace-state/regional-us-east-1",
-		},
-		"ShouldVarSubstituteTerrascaleDeploymentRing": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "/${var.terrascale_deployment_ring}/key",
-				Type: S3Backend,
-			},
-			environment: "prod",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			expect:      "fake-accountID/deploymentring/key",
-		},
-		"ShouldNamespaceWhenPRAndNoDeclaredBackendKeyAndUsEast1": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/namespace-step1_deploy.tfstate",
-		},
-		"ShouldNamespaceWhenPRAndNoDeclaredBackendKeyAndNotUsEast1": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "",
-				Type: S3Backend,
-			},
-			environment: "pr",
-			region:      "centralus",
-			regionType:  PrimaryRegionDeployType,
-			namespace:   "namespace",
-			expect:      "fake-accountID/namespace-step1_deploy/primary-centralus.tfstate",
-		},
-		"ShouldIncludeRegionalWhenNotUsEast1AndNotNamespaceInProd": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "",
-				Type: S3Backend,
-			},
-			environment: "prod",
-			region:      "eastus",
-			regionType:  RegionalRegionDeployType,
-			expect:      "fake-accountID/step1_deploy/regional-eastus.tfstate",
-		},
-		"ShouldCorrectlyParseLocalBack": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "",
-				Type: LocalBackend,
-			},
-			environment: "prod",
-			region:      "eastus",
-			regionType:  RegionalRegionDeployType,
-			expectNil:   true,
-		},
-		"ShouldCorrectlyParseGCSBackend": {
-			stubParsedBackend: TerraformBackend{
-				GCSPrefix: "",
-				Type:      GCSBackend,
-			},
-			environment: "prod",
-			region:      "us-central1",
-			regionType:  PrimaryRegionDeployType,
-			expectNil:   true,
-		},
-	}
-
-	fs := afero.NewMemMapFs()
-
-	for name, tc := range getBackendTests {
-		t.Run(name, func(t *testing.T) {
-			exec := ExecutionConfig{
-				RegionDeployType:           tc.regionType,
-				Region:                     tc.region,
-				Logger:                     logger,
-				Fs:                         fs,
-				DefaultStepOutputVariables: map[string]map[string]string{},
-				CredsID:                    "creds",
-				Environment:                tc.environment,
-				Namespace:                  tc.namespace,
-				AccountID:                  "accountID",
-				TerrascaleTargetAccountID:  "accountID",
-				DeploymentRing:             "deploymentring",
-				RegionGroup:                "us",
-				Dir:                        "/tracks/step1_deploy",
-				StepName:                   "step1_deploy",
-			}
-
-			stubParseTFBackend := func(fs afero.Fs, log *logrus.Entry, file string) TerraformBackend {
-				return tc.stubParsedBackend
-			}
-			received := GetBackendConfig(exec, stubParseTFBackend)
-
-			if tc.expectNil {
-				require.Nil(t, received.Config["key"])
-			} else {
-				require.Equal(t, tc.expect, received.Config["key"])
-			}
-			require.Equal(t, tc.stubParsedBackend.Type, received.Type)
-		})
-	}
-}
-
 func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 	t.Parallel()
 
@@ -595,86 +392,6 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 
 			require.Equal(t, tc.expectBucket, received.Config["bucket"])
 			require.Equal(t, tc.expectPrefix, received.Config["prefix"])
-			require.Equal(t, tc.stubParsedBackend.Type, received.Type)
-		})
-	}
-}
-
-func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(t *testing.T) {
-	t.Parallel()
-
-	getBackendTests := map[string]struct {
-		stubParsedBackend TerraformBackend
-		environment       string
-		region            string
-		regionType        RegionDeployType
-		expect            string
-		expectNil         bool
-		namespace         string
-	}{
-		"ShouldVarSubstituteTerrascaleDeploymentRingAndCoreAccountIds": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "fake-${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
-				Type: S3Backend,
-			},
-			environment: "prod",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			expect:      "fake-projectId/deploymentring.tfstate",
-		},
-		"ShouldSubstituteAllInstancesOfCoreAccountIdsMaps": {
-			stubParsedBackend: TerraformBackend{
-				Key:  "fake-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
-				Type: S3Backend,
-			},
-			environment: "prod",
-			region:      "us-east-1",
-			regionType:  PrimaryRegionDeployType,
-			expect:      "fake-projectId2/projectId/deploymentring.tfstate",
-		},
-	}
-
-	fs := afero.NewMemMapFs()
-
-	for name, tc := range getBackendTests {
-		t.Run(name, func(t *testing.T) {
-			exec := ExecutionConfig{
-				RegionDeployType:                         tc.regionType,
-				Region:                                   tc.region,
-				Logger:                                   logger,
-				Fs:                                       fs,
-				DefaultStepOutputVariables:               map[string]map[string]string{},
-				CredsID:                                  "creds",
-				Environment:                              tc.environment,
-				Namespace:                                tc.namespace,
-				AccountID:                                "accountID",
-				TerrascaleTargetAccountID:                "accountID",
-				DeploymentRing:                           "deploymentring",
-				RegionGroup:                              "us",
-				Dir:                                      "/tracks/step1_deploy",
-				StepName:                                 "step1_deploy",
-				FeatureToggleDisableS3BackendKeyPrefix:   true,
-				FeatureToggleDisableBackendDefaultBucket: true,
-				CoreAccounts: map[string]config.Account{
-					"gcp_core_project": {
-						ID: "projectId",
-					},
-					"logging_bridge_gcp": {
-						ID: "projectId2",
-					},
-				},
-			}
-
-			stubParseTFBackend := func(fs afero.Fs, log *logrus.Entry, file string) TerraformBackend {
-				return tc.stubParsedBackend
-			}
-			received := GetBackendConfig(exec, stubParseTFBackend)
-
-			if tc.expectNil {
-				require.Nil(t, received.Config["key"])
-			} else {
-				require.Equal(t, tc.expect, received.Config["key"])
-			}
 			require.Equal(t, tc.stubParsedBackend.Type, received.Type)
 		})
 	}
@@ -739,7 +456,7 @@ func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrec
 			received := GetBackendConfig(exec, stubParseTFBackend)
 
 			// assert
-			require.Equal(t, fmt.Sprintf("fake-%s/%s", tc.expectedAccountID, stubBackendParserResponse.Key), received.Config["key"])
+			require.Equal(t, stubBackendParserResponse.Key, received.Config["key"])
 			require.Equal(t, stubBackendParserResponse.Type, exec.TFBackend.Type)
 		})
 	}

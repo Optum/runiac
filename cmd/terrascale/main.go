@@ -7,14 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.optum.com/healthcarecloud/terrascale/pkg/auth"
 	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/logging"
-	"github.optum.com/healthcarecloud/terrascale/pkg/params"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
@@ -199,18 +197,6 @@ func initFunc() {
 	cloudaccountdeployment.InvokeLambdaFunc = cloudaccountdeployment.InvokeLambdaSDK
 	cloudaccountdeployment.Auth = deployment.Config.Authenticator
 	cloudaccountdeployment.UpdateStatusLambda = deployment.Config.UpdateStatusLambda
-
-	if !deployment.Config.FeatureToggleDisableParamStoreVars {
-		paramSession, err := deployment.Config.Authenticator.GetPlatformParametersSession(log)
-
-		if err == nil {
-			deployment.Config.StepParameters = &params.AWSParamStore{
-				Ssmapi: ssm.New(paramSession),
-			}
-		} else {
-			log.WithError(err).Error("Failed to initialize Parameter Store plugin")
-		}
-	}
 
 	// prepare basic parameters for executing terraform version
 	// disable checkpoints since we just want to print the version string alone

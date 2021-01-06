@@ -55,9 +55,6 @@ type ExecutionConfig struct {
 	TrackName                                   string
 	DryRun                                      bool
 	TerrascaleConfig                            TerrascaleConfig
-	FeatureToggleDisableBackendDefaultBucket    bool // TODO: tech debt remove consumption model that requires these feature toggles
-	FeatureToggleDisableS3BackendKeyPrefix      bool
-	FeatureToggleDisableS3BackendKeyNamespacing bool
 
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
 	Authenticator              auth.Authenticator
@@ -68,71 +65,7 @@ type ExecutionConfig struct {
 var terraformer terraform.Terraformer = terraform.Terraform{}
 
 func (exec ExecutionConfig) GetCredentialEnvVars() (map[string]string, error) {
-	config, cerr := config.GetConfig()
-
-	if cerr != nil {
-		return nil, cerr
-
-	}
-
 	creds := map[string]string{}
-
-	if !config.FeatureToggleDisableCreds {
-		// Grab initial creds for the deployment
-		c, err := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, exec.CSP, exec.AccountID, exec.CredsID)
-		if err != nil {
-			return nil, err
-		}
-
-		for k, v := range c {
-			creds[k] = v
-		}
-
-		// If a non AWS CSP is selected and using the S3 backend, we need to grab
-		// credentials for an assumed role in order to access the bucket
-		if (exec.TFProvider.Type != AWSProvider || exec.TFProvider.AccountOverridden) && exec.TFBackend.Type == S3Backend && exec.TFBackend.S3RoleArn != "" {
-			awsCredsValue, s3CredsErr := exec.Authenticator.GetAWSMasterCreds(exec.Logger, "aws", exec.CredsID)
-
-			if s3CredsErr != nil {
-				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
-				return nil, s3CredsErr
-			}
-
-			awsCreds, err := awsCredsValue.Get()
-
-			if err != nil {
-				exec.Logger.WithError(err).Error("unable to retrieve credentials to access s3")
-				return nil, err
-			}
-
-			creds["AWS_ACCESS_KEY_ID"] = awsCreds.AccessKeyID
-			creds["AWS_SECRET_ACCESS_KEY"] = awsCreds.SecretAccessKey
-			creds["AWS_SESSION_TOKEN"] = awsCreds.SessionToken
-		} else if exec.TFProvider.Type != AWSProvider && exec.TFBackend.Type == S3Backend {
-			s3Creds, s3CredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, "aws", "304095320850", "poc")
-			if s3CredsErr != nil {
-				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
-				return nil, s3CredsErr
-			}
-			// Add these additional credentials to the creds object above
-			for k, v := range s3Creds {
-				creds[k] = v
-			}
-		}
-
-		// adding the azu creds if passed in front config and not matching already pulled creds
-		if config.CSP == "AZU" && config.CredsID != "" && exec.CSP != config.CSP {
-			azuCreds, azuCredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, config.CSP, exec.TerrascaleTargetAccountID, config.CredsID)
-			if azuCredsErr != nil {
-				exec.Logger.WithError(azuCredsErr).Error("unable to retrieve credentials to access account")
-				return nil, azuCredsErr
-			}
-			// Add these additional credentials to the creds object above
-			for k, v := range azuCreds {
-				creds[k] = v
-			}
-		}
-	}
 	return creds, nil
 }
 
@@ -206,9 +139,6 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		UniqueExternalExecutionID:                s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:                             s.DeployConfig.RegionGroups,
 		TerrascaleConfig:                         s.TerrascaleConfig,
-		FeatureToggleDisableS3BackendKeyPrefix:   s.DeployConfig.FeatureToggleDisableS3BackendKeyPrefix,
-		FeatureToggleDisableBackendDefaultBucket: s.DeployConfig.FeatureToggleDisableBackendDefaultBucket,
-		FeatureToggleDisableS3BackendKeyNamespacing: s.DeployConfig.FeatureToggleDisableS3BackendKeyNamespacing,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
@@ -672,40 +602,8 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	exec.Logger.Debugf("Parsed Backend Type: %s", declaredBackend.Type)
 	exec.Logger.Debugf("Parsed Backend Key: %s", declaredBackend.Key)
 
-	s3Config := map[string]interface{}{
-		"key":     fmt.Sprintf("%s.tfstate", getStateFile(exec.StepName, exec.Namespace, exec.DeploymentRing, exec.Environment, exec.Region, exec.RegionDeployType)),
-		"region":  exec.CommonRegion,
-		"encrypt": "1",
-	}
-
-	if !exec.FeatureToggleDisableBackendDefaultBucket {
-		centralAccountID := "304095320850"
-
-		if (strings.ToLower(exec.CSP) == "aws" && strings.ToLower(exec.CredsID) == "enterprise") || strings.ToLower(exec.CSP) != "aws" {
-			// All non AWS CSPs will use this bucket for their backend
-			centralAccountID = "626017279283"
-		}
-
-		backendBucket := fmt.Sprintf("launchpad-tfstate-%s", centralAccountID)
-
-		s3Config["bucket"] = backendBucket
-	}
-
-	stateAccountIDDirectory := exec.AccountID
-
-	// accountID (account being deployed to) has been overridden by terraform,
-	// leverage the terrascale target account id for state directory if it exists.
-	// Example use case: Looping through customer accounts to apply customer specific resources in a single core account
-	// Statefile needs to be unique per each customer account (the terrascale target account ID),
-	// therefore we store the state in the terrascale target account id
-	if exec.TerrascaleTargetAccountID != "" && exec.AccountID != exec.TerrascaleTargetAccountID {
-		stateAccountIDDirectory = exec.TerrascaleTargetAccountID
-	}
-	baseS3StateDir := fmt.Sprintf("fake-%s", stateAccountIDDirectory)
-	s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
-
 	backendConfig := map[string]map[string]interface{}{
-		"s3":      s3Config,
+		"s3":      {},
 		"azurerm": {},
 		"gcs":     {},
 		"local":   {},
@@ -717,27 +615,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	// if user has decided to overwrite state file convention in backend.tf, support this override
 	if declaredBackend.Key != "" {
 		// grab statefile name (base)
-
-		if !exec.FeatureToggleDisableS3BackendKeyNamespacing {
-			stateFileName := filepath.Base(declaredBackend.Key)
-			namespacedTfState := getStateFile(stateFileName, exec.Namespace, exec.DeploymentRing, exec.Environment, exec.Region, exec.RegionDeployType)
-
-			// if parsed key contains directories, inject appropriately
-			if strings.Contains(declaredBackend.Key, "/") {
-				namespacedTfState = filepath.Join(filepath.Dir(declaredBackend.Key), namespacedTfState)
-			}
-
-			b["key"] = namespacedTfState
-		} else {
-			b["key"] = declaredBackend.Key
-		}
-
-		// prepend account specific directory
-		if !exec.FeatureToggleDisableS3BackendKeyPrefix {
-			b["key"] = filepath.Join(baseS3StateDir, b["key"].(string))
-		}
-
-		b["key"] = interpolateString(exec, b["key"].(string))
+		b["key"] = interpolateString(exec, declaredBackend.Key)
 	}
 
 	if declaredBackend.S3RoleArn != "" {
