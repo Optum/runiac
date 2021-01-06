@@ -701,7 +701,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	if exec.TerrascaleTargetAccountID != "" && exec.AccountID != exec.TerrascaleTargetAccountID {
 		stateAccountIDDirectory = exec.TerrascaleTargetAccountID
 	}
-	baseS3StateDir := fmt.Sprintf("bootstrap-launchpad-%s", stateAccountIDDirectory)
+	baseS3StateDir := fmt.Sprintf("fake-%s", stateAccountIDDirectory)
 	s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
 
 	backendConfig := map[string]map[string]interface{}{
@@ -825,7 +825,6 @@ func interpolateString(exec ExecutionConfig, s string) string {
 
 	// Replace all ${var.core_account_ids_map instances.
 	// There could be multiple ${var.core_account_ids_map references in the string,
-	// e.g. "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate"
 	if strings.Contains(s, "${var.core_account_ids_map") {
 		regexForAllCoreAccountIdsMap := regexp.MustCompile(`(?m)\${var\.core_account_ids_map\..*?}`)
 		matches := regexForAllCoreAccountIdsMap.FindAllString(s, -1)

@@ -446,7 +446,7 @@ Example Usage:
 terraform {
   backend "s3" {
     key      = "${var.terrascale_target_account_id}/${local.namespace-}${var.terrascale_step}/${var.terrascale_region_deploy_type}-${var.region}.tfstate"
-    bucket   = "launchpad-tfstate-${var.core_account_ids_map.terrascale_deploy}"
+    bucket   = "product-tfstate-${var.core_account_ids_map.terrascale_deploy}"
     role_arn = "arn:aws:iam::${var.core_account_ids_map.terrascale_deploy}:role/StateRole"
     acl      = "bucket-owner-full-control"
     region   = "us-east-1"

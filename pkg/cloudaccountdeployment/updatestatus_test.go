@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 	stubConfig.TerrascaleTargetRegions = []string{"us-east-1", "us-east-2", "us-west-2"}
 	stubConfig.CSP = "csp"
 	stubConfig.Project = "project"
-	stubConfig.UniqueExternalExecutionID = "fargatetaskid"
+	stubConfig.UniqueExternalExecutionID = "taskID"
 	stubConfig.AccountID = "accountID"
 	cloudaccountdeployment.Cfg.ReporterDynamodb = true
 

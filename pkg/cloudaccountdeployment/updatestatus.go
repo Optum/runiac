@@ -79,7 +79,7 @@ type ExecutionResult struct {
 var StepDeployments = map[string]ExecutionResult{}
 var Cfg, _ = config.GetConfig()
 
-func RecordStepStart(logger *logrus.Entry, accountID string, track string, step string, regionDeployType string, region string, dryRun bool, csp string, version string, fargateTaskID string, stepFunctionName string, codePipelineExecutionID string, stage string, terrascaleTargetRegions []string) {
+func RecordStepStart(logger *logrus.Entry, accountID string, track string, step string, regionDeployType string, region string, dryRun bool, csp string, version string, executionID string, stepFunctionName string, codePipelineExecutionID string, stage string, terrascaleTargetRegions []string) {
 	deployPhase := PreDeploy
 	result := InProgress
 	resultMessage := ""
@@ -97,15 +97,15 @@ func RecordStepStart(logger *logrus.Entry, accountID string, track string, step 
 	logger.Debug("Updating deployment status...")
 
 	p := UpdateStatusPayload{
-		Product:             "Launchpad",
+		Product:             stage,
 		AccountID:           accountID,
 		CSP:                 csp,
 		DeploymentPhase:     deployPhase.String(),
 		Version:             version,
 		Result:              result.String(),
 		ResultMessage:       resultMessage,
-		Tool:                "StepFnFargate",
-		AccountDeploymentID: fargateTaskID,
+		Tool:                "StepFn",
+		AccountDeploymentID: executionID,
 		RingDeploymentID:    stepFunctionName,
 		ReleaseDeploymentID: codePipelineExecutionID,
 		Stage:               stage,
@@ -120,7 +120,7 @@ func RecordStepStart(logger *logrus.Entry, accountID string, track string, step 
 	}
 }
 
-func RecordStepSuccess(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, fargateTaskID string, stage string, terrascaleTargetRegions []string) {
+func RecordStepSuccess(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, executionID string, stage string, terrascaleTargetRegions []string) {
 	result := Success
 	//resultMessage := "Success"
 
@@ -128,13 +128,13 @@ func RecordStepSuccess(logger *logrus.Entry, csp string, track string, step stri
 		Result:                  result,
 		Region:                  region,
 		RegionDeployType:        regionDeployType,
-		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", fargateTaskID, stage, track, step),
+		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", executionID, stage, track, step),
 		CSP:                     csp,
 		TargetRegions:           terrascaleTargetRegions,
 	}
 }
 
-func RecordStepFail(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, fargateTaskID string, stage string, terrascaleTargetRegions []string, err error) {
+func RecordStepFail(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, executionID string, stage string, terrascaleTargetRegions []string, err error) {
 	result := Fail
 	//resultMessage := ""
 
@@ -142,20 +142,20 @@ func RecordStepFail(logger *logrus.Entry, csp string, track string, step string,
 		Result:                  result,
 		Region:                  region,
 		RegionDeployType:        regionDeployType,
-		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", fargateTaskID, stage, track, step),
+		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", executionID, stage, track, step),
 		CSP:                     csp,
 		TargetRegions:           terrascaleTargetRegions,
 	}
 }
 
-func RecordStepTestFail(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, fargateTaskID string, stage string, terrascaleTargetRegions []string, err error) {
+func RecordStepTestFail(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, executionID string, stage string, terrascaleTargetRegions []string, err error) {
 	result := Unstable
 
 	StepDeployments[fmt.Sprintf("#%s#%s#%s#%s", track, step, regionDeployType, region)] = ExecutionResult{
 		Result:                  result,
 		Region:                  region,
 		RegionDeployType:        regionDeployType,
-		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", fargateTaskID, stage, track, step),
+		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", executionID, stage, track, step),
 		CSP:                     csp,
 		TargetRegions:           terrascaleTargetRegions,
 	}

@@ -33,7 +33,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 			Project:                   "stubProject",
 			DryRun:                    true,
 			TerrascaleTargetRegions:   []string{"stub"},
-			UniqueExternalExecutionID: "stubFargateTaskID",
+			UniqueExternalExecutionID: "stubExecutionID",
 			MaxRetries:                3,
 			MaxTestRetries:            2,
 		},
@@ -66,7 +66,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/aws/core/logging/${var.terrascale_deployment_ring}-consumeraas_aws.tfstate"
+		key         = "/${var.terrascale_deployment_ring}-stub.tfstate"
 		role_arn    = "arn:aws:iam::${var.core_account_ids_map.logging_bridge_aws}:role/OrganizationAccountAccessRole"
 	  }
 	}
@@ -156,7 +156,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/aws/core/logging/${var.terrascale_step}-consumeraas_aws.tfstate"
+		key         = "/${var.terrascale_step}-stub.tfstate"
 	  }
 	}
 	`), 0644)
@@ -167,7 +167,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
 		StepName: "fakestep",
 	}, ParseTFBackend)
 
-	require.Equal(t, "bootstrap-launchpad-/aws/core/logging/fakestep-consumeraas_aws.tfstate/primary-", mockResult.Config["key"].(string))
+	require.Equal(t, "fake-/fakestep-stub.tfstate/primary-", mockResult.Config["key"].(string))
 }
 
 func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorrectly(t *testing.T) {
@@ -364,7 +364,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "",
-			expect:      "bootstrap-launchpad-accountID/key",
+			expect:      "fake-accountID/key",
 		},
 		"ShouldSanitizeDoubleSlash": {
 			stubParsedBackend: TerraformBackend{
@@ -374,7 +374,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			environment: "prod",
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
-			expect:      "bootstrap-launchpad-accountID/key",
+			expect:      "fake-accountID/key",
 		},
 		"ShouldNamespaceStateFileAndNotPath": {
 			stubParsedBackend: TerraformBackend{
@@ -385,7 +385,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/directory/namespace-state",
+			expect:      "fake-accountID/directory/namespace-state",
 		},
 		"ShouldNotNamespaceStateFileWhenNamespaceIsEmpty": {
 			stubParsedBackend: TerraformBackend{
@@ -396,7 +396,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "",
-			expect:      "bootstrap-launchpad-accountID/directory/state",
+			expect:      "fake-accountID/directory/state",
 		},
 		"ShouldIncludeRegionWhenRegional": {
 			stubParsedBackend: TerraformBackend{
@@ -407,7 +407,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-2",
 			regionType:  RegionalRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/directory/namespace-state/regional-us-east-2",
+			expect:      "fake-accountID/directory/namespace-state/regional-us-east-2",
 		},
 		"ShouldNotIncludeRegionWhenPrimaryAndUsEast1": {
 			stubParsedBackend: TerraformBackend{
@@ -418,7 +418,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/directory/namespace-state",
+			expect:      "fake-accountID/directory/namespace-state",
 		},
 		"ShouldNotIncludeRegionWhenPrimaryAndNotUsEast1": {
 			stubParsedBackend: TerraformBackend{
@@ -429,7 +429,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-2",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/directory/namespace-state/primary-us-east-2",
+			expect:      "fake-accountID/directory/namespace-state/primary-us-east-2",
 		},
 		"ShouldIncludeRegionWhenRegionalAndUsEast1": {
 			stubParsedBackend: TerraformBackend{
@@ -440,7 +440,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-1",
 			regionType:  RegionalRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/directory/namespace-state/regional-us-east-1",
+			expect:      "fake-accountID/directory/namespace-state/regional-us-east-1",
 		},
 		"ShouldVarSubstituteTerrascaleDeploymentRing": {
 			stubParsedBackend: TerraformBackend{
@@ -450,7 +450,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			environment: "prod",
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
-			expect:      "bootstrap-launchpad-accountID/deploymentring/key",
+			expect:      "fake-accountID/deploymentring/key",
 		},
 		"ShouldNamespaceWhenPRAndNoDeclaredBackendKeyAndUsEast1": {
 			stubParsedBackend: TerraformBackend{
@@ -461,7 +461,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/namespace-step1_deploy.tfstate",
+			expect:      "fake-accountID/namespace-step1_deploy.tfstate",
 		},
 		"ShouldNamespaceWhenPRAndNoDeclaredBackendKeyAndNotUsEast1": {
 			stubParsedBackend: TerraformBackend{
@@ -472,7 +472,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			region:      "centralus",
 			regionType:  PrimaryRegionDeployType,
 			namespace:   "namespace",
-			expect:      "bootstrap-launchpad-accountID/namespace-step1_deploy/primary-centralus.tfstate",
+			expect:      "fake-accountID/namespace-step1_deploy/primary-centralus.tfstate",
 		},
 		"ShouldIncludeRegionalWhenNotUsEast1AndNotNamespaceInProd": {
 			stubParsedBackend: TerraformBackend{
@@ -482,7 +482,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackend2(t *testing.T) {
 			environment: "prod",
 			region:      "eastus",
 			regionType:  RegionalRegionDeployType,
-			expect:      "bootstrap-launchpad-accountID/step1_deploy/regional-eastus.tfstate",
+			expect:      "fake-accountID/step1_deploy/regional-eastus.tfstate",
 		},
 		"ShouldCorrectlyParseLocalBack": {
 			stubParsedBackend: TerraformBackend{
@@ -614,23 +614,23 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParsedBackendWithFeatureDisables(
 	}{
 		"ShouldVarSubstituteTerrascaleDeploymentRingAndCoreAccountIds": {
 			stubParsedBackend: TerraformBackend{
-				Key:  "bootstrap-launchpad-${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
+				Key:  "fake-${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
 				Type: S3Backend,
 			},
 			environment: "prod",
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
-			expect:      "bootstrap-launchpad-projectId/deploymentring.tfstate",
+			expect:      "fake-projectId/deploymentring.tfstate",
 		},
 		"ShouldSubstituteAllInstancesOfCoreAccountIdsMaps": {
 			stubParsedBackend: TerraformBackend{
-				Key:  "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
+				Key:  "fake-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.terrascale_deployment_ring}.tfstate",
 				Type: S3Backend,
 			},
 			environment: "prod",
 			region:      "us-east-1",
 			regionType:  PrimaryRegionDeployType,
-			expect:      "bootstrap-launchpad-projectId2/projectId/deploymentring.tfstate",
+			expect:      "fake-projectId2/projectId/deploymentring.tfstate",
 		},
 	}
 
@@ -739,7 +739,7 @@ func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrec
 			received := GetBackendConfig(exec, stubParseTFBackend)
 
 			// assert
-			require.Equal(t, fmt.Sprintf("bootstrap-launchpad-%s/%s", tc.expectedAccountID, stubBackendParserResponse.Key), received.Config["key"])
+			require.Equal(t, fmt.Sprintf("fake-%s/%s", tc.expectedAccountID, stubBackendParserResponse.Key), received.Config["key"])
 			require.Equal(t, stubBackendParserResponse.Type, exec.TFBackend.Type)
 		})
 	}
