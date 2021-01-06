@@ -44,7 +44,7 @@ type Config struct {
 	StepWhitelist                               []string `envconfig:"TERRASCALE_STEP_WHITELIST"` // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
 	TargetAll                                   bool     `envconfig:"TERRASCALE_TARGET_ALL"`     // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
 	CommonRegion                                string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
-	AccountOwnerMSID                            string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
+	AccountOwnerLabel                           string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
 	Version                                     string   `envconfig:"VERSION"`       // Version override
 	MaxRetries                                  int      `envconfig:"GAIA_MAX_RETRIES" default:"3"`
 	MaxTestRetries                              int      `envconfig:"GAIA_MAX_TEST_RETRIES" default:"2"`
@@ -100,7 +100,7 @@ type Account struct {
 	ID               string
 	CredsID          string
 	CSP              string
-	AccountOwnerMSID string
+	AccountOwnerLabel string
 }
 
 // GetPrimaryRegionByCSP retrieves the primary region by CSP

@@ -76,7 +76,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 		Fs:     fs,
 		Logger: logger,
 		CoreAccounts: map[string]config.Account{
-			"logging_bridge_aws": {ID: DefaultStubAccountID, CredsID: DefaultStubAccountID, CSP: DefaultStubAccountID, AccountOwnerMSID: DefaultStubAccountID},
+			"logging_bridge_aws": {ID: DefaultStubAccountID, CredsID: DefaultStubAccountID, CSP: DefaultStubAccountID, AccountOwnerLabel: DefaultStubAccountID},
 		}}, ParseTFBackend)
 
 	require.Equal(t, S3Backend, mockResult.Type)
@@ -186,7 +186,7 @@ func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorr
 		Fs:     fs,
 		Logger: logger,
 		CoreAccounts: map[string]config.Account{
-			"logging_bridge_aws": {ID: DefaultStubAccountID, CredsID: DefaultStubAccountID, CSP: DefaultStubAccountID, AccountOwnerMSID: DefaultStubAccountID},
+			"logging_bridge_aws": {ID: DefaultStubAccountID, CredsID: DefaultStubAccountID, CSP: DefaultStubAccountID, AccountOwnerLabel: DefaultStubAccountID},
 		},
 		AccountID:                              "fun",
 		FeatureToggleDisableS3BackendKeyPrefix: true,

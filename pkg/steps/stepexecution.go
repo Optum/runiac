@@ -187,7 +187,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		AppVersion:                               s.DeployConfig.Version,
 		CredsID:                                  s.DeployConfig.CredsID,
 		AccountID:                                s.DeployConfig.AccountID,
-		AccountOwnerID:                           s.DeployConfig.AccountOwnerMSID,
+		AccountOwnerID:                           s.DeployConfig.AccountOwnerLabel,
 		CoreAccounts:                             s.DeployConfig.CoreAccounts,
 		StepName:                                 s.Name,
 		StepID:                                   s.ID,
@@ -250,7 +250,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 			ID:               exec.TerrascaleTargetAccountID,
 			CredsID:          exec.CredsID,
 			CSP:              exec.CSP,
-			AccountOwnerMSID: exec.AccountOwnerID,
+			AccountOwnerLabel: exec.AccountOwnerID,
 		},
 	}
 	for k, v := range exec.CoreAccounts {
@@ -292,7 +292,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 		exec.AccountID = provider.AssumeRoleAccount.ID
 		exec.CredsID = provider.AssumeRoleAccount.CredsID
 		exec.CSP = provider.AssumeRoleAccount.CSP
-		exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerMSID
+		exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerLabel
 
 		// if no account was originally targeted in this run, use this specific step's "AccountOveridden" account id
 		if exec.TerrascaleTargetAccountID == "" {
@@ -305,7 +305,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	exec.Logger = exec.Logger.WithFields(logrus.Fields{
 		"credsID":          exec.CredsID,
 		"accountID":        exec.AccountID,
-		"accountOwnerMSID": exec.AccountOwnerID,
+		"AccountOwnerLabel": exec.AccountOwnerID,
 	})
 
 	var params = map[string]string{}
