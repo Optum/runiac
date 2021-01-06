@@ -158,16 +158,7 @@ func GetConfig() (config Config, err error) {
 	if len(config.TerrascaleTargetRegions) == 0 {
 		config.TerrascaleTargetRegions = []string{config.GetPrimaryRegionByCSP(config.CSP)}
 	}
-
-	// backwards compatibility
-	if os.Getenv("TERRASCALE_SELF_DESTROY") == "" && os.Getenv("BR_AUTO_DESTROY") == "true" {
-		config.SelfDestroy = true
-	}
-
-	if config.TerrascaleRingDeploymentID == "" {
-		config.TerrascaleRingDeploymentID = os.Getenv("STEP_FUNCTION_NAME")
-	}
-
+	
 	err = validate.Struct(config)
 
 	return
