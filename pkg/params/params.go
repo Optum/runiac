@@ -67,8 +67,6 @@ func (p AWSParamStore) GetParamsForStep(logger *logrus.Entry, csp string, stage 
 		}
 	}
 
-	// hierarchy = /bedrock/delivery/{csp}/{stage}/{track}/{step}/{ring}/param-{parameter}
-
 	depthCache := make(map[string]int)
 	depthMatch := strings.ToLower(csp + stage + track + step + ring)
 

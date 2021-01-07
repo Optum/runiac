@@ -28,9 +28,9 @@ type ExecutionConfig struct {
 	Region                                      string `json:"region"`
 	Logger                                      *logrus.Entry
 	Fs                                          afero.Fs
-	FargateTaskID                               string
+	UniqueExternalExecutionID                   string
 	RegionGroupRegions                          []string
-	GaiaTargetAccountID                         string
+	TerrascaleTargetAccountID                   string
 	RegionGroup                                 string
 	PrimaryRegion                               string
 	Dir                                         string
@@ -42,6 +42,8 @@ type ExecutionConfig struct {
 	CredsID                                     string `json:"creds_id"`
 	AccountID                                   string `json:"account_id"`
 	AccountOwnerID                              string `json:"account_owner_msid"`
+	MaxRetries                                  int
+	MaxTestRetries                              int
 	CoreAccounts                                map[string]config.Account
 	RegionGroups                                config.RegionGroupsMap
 	Namespace                                   string
@@ -49,13 +51,10 @@ type ExecutionConfig struct {
 	StepName                                    string
 	StepID                                      string
 	DeploymentRing                              string
-	Stage                                       string
+	Project                                     string
 	TrackName                                   string
 	DryRun                                      bool
-	GaiaConfig                                  GaiaConfig
-	FeatureToggleDisableBackendDefaultBucket    bool // TODO: tech debt remove consumption model that requires these feature toggles
-	FeatureToggleDisableS3BackendKeyPrefix      bool
-	FeatureToggleDisableS3BackendKeyNamespacing bool
+	TerrascaleConfig                            TerrascaleConfig
 
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
 	Authenticator              auth.Authenticator
@@ -66,71 +65,7 @@ type ExecutionConfig struct {
 var terraformer terraform.Terraformer = terraform.Terraform{}
 
 func (exec ExecutionConfig) GetCredentialEnvVars() (map[string]string, error) {
-	config, cerr := config.GetConfig()
-
-	if cerr != nil {
-		return nil, cerr
-
-	}
-
 	creds := map[string]string{}
-
-	if !config.FeatureToggleDisableCreds {
-		// Grab initial creds for the deployment
-		c, err := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, exec.CSP, exec.AccountID, exec.CredsID)
-		if err != nil {
-			return nil, err
-		}
-
-		for k, v := range c {
-			creds[k] = v
-		}
-
-		// If a non AWS CSP is selected and using the S3 backend, we need to grab
-		// credentials for an assumed role in order to access the bucket
-		if (exec.TFProvider.Type != AWSProvider || exec.TFProvider.AccountOverridden) && exec.TFBackend.Type == S3Backend && exec.TFBackend.S3RoleArn != "" {
-			awsCredsValue, s3CredsErr := exec.Authenticator.GetAWSMasterCreds(exec.Logger, "aws", exec.CredsID)
-
-			if s3CredsErr != nil {
-				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
-				return nil, s3CredsErr
-			}
-
-			awsCreds, err := awsCredsValue.Get()
-
-			if err != nil {
-				exec.Logger.WithError(err).Error("unable to retrieve credentials to access s3")
-				return nil, err
-			}
-
-			creds["AWS_ACCESS_KEY_ID"] = awsCreds.AccessKeyID
-			creds["AWS_SECRET_ACCESS_KEY"] = awsCreds.SecretAccessKey
-			creds["AWS_SESSION_TOKEN"] = awsCreds.SessionToken
-		} else if exec.TFProvider.Type != AWSProvider && exec.TFBackend.Type == S3Backend {
-			s3Creds, s3CredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, "aws", "304095320850", "poc")
-			if s3CredsErr != nil {
-				exec.Logger.WithError(s3CredsErr).Error("unable to retrieve credentials to access s3")
-				return nil, s3CredsErr
-			}
-			// Add these additional credentials to the creds object above
-			for k, v := range s3Creds {
-				creds[k] = v
-			}
-		}
-
-		// adding the azu creds if passed in front config and not matching already pulled creds
-		if config.CSP == "AZU" && config.CredsID != "" && exec.CSP != config.CSP {
-			azuCreds, azuCredsErr := exec.Authenticator.GetCredentialEnvVarsForAccount(exec.Logger, config.CSP, exec.GaiaTargetAccountID, config.CredsID)
-			if azuCredsErr != nil {
-				exec.Logger.WithError(azuCredsErr).Error("unable to retrieve credentials to access account")
-				return nil, azuCredsErr
-			}
-			// Add these additional credentials to the creds object above
-			for k, v := range azuCreds {
-				creds[k] = v
-			}
-		}
-	}
 	return creds, nil
 }
 
@@ -178,14 +113,14 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		RegionDeployType:                         regionDeployType,
 		Region:                                   region,
 		Fs:                                       fs,
-		GaiaTargetAccountID:                      s.DeployConfig.GaiaTargetAccountID,
-		RegionGroup:                              s.DeployConfig.GaiaRegionGroup,
+		TerrascaleTargetAccountID:                s.DeployConfig.TerrascaleTargetAccountID,
+		RegionGroup:                              s.DeployConfig.TerrascaleRegionGroup,
 		DefaultStepOutputVariables:               defaultStepOutputVariables,
 		Environment:                              s.DeployConfig.Environment,
 		AppVersion:                               s.DeployConfig.Version,
 		CredsID:                                  s.DeployConfig.CredsID,
 		AccountID:                                s.DeployConfig.AccountID,
-		AccountOwnerID:                           s.DeployConfig.AccountOwnerMSID,
+		AccountOwnerID:                           s.DeployConfig.AccountOwnerLabel,
 		CoreAccounts:                             s.DeployConfig.CoreAccounts,
 		StepName:                                 s.Name,
 		StepID:                                   s.ID,
@@ -196,15 +131,14 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		CSP:                                      s.DeployConfig.CSP,
 		DeploymentRing:                           s.DeployConfig.DeploymentRing,
 		DryRun:                                   s.DeployConfig.DryRun,
-		Stage:                                    s.DeployConfig.Stage,
+		MaxRetries:                               s.DeployConfig.MaxRetries,
+		MaxTestRetries:                           s.DeployConfig.MaxTestRetries,
+		Project:                                  s.DeployConfig.Project,
 		TrackName:                                s.TrackName,
-		RegionGroupRegions:                       s.DeployConfig.GaiaTargetRegions,
-		FargateTaskID:                            s.DeployConfig.FargateTaskID,
+		RegionGroupRegions:                       s.DeployConfig.TerrascaleTargetRegions,
+		UniqueExternalExecutionID:                s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:                             s.DeployConfig.RegionGroups,
-		GaiaConfig:                               s.GaiaConfig,
-		FeatureToggleDisableS3BackendKeyPrefix:   s.DeployConfig.FeatureToggleDisableS3BackendKeyPrefix,
-		FeatureToggleDisableBackendDefaultBucket: s.DeployConfig.FeatureToggleDisableBackendDefaultBucket,
-		FeatureToggleDisableS3BackendKeyNamespacing: s.DeployConfig.FeatureToggleDisableS3BackendKeyNamespacing,
+		TerrascaleConfig:                         s.TerrascaleConfig,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
@@ -242,11 +176,11 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	}
 
 	accounts := map[string]config.Account{
-		"gaia_target_account_id": {
-			ID:               exec.GaiaTargetAccountID,
+		"terrascale_target_account_id": {
+			ID:               exec.TerrascaleTargetAccountID,
 			CredsID:          exec.CredsID,
 			CSP:              exec.CSP,
-			AccountOwnerMSID: exec.AccountOwnerID,
+			AccountOwnerLabel: exec.AccountOwnerID,
 		},
 	}
 	for k, v := range exec.CoreAccounts {
@@ -288,11 +222,11 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 		exec.AccountID = provider.AssumeRoleAccount.ID
 		exec.CredsID = provider.AssumeRoleAccount.CredsID
 		exec.CSP = provider.AssumeRoleAccount.CSP
-		exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerMSID
+		exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerLabel
 
 		// if no account was originally targeted in this run, use this specific step's "AccountOveridden" account id
-		if exec.GaiaTargetAccountID == "" {
-			exec.GaiaTargetAccountID = exec.AccountID
+		if exec.TerrascaleTargetAccountID == "" {
+			exec.TerrascaleTargetAccountID = exec.AccountID
 		}
 
 		exec.Logger.Infof("Overriding account to %v/%v based on provider.tf", exec.AccountID, exec.CredsID)
@@ -301,7 +235,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	exec.Logger = exec.Logger.WithFields(logrus.Fields{
 		"credsID":          exec.CredsID,
 		"accountID":        exec.AccountID,
-		"accountOwnerMSID": exec.AccountOwnerID,
+		"AccountOwnerLabel": exec.AccountOwnerID,
 	})
 
 	var params = map[string]string{}
@@ -309,21 +243,21 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	// translate custom type to map type for terraformer to parse correctly
 	var rgs map[string]map[string][]string = s.DeployConfig.RegionGroups
 
-	// Add Gaia variables to step params
-	params["gaia_target_account_id"] = exec.GaiaTargetAccountID
-	params["gaia_deployment_ring"] = exec.DeploymentRing
-	params["gaia_stage"] = strings.ToLower(exec.Stage)
-	params["gaia_track"] = strings.ToLower(exec.TrackName)
-	params["gaia_step"] = strings.ToLower(exec.StepName)
-	params["gaia_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
-	params["gaia_region_group"] = strings.ToLower(exec.RegionGroup)
-	params["gaia_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.GaiaTargetRegions), " ", ",", -1)
-	params["gaia_primary_region"] = exec.PrimaryRegion
-	params["gaia_region_groups"] = terraformer.OutputToString(rgs)
+	// Add Terrascale variables to step params
+	params["terrascale_target_account_id"] = exec.TerrascaleTargetAccountID
+	params["terrascale_deployment_ring"] = exec.DeploymentRing
+	params["terrascale_project"] = strings.ToLower(exec.Project)
+	params["terrascale_track"] = strings.ToLower(exec.TrackName)
+	params["terrascale_step"] = strings.ToLower(exec.StepName)
+	params["terrascale_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
+	params["terrascale_region_group"] = strings.ToLower(exec.RegionGroup)
+	params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.TerrascaleTargetRegions), " ", ",", -1)
+	params["terrascale_primary_region"] = exec.PrimaryRegion
+	params["terrascale_region_groups"] = terraformer.OutputToString(rgs)
 
 	// TODO: pre-step param store plugin for integrating "just-in-time" variables from param store
 	if s.DeployConfig.StepParameters != nil {
-		paramStoreParams := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.DeploymentRing)
+		paramStoreParams := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Project, exec.TrackName, exec.StepName, exec.DeploymentRing)
 
 		// Add to params
 		for k, v := range paramStoreParams {
@@ -343,7 +277,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 			params[k] = terraform.OutputToString(v)
 		}
 	} else {
-		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.FargateTaskID, s.DeployConfig.GaiaRingDeploymentID, s.DeployConfig.GaiaReleaseDeploymentID, exec.Stage, s.DeployConfig.GaiaTargetRegions)
+		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Project, s.DeployConfig.TerrascaleTargetRegions)
 	}
 
 	exec.OptionalStepParams = stepParams
@@ -460,9 +394,9 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 		}
 	}
 
-	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), 2, 20*time.Second, exec.Logger, func(retryCount int) error {
+	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), exec.MaxTestRetries, 20*time.Second, exec.Logger, func(retryCount int) error {
 		retryLogger := exec.Logger.WithField("retryCount", retryCount)
-		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s-%s", exec.CSP, exec.Stage, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
+		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s-%s", exec.CSP, exec.Project, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
 		cmd := shell.Command{
 			Command: "gotestsum",
 			//Command:        "/bin/bash",
@@ -486,19 +420,19 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 
 func postStep(exec ExecutionConfig, output StepOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	} else if output.Status == Fail {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
 	} else if output.Status == Unstable {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
 	} else {
-		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions)
+		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions)
 	}
 }
 
 func postStepTest(exec ExecutionConfig, output StepTestOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.FargateTaskID, exec.Stage, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	}
 }
 
@@ -512,7 +446,7 @@ var executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output Ste
 	var tfOptions *terraform.Options
 
 	// Check if the step is filtered in the configuration
-	inRegions := exec.GaiaConfig.ExecuteWhen.RegionIn
+	inRegions := exec.TerrascaleConfig.ExecuteWhen.RegionIn
 	if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
 		exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
 		return StepOutput{
@@ -544,7 +478,7 @@ var executeTerraformInDir = func(exec ExecutionConfig, destroy bool) (output Ste
 	}
 
 	// terraform plan
-	_ = retry.DoWithRetry("terraform plan and apply", 3, 10*time.Second, tfOptions.Logger, func(attempt int) error {
+	_ = retry.DoWithRetry("terraform plan and apply", tfOptions.MaxRetries, 10*time.Second, tfOptions.Logger, func(attempt int) error {
 
 		retryLogger := tfOptions.Logger.WithField("retryCount", attempt)
 
@@ -668,41 +602,11 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	exec.Logger.Debugf("Parsed Backend Type: %s", declaredBackend.Type)
 	exec.Logger.Debugf("Parsed Backend Key: %s", declaredBackend.Key)
 
-	s3Config := map[string]interface{}{
-		"key":     fmt.Sprintf("%s.tfstate", getStateFile(exec.StepName, exec.Namespace, exec.DeploymentRing, exec.Environment, exec.Region, exec.RegionDeployType)),
-		"region":  exec.CommonRegion,
-		"encrypt": "1",
-	}
-
-	if !exec.FeatureToggleDisableBackendDefaultBucket {
-		centralAccountID := "304095320850"
-
-		if (strings.ToLower(exec.CSP) == "aws" && strings.ToLower(exec.CredsID) == "enterprise") || strings.ToLower(exec.CSP) != "aws" {
-			// All non AWS CSPs will use this bucket for their backend
-			centralAccountID = "626017279283"
-		}
-
-		backendBucket := fmt.Sprintf("launchpad-tfstate-%s", centralAccountID)
-
-		s3Config["bucket"] = backendBucket
-	}
-
-	stateAccountIDDirectory := exec.AccountID
-
-	// accountID (account being deployed to) has been overridden by terraform,
-	// leverage the gaia target account id for state directory if it exists.
-	// Example use case: Looping through customer accounts to apply customer specific resources in a single core account
-	// Statefile needs to be unique per each customer account (the gaia target account ID),
-	// therefore we store the state in the gaia target account id
-	if exec.GaiaTargetAccountID != "" && exec.AccountID != exec.GaiaTargetAccountID {
-		stateAccountIDDirectory = exec.GaiaTargetAccountID
-	}
-	baseS3StateDir := fmt.Sprintf("bootstrap-launchpad-%s", stateAccountIDDirectory)
-	s3Config["key"] = fmt.Sprintf("%s/%s", baseS3StateDir, s3Config["key"].(string))
-
 	backendConfig := map[string]map[string]interface{}{
-		"s3":    s3Config,
-		"local": {},
+		"s3":      {},
+		"azurerm": {},
+		"gcs":     {},
+		"local":   {},
 	}
 
 	// if user has decided to set a specific backend type, use that and set default values
@@ -711,27 +615,7 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	// if user has decided to overwrite state file convention in backend.tf, support this override
 	if declaredBackend.Key != "" {
 		// grab statefile name (base)
-
-		if !exec.FeatureToggleDisableS3BackendKeyNamespacing {
-			stateFileName := filepath.Base(declaredBackend.Key)
-			namespacedTfState := getStateFile(stateFileName, exec.Namespace, exec.DeploymentRing, exec.Environment, exec.Region, exec.RegionDeployType)
-
-			// if parsed key contains directories, inject appropriately
-			if strings.Contains(declaredBackend.Key, "/") {
-				namespacedTfState = filepath.Join(filepath.Dir(declaredBackend.Key), namespacedTfState)
-			}
-
-			b["key"] = namespacedTfState
-		} else {
-			b["key"] = declaredBackend.Key
-		}
-
-		// prepend account specific directory
-		if !exec.FeatureToggleDisableS3BackendKeyPrefix {
-			b["key"] = filepath.Join(baseS3StateDir, b["key"].(string))
-		}
-
-		b["key"] = interpolateString(exec, b["key"].(string))
+		b["key"] = interpolateString(exec, declaredBackend.Key)
 	}
 
 	if declaredBackend.S3RoleArn != "" {
@@ -743,7 +627,27 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 	if declaredBackend.S3Bucket != "" {
 		b["bucket"] = interpolateString(exec, declaredBackend.S3Bucket)
 
-		exec.Logger.Debugf("Declared bucket: %s", b["bucket"])
+		exec.Logger.Debugf("Declared S3 bucket: %s", b["bucket"])
+	}
+
+	if declaredBackend.GCSBucket != "" {
+		b["bucket"] = interpolateString(exec, declaredBackend.GCSBucket)
+
+		exec.Logger.Debugf("Declared GCS bucket: %s", b["bucket"])
+	}
+
+	if declaredBackend.GCSPrefix != "" {
+		b["prefix"] = interpolateString(exec, declaredBackend.GCSPrefix)
+
+		exec.Logger.Debugf("Declared GCS prefix: %s", b["prefix"])
+	}
+
+	if declaredBackend.AZUResourceGroupName != "" {
+		b["resource_group_name"] = interpolateString(exec, declaredBackend.AZUResourceGroupName)
+	}
+
+	if declaredBackend.AZUStorageAccountName != "" {
+		b["storage_account_name"] = interpolateString(exec, declaredBackend.AZUStorageAccountName)
 	}
 
 	declaredBackend.Config = b
@@ -752,23 +656,23 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 }
 
 func interpolateString(exec ExecutionConfig, s string) string {
-	if strings.Contains(s, "${var.gaia_deployment_ring}") {
-		s = strings.ReplaceAll(s, "${var.gaia_deployment_ring}", exec.DeploymentRing)
+	if strings.Contains(s, "${var.terrascale_deployment_ring}") {
+		s = strings.ReplaceAll(s, "${var.terrascale_deployment_ring}", exec.DeploymentRing)
 	}
 
-	if strings.Contains(s, "${var.gaia_target_account_id}") {
+	if strings.Contains(s, "${var.terrascale_target_account_id}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_target_account_id}", exec.GaiaTargetAccountID)
+			"${var.terrascale_target_account_id}", exec.TerrascaleTargetAccountID)
 	}
 
-	if strings.Contains(s, "${var.gaia_step}") {
+	if strings.Contains(s, "${var.terrascale_step}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_step}", exec.StepName)
+			"${var.terrascale_step}", exec.StepName)
 	}
 
-	if strings.Contains(s, "${var.gaia_region_deploy_type}") {
+	if strings.Contains(s, "${var.terrascale_region_deploy_type}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_region_deploy_type}", exec.RegionDeployType.String())
+			"${var.terrascale_region_deploy_type}", exec.RegionDeployType.String())
 	}
 
 	if strings.Contains(s, "${var.region}") {
@@ -789,12 +693,16 @@ func interpolateString(exec ExecutionConfig, s string) string {
 
 	if strings.Contains(s, "${var.region}") {
 		s = strings.ReplaceAll(s,
-			"${var.gaia_step}", exec.StepName)
+			"${var.terrascale_step}", exec.StepName)
+	}
+
+	if strings.Contains(s, "${var.environment}") {
+		s = strings.ReplaceAll(s,
+			"${var.environment}", exec.Environment)
 	}
 
 	// Replace all ${var.core_account_ids_map instances.
 	// There could be multiple ${var.core_account_ids_map references in the string,
-	// e.g. "bootstrap-launchpad-${var.core_account_ids_map.logging_bridge_gcp}/${var.core_account_ids_map.gcp_core_project}/${var.gaia_deployment_ring}.tfstate"
 	if strings.Contains(s, "${var.core_account_ids_map") {
 		regexForAllCoreAccountIdsMap := regexp.MustCompile(`(?m)\${var\.core_account_ids_map\..*?}`)
 		matches := regexForAllCoreAccountIdsMap.FindAllString(s, -1)
@@ -833,7 +741,7 @@ func getCommonTfOptions2(exec ExecutionConfig) (tfOptions *terraform.Options, er
 		Logger:                   exec.Logger,
 		NoColor:                  true,
 		RetryableTerraformErrors: map[string]string{".*": "General Terraform error occurred."},
-		MaxRetries:               3,
+		MaxRetries:               exec.MaxRetries,
 		TimeBetweenRetries:       5 * time.Second,
 	}
 

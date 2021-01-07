@@ -20,6 +20,7 @@ import (
 
 const (
 	PRE_TRACK_NAME = "_pretrack" // The name of the directory for the pretrack
+	DEFAULT_TRACK_NAME = "default" // The name of the default top-level track
 )
 
 // ExecuteTrackFunc facilitates track executions across multiple regions and RegionDeployTypes (e.g. Primary us-east-1 and regional us-*)
@@ -64,6 +65,7 @@ type Track struct {
 	Output                      Output
 	DestroyOutput               Output
 	IsPreTrack                  bool // If true, this is a PreTrack, meaning it should be run before all other tracks
+	IsDefaultTrack              bool // If true, this track represents steps contained in a standalone, top-level track
 	Skipped                     bool // Indicates that the track was skipped. This will be for non-pretrack tracks if the pretrack fails
 }
 
@@ -119,144 +121,179 @@ type Stage struct {
 // GatherTracks gets all tracks that should be executed based
 // on the directory structure
 func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks []Track) {
+	defaultDir := "./steps"
 	tracksDir := "./tracks"
 
+	// try to read steps from the default track at the top-level directory, if it exists
+	defaultExists, _ := afero.DirExists(tracker.Fs, defaultDir)
+	if defaultExists {
+		tracker.Log.Debug("Found default track directory")
+
+		t, included, _ := tracker.readTrack(config, DEFAULT_TRACK_NAME, defaultDir)
+		if included && t.StepsCount > 0 {
+			tracker.Log.Println(fmt.Sprintf("Tracks: Adding default track"))
+			tracks = append(tracks, t)
+		}
+	}
+
+	// read tracks from the usual tracks directory
 	items, _ := afero.ReadDir(tracker.Fs, tracksDir)
 	for _, item := range items {
 		if item.IsDir() {
-			t := Track{
-				Name:         item.Name(),
-				Dir:          fmt.Sprintf("%s/%s", tracksDir, item.Name()),
-				OrderedSteps: map[int][]steps.Step{},
-			}
-
-			if t.Name == PRE_TRACK_NAME {
-				tracker.Log.Debug("Pre-track found")
-				t.IsPreTrack = true
-			}
-
-			tConfig := viper.New()
-			tConfig.SetConfigName("gaia")               // name of config file (without extension)
-			tConfig.AddConfigPath(filepath.Join(t.Dir)) // path to look for the config file in
-			if err := tConfig.ReadInConfig(); err != nil {
-				if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-					// Config file not found, don't record or log error as this configuration file is optional.
-					tracker.Log.Debug("Track is not using a gaia.yaml configuration file")
-				} else {
-					tracker.Log.WithError(err).Error("Error reading configuration file")
-				}
-			}
-
-			if tConfig.IsSet("enabled") && !tConfig.GetBool("enabled") {
-				tracker.Log.Warningf("Skipping track %s. Not enabled in configuration.", t.Name)
-				continue
-			}
-
-			// if steps are not being targeted and track are, skip the non-targeted tracks
-			if len(config.StepWhitelist) == 0 && !config.TargetAll && !(tConfig.IsSet("enabled") && tConfig.GetBool("enabled")) {
-				tracker.Log.Warning(fmt.Sprintf("Tracks: Skipping %s", item.Name()))
-				continue
-			} else {
-				tFolders, _ := afero.ReadDir(tracker.Fs, t.Dir)
-				stepPrefix := "step"
-				highestProgressionLevel := 0
-
-				for _, tFolder := range tFolders {
-					tFolderName := tFolder.Name()
-
-					// step folder convention is step{progressionLevel}_{stepName}
-					if strings.HasPrefix(tFolderName, stepPrefix) {
-						stepName := tFolderName[len(stepPrefix)+2:]
-						stepID := fmt.Sprintf("#%s#%s#%s", config.Stage, t.Name, stepName)
-
-						// if step is not targeted, skip.
-						if !contains(config.StepWhitelist, stepID) && !config.TargetAll {
-							tracker.Log.Warningf("Step %s disabled. Not present in whitelist.", stepID)
-							continue
-						}
-
-						v := viper.New()
-						v.SetConfigName("gaia")                            // name of config file (without extension)
-						v.AddConfigPath(filepath.Join(t.Dir, tFolderName)) // path to look for the config file in
-						if err := v.ReadInConfig(); err != nil {
-							if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-								// Config file not found, don't record or log error as this configuration file is optional.
-								tracker.Log.Debug("Step is not using a gaia.yaml configuration file")
-							} else {
-								tracker.Log.WithError(err).Error("Error reading configuration file")
-							}
-						}
-
-						if v.IsSet("enabled") && !v.GetBool("enabled") {
-							tracker.Log.Warningf("Step %s disabled. Not enabled in configuration.", stepID)
-							continue
-						}
-
-						parsedStringProgression := string(tFolderName[len(stepPrefix)])
-						progressionLevel, err := strconv.Atoi(parsedStringProgression)
-
-						if err != nil {
-							tracker.Log.Error(err)
-						}
-
-						if progressionLevel > highestProgressionLevel {
-							highestProgressionLevel = progressionLevel
-						}
-
-						gaiaCfg := &steps.GaiaConfig{}
-
-						err = v.Unmarshal(gaiaCfg)
-
-						if err != nil {
-							tracker.Log.WithError(err).Error("Error unmarshaling gaia config")
-						}
-
-						step := steps.Step{
-							ProgressionLevel: progressionLevel,
-							Name:             stepName,
-							Dir:              filepath.Join(t.Dir, tFolderName),
-							DeployConfig:     config,
-							TrackName:        t.Name,
-							ID:               stepID,
-							GaiaConfig:       *gaiaCfg,
-						}
-
-						step.TestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "tests/tests.test"))
-						step.RegionalResourcesExist = exists(tracker.Fs, filepath.Join(step.Dir, "regional"))
-
-						if step.RegionalResourcesExist {
-							step.RegionalTestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "regional", "tests/tests.test"))
-						}
-
-						tracker.Log.Infof("Adding Step %s. Tests Exist: %v. Regional Resources Exist: %v. Regional Tests Exist: %v.", stepID, step.TestsExist, step.RegionalResourcesExist, step.RegionalTestsExist)
-
-						// let track know it needs to execute regionally as well
-						if !t.RegionalDeployment && step.RegionalResourcesExist {
-							t.RegionalDeployment = true
-						}
-
-						t.OrderedSteps[progressionLevel] = append(t.OrderedSteps[progressionLevel], step)
-						t.StepsCount++
-
-						if step.TestsExist {
-							t.StepsWithTestsCount++
-						}
-
-						if step.RegionalTestsExist {
-							t.StepsWithRegionalTestsCount++
-						}
-					}
-				}
-				t.StepProgressionsCount = highestProgressionLevel
-			}
-			if t.StepsCount > 0 {
+			t, included, _ := tracker.readTrack(config, item.Name(), fmt.Sprintf("%s/%s", tracksDir, item.Name()))
+			if included && t.StepsCount > 0 {
 				tracker.Log.Println(fmt.Sprintf("Tracks: Adding %s", item.Name()))
 				tracks = append(tracks, t)
 			}
 		}
 	}
 
+	// best practice is for one or the other of the above two situations to be present
+	if defaultExists && len(tracks) > 1 {
+		tracker.Log.Warnf("Detected that a default track (%s) exists along with one or more explicit tracks (%s). Best practice is to migrate your default track to a named one instead.", defaultDir, tracksDir)
+	}
+
 	return
+}
+
+func (tracker DirectoryBasedTracker) readTrack(config config.Config, name string, dir string) (Track, bool, error) {
+	t := Track{
+		Name:         name,
+		Dir:          dir,
+		OrderedSteps: map[int][]steps.Step{},
+	}
+
+	if t.Name == PRE_TRACK_NAME {
+		tracker.Log.Debug("Pre-track found")
+		t.IsPreTrack = true
+	} else if t.Name == DEFAULT_TRACK_NAME {
+		tracker.Log.Debug("Default track found")
+		t.IsDefaultTrack = true
+	}
+
+	tConfig := viper.New()
+	tConfig.SetConfigName("terrascale")         // name of config file (without extension)
+	tConfig.AddConfigPath(filepath.Join(t.Dir)) // path to look for the config file in
+	if err := tConfig.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found, don't record or log error as this configuration file is optional.
+			tracker.Log.Debug("Track is not using a terrascale.yaml configuration file")
+		} else {
+			tracker.Log.WithError(err).Error("Error reading configuration file")
+		}
+	}
+
+	if tConfig.IsSet("enabled") && !tConfig.GetBool("enabled") {
+		tracker.Log.Warningf("Skipping track %s. Not enabled in configuration.", t.Name)
+		return t, false, nil
+	}
+
+	// if steps are not being targeted and track are, skip the non-targeted tracks
+	if len(config.StepWhitelist) == 0 && !config.TargetAll && !(tConfig.IsSet("enabled") && tConfig.GetBool("enabled")) {
+		tracker.Log.Warning(fmt.Sprintf("Tracks: Skipping %s", name))
+		return t, false, nil
+	} else {
+		tFolders, _ := afero.ReadDir(tracker.Fs, t.Dir)
+		stepPrefix := "step"
+		highestProgressionLevel := 0
+
+		for _, tFolder := range tFolders {
+			tFolderName := tFolder.Name()
+
+			// step folder convention is step{progressionLevel}_{stepName}
+			if strings.HasPrefix(tFolderName, stepPrefix) {
+				stepName := tFolderName[len(stepPrefix)+2:]
+
+				// if the step belongs to the default track, exclude the name of the track from the identifier
+				stepID := ""
+				if t.IsDefaultTrack {
+					stepID = fmt.Sprintf("#%s#%s", config.Project, stepName)
+				} else {
+					stepID = fmt.Sprintf("#%s#%s#%s", config.Project, t.Name, stepName)
+				}
+
+				// if step is not targeted, skip.
+				if !contains(config.StepWhitelist, stepID) && !config.TargetAll {
+					tracker.Log.Warningf("Step %s disabled. Not present in whitelist.", stepID)
+					continue
+				}
+
+				v := viper.New()
+				v.SetConfigName("terrascale")                      // name of config file (without extension)
+				v.AddConfigPath(filepath.Join(t.Dir, tFolderName)) // path to look for the config file in
+				if err := v.ReadInConfig(); err != nil {
+					if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+						// Config file not found, don't record or log error as this configuration file is optional.
+						tracker.Log.Debug("Step is not using a terrascale.yaml configuration file")
+					} else {
+						tracker.Log.WithError(err).Error("Error reading configuration file")
+					}
+				}
+
+				if v.IsSet("enabled") && !v.GetBool("enabled") {
+					tracker.Log.Warningf("Step %s disabled. Not enabled in configuration.", stepID)
+					continue
+				}
+
+				parsedStringProgression := string(tFolderName[len(stepPrefix)])
+				progressionLevel, err := strconv.Atoi(parsedStringProgression)
+
+				if err != nil {
+					tracker.Log.Error(err)
+				}
+
+				if progressionLevel > highestProgressionLevel {
+					highestProgressionLevel = progressionLevel
+				}
+
+				terrascaleCfg := &steps.TerrascaleConfig{}
+
+				err = v.Unmarshal(terrascaleCfg)
+
+				if err != nil {
+					tracker.Log.WithError(err).Error("Error unmarshaling terrascale config")
+				}
+
+				step := steps.Step{
+					ProgressionLevel: progressionLevel,
+					Name:             stepName,
+					Dir:              filepath.Join(t.Dir, tFolderName),
+					DeployConfig:     config,
+					TrackName:        t.Name,
+					ID:               stepID,
+					TerrascaleConfig: *terrascaleCfg,
+				}
+
+				step.TestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "tests/tests.test"))
+				step.RegionalResourcesExist = exists(tracker.Fs, filepath.Join(step.Dir, "regional"))
+
+				if step.RegionalResourcesExist {
+					step.RegionalTestsExist = fileExists(tracker.Fs, filepath.Join(step.Dir, "regional", "tests/tests.test"))
+				}
+
+				tracker.Log.Infof("Adding Step %s. Tests Exist: %v. Regional Resources Exist: %v. Regional Tests Exist: %v.", stepID, step.TestsExist, step.RegionalResourcesExist, step.RegionalTestsExist)
+
+				// let track know it needs to execute regionally as well
+				if !t.RegionalDeployment && step.RegionalResourcesExist {
+					t.RegionalDeployment = true
+				}
+
+				t.OrderedSteps[progressionLevel] = append(t.OrderedSteps[progressionLevel], step)
+				t.StepsCount++
+
+				if step.TestsExist {
+					t.StepsWithTestsCount++
+				}
+
+				if step.RegionalTestsExist {
+					t.StepsWithRegionalTestsCount++
+				}
+			}
+		}
+		t.StepProgressionsCount = highestProgressionLevel
+	}
+
+	return t, true, nil
 }
 
 // fileExists checks if a file exists and is not a directory before we
@@ -553,7 +590,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		return
 	}
 
-	targetRegions := cfg.GaiaTargetRegions
+	targetRegions := cfg.TerrascaleTargetRegions
 	targetRegionsCount := len(targetRegions)
 	regionOutChan := make(chan RegionExecution, targetRegionsCount)
 	regionInChan := make(chan RegionExecution, targetRegionsCount)
@@ -638,8 +675,8 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		regionOutChan := make(chan RegionExecution)
 		regionInChan := make(chan RegionExecution)
 
-		targetRegions := cfg.GaiaTargetRegions
-		targetRegionsCount := len(cfg.GaiaTargetRegions)
+		targetRegions := cfg.TerrascaleTargetRegions
+		targetRegionsCount := len(cfg.TerrascaleTargetRegions)
 
 		for i := 0; i < targetRegionsCount; i++ {
 			go DestroyTrackRegion(regionInChan, regionOutChan)

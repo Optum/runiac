@@ -1,5 +1,11 @@
 # Terrascale
 
+## 1.0.0 (Unreleased)
+
+### ENHANCEMENTS
+
+- Initial public release
+
 ## 0.3.2 (November 2, 2020)
 
 ### ENHANCEMENTS

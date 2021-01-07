@@ -4,7 +4,7 @@
 
 ---
 
-An opinionated framework and tool for scaling terraform with ease.
+An opinionated framework and tool for scaling Terraform with ease.
 
 - Quality developer experience
 - Container-based, execute anywhere or use any CI/CD system
@@ -19,19 +19,62 @@ An opinionated framework and tool for scaling terraform with ease.
 
 ### Inputs
 
-Configuration for executing Terrascale is done through environment variables. For a list of options of see the code [here](pkg/config/config.go)
+Configuration for executing Terrascale is done through environment variables. For a list of options, see the code [here](pkg/config/config.go).
 
 #### Choosing which steps to execute
 
+By default, steps will not be executed unless they are explicitly configured to do so.
+
 ##### Environment Variables
 
-- `GAIA_STEP_WHITELIST`
+- `TERRASCALE_STEP_WHITELIST`: list of step names to include in execution
+
+When providing a list of steps to execute using the `TERRASCALE_STEP_WHITELIST` environment variable, the general syntax is as follows:
+
+```
+#PROJECT[#TRACK]#STEP_NAME,...
+```
+
+Where:
+* `PROJECT` is the value of the `TERRASCALE_PROJECT` environment variable (default to `terrascale` is not specified)
+* `[TRACK]` is the name of the track the step is located under (unless using the default track)
+* `STEP_NAME`: is the name of the step, without the leading `stepX_` prefix
+
+For example, given the following Terrascale directory setup:
+
+```bash
+tracks/
+├── infra/
+├──── step1_sample/
+├── shared
+├──── step1_sample/
+├──── step1_another_one/
+```
+
+If you wanted all three steps to be executed, you would specify them as such:
+
+```bash
+TERRASCALE_STEP_WHITELIST="#terrascale#infra#sample,#terrascale#shared#sample,#terrascale#shared#another_one"
+```
+
+To make things more readable, you can leverage some much nicer Bash syntax as such:
+
+```bash
+TRACK_STEPS=(
+  "#terrascale#infra#sample"
+  "#terrascale#shared#sample"
+  "#terrascale#shared#another_one"
+)
+
+TERRASCALE_STEP_WHITELIST=$(printf ",%s", "${TRACK_STEPS[@]}")
+TERRASCALE_STEP_WHITELIST=${TERRASCALE_STEP_WHITELIST:1}
+```
 
 ##### Configuration Files
 
 A configuration file can exist in either a track's or step's directory.
 
-- `gaia.yaml`
+- `terrascale.yaml`
 
 ```yaml
 enabled: <true|false> # This determines whether the step will be executed
@@ -40,13 +83,19 @@ execute_when: # This will conduct a runtime evaluation on whether the step shoul
     - "region-1"
 ```
 
-Also required is a file named `version.json` in the root of the directory structure, with at least a `version` element:
+#### Versioning
 
+The most flexible way to specify a version string for your deployment artifacts is to use the `VERSION` environment variable. You
+can source your version string however you wish with this approach.
+
+Otherwise, you can create a `version.json` file at the root of the directory structure, with a `version` element:
 ```json
 {
   "version": "v0.0.1"
 }
 ```
+
+If both are present, `version.json` takes precedence over the `VERSION` environment variable.
 
 ### Provider Plugin Caching
 
@@ -61,6 +110,28 @@ Terrascale uses [provider plugin caching](https://www.terraform.io/docs/commands
 - By definition **tracks do not have depedencies on each other**. If they do, treat them as one track with multiple steps
 
 2. For a track to be executed, at least one _Step_ has to be defined within it
+
+#### Default Track
+
+For projects that are relatively straightforward and don't require multiple tracks, you can opt to organize your steps under a single
+"default" track. The benefit of this approach is a simpler directory hierarchy, and you still have the possibility to scale out with
+multiple tracks down the road.
+
+Be aware that with this simpler approach, you cannot use pre-tracks (see below).
+
+A sample structure from the root directory of your project might look like this:
+
+```bash
+steps/
+├── step1_sample/
+├── step1_another_one/
+```
+
+To whitelist steps for execution when using a default track, omit the track name from the step list, like so:
+
+```bash
+TERRASCALE_STEP_WHITELIST="#terrascale#sample,#terrascale#another_one"
+```
 
 #### Pre-track
 
@@ -85,7 +156,7 @@ In the following _Track_ directories:
 ##### Concurrent Steps
 
 ```bash
-stages/customer/tracks/iamsso
+tracks/iamsso
 ├── step1_aws
 └── step1_onprem_adgroups
 ```
@@ -95,7 +166,7 @@ stages/customer/tracks/iamsso
 ##### Sequential Steps
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 └── step2_egress_proxy
 ```
@@ -105,7 +176,7 @@ stages/customer/tracks/network
 ##### Concurrent and Sequential Steps
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 ├── step1_aws
 └── step2_cool_step
@@ -121,24 +192,24 @@ stages/customer/tracks/network
 
 #### Step Deployment Types
 
-Step deployment types facilitate multi-region deployments. Gaia will first execute every primary step deployment type in a track. Assuming successful execution, it will then proceed through each step regional deployment type concurrently across each region.
+Step deployment types facilitate multi-region deployments. Terrascale will first execute every primary step deployment type in a track. Assuming successful execution, it will then proceed through each step regional deployment type concurrently across each region.
 
 ##### Primary
 
 Primary deployments represent all terraform in the top level directory of the executing step. Currently the primary type is executed _once per region group_. For example, in the `us` region group, the primary code would only be executed in the primary region of the `us` region group, `us-east-1`.
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 ├──--- *.tf
 ```
 
 ##### Regional
 
-Regional deployments represent all terraform in the `/regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `-e GAIA_TARGET_REGIONS` configuration.
+Regional deployments represent all terraform in the `/regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `-e TERRASCALE_TARGET_REGIONS` configuration.
 
 ```bash
-stages/customer/tracks/network
+tracks/network
 ├── step1_vpc
 ├──--- regional
 ├──--------*.tf
@@ -146,7 +217,7 @@ stages/customer/tracks/network
 
 #### Using Previous Step Output Variables
 
-By default, Gaia will pass in the output variables from previous steps into the current step.
+By default, Terrascale will pass in the output variables from previous steps into the current step.
 
 For example, if `step1_s3_bucket` has a defined `outputs.tf`:
 
@@ -246,49 +317,49 @@ variable "core_account_ids_map" {
 
 # The initial use case for this variable is to know which account is the original target after overriding
 # provider.assume_role.arn in terraform.
-variable "gaia_target_account_id" {
+variable "terrascale_target_account_id" {
   type        = string
   description = "The account id that the step function told the fargate task to deploy to"
 }
 
-variable "gaia_deployment_ring" {
+variable "terrascale_deployment_ring" {
   type = string
   description = "The deployment ring currently being executed in"
 }
 
-variable "gaia_stage" {
+variable "terrascale_stage" {
   type = string
   description = "The stage currently being executed in"
 }
 
-variable "gaia_track" {
+variable "terrascale_track" {
   type = string
   description = "The track currently being executed in"
 }
 
-variable "gaia_step" {
+variable "terrascale_step" {
   type = string
   description = "The step currently being executed in"
 }
 
-variable "gaia_region_deploy_type" {
+variable "terrascale_region_deploy_type" {
   type = string
   description = "The step deployment type, either primary or regional"
 }
 
-variable "gaia_region_group" {
+variable "terrascale_region_group" {
   type = string
   description = "The region group being deployed in, supported: 'us'"
 }
 
-variable "gaia_primary_region" {
+variable "terrascale_primary_region" {
   type = string
-  description = "The primary region of the gaia_region_group"
+  description = "The primary region of the terrascale_region_group"
 }
 
-variable "gaia_region_group_regions" {
+variable "terrascale_region_group_regions" {
   type = string
-  description = "The list of regions within the gaia_region_group.  This list represents the regions that will be used to execute the `regional` directory within a step."
+  description = "The list of regions within the terrascale_region_group.  This list represents the regions that will be used to execute the `regional` directory within a step."
 }
 ```
 
@@ -300,7 +371,7 @@ Tests within a step will automatically be executed after a successful deployment
 
 - Need to be defined in a `tests` directory within the _step_'s directory.
 - Need to be golang tests OR compiled to an executable named `tests.test`
-  - If using golang tests, Gaia Build Container will compile the tests to an executable automatically as part of container build process
+  - If using golang tests, Terrascale Build Container will compile the tests to an executable automatically as part of container build process
   - Golang tests are the recommendation (ie. Terratest).
 - The tests directory will receive the terraform outputs of the step as `TF_VAR` environment variables
 
@@ -345,22 +416,28 @@ Bedrock will then execute `tests.test` after a successful step deployment.
 By convention the backend type will be automatically configured.
 
 Supported Types:
-
-- Local
 - S3
+- AzureRM
+- GCS
+- Local
 
-If defining local, the terraform will be executed "fresh" each time. This works very well when the step is only executing scripts/binaries through `local-exec`
+If defining local, the terraform will be executed "fresh" each time. This works very well when the step is only executing scripts/binaries through `local-exec`.
+
+While you normally cannot use variable interpolation in typical Terraform backend configurations, Terrascale allows you some more flexibility
+in this area. Depending on which backend provider you are intending to use, the sections below detail which variables can be used in your
+configuration. These variables will be interpolated by Terrascale itself prior to executing Terraform.
 
 ##### S3
 
 Supported variables for dynamic [`key`](https://www.terraform.io/docs/backends/types/s3.html#key), [`bucket`](https://www.terraform.io/docs/backends/types/s3.html#role_arn) or [`role_arn`](https://www.terraform.io/docs/backends/types/s3.html#bucket) configuration:
 
-- `${var.gaia_region_deploy_type}`: **required** in `key`
+- `${var.terrascale_region_deploy_type}`: **required** in `key`
 - `${var.region}`: **required** in `key`
-- `${var.gaia_step}`
+- `${var.terrascale_step}`
 - `${var.core_account_ids_map}`
-- `${var.gaia_target_account_id}`
-- `${var.gaia_deployment_ring}`
+- `${var.terrascale_target_account_id}`
+- `${var.terrascale_deployment_ring}`
+- `${var.environment}`
 - `${local.namespace-}` (temporary backwards compatibility variable)
 
 Example Usage:
@@ -368,12 +445,36 @@ Example Usage:
 ```hcl-terraform
 terraform {
   backend "s3" {
-    key      = "${var.gaia_target_account_id}/${local.namespace-}${var.gaia_step}/${var.gaia_region_deploy_type}-${var.region}.tfstate"
-    bucket   = "launchpad-tfstate-${var.core_account_ids_map.gaia_deploy}"
-    role_arn = "arn:aws:iam::${var.core_account_ids_map.gaia_deploy}:role/StateRole"
+    key      = "${var.terrascale_target_account_id}/${local.namespace-}${var.terrascale_step}/${var.terrascale_region_deploy_type}-${var.region}.tfstate"
+    bucket   = "product-tfstate-${var.core_account_ids_map.terrascale_deploy}"
+    role_arn = "arn:aws:iam::${var.core_account_ids_map.terrascale_deploy}:role/StateRole"
     acl      = "bucket-owner-full-control"
     region   = "us-east-1"
     encrypt  = true
+  }
+}
+```
+
+##### GCS
+
+Supported variables for dynamic [`bucket and/or prefix`](https://www.terraform.io/docs/backends/types/gcs.html#configuration-variables) configuration:
+
+- `${var.gaia_region_deploy_type}`
+- `${var.region}`
+- `${var.gaia_step}`
+- `${var.core_account_ids_map}`
+- `${var.gaia_target_account_id}`
+- `${var.gaia_deployment_ring}`
+- `${var.environment}`
+- `${local.namespace-}` (temporary backwards compatibility variable)
+
+Example Usage:
+
+```hcl-terraform
+terraform { 
+  backend "gcs" {
+    bucket  = "df-${var.environment}-tfstate"
+    prefix  = "infra/${var.gaia_deployment_ring}/${var.gaia_region_deploy_type}/${var.region}/${local.namespace-}infra.tfstate"
   }
 }
 ```
@@ -384,7 +485,7 @@ At this time, providers **must** be defined in a `providers.tf` file for this co
 
 ##### [AssumeRole](https://www.terraform.io/docs/providers/aws/index.html#assume-role)
 
-By convention Gaia will assume role into the `OrganizationAccountAccessRole` of the `ACCOUNT_ID` environment variable prior to executing any steps. However, sometimes there is value in explicitly defining terraform infrastructure for multiple accounts in the same repository, for example a subset of "Core" accounts all other accounts share. To support this, Bedrock container will use the `provider.assume_role.role_arn` value in the step's `provider.tf` where one can explicitly set which account the terraform will be executed in via the assume role arn.
+By convention Terrascale will assume role into the `OrganizationAccountAccessRole` of the `ACCOUNT_ID` environment variable prior to executing any steps. However, sometimes there is value in explicitly defining terraform infrastructure for multiple accounts in the same repository, for example a subset of "Core" accounts all other accounts share. To support this, Bedrock container will use the `provider.assume_role.role_arn` value in the step's `provider.tf` where one can explicitly set which account the terraform will be executed in via the assume role arn.
 
 #### Provider (Azurerm)
 
@@ -392,7 +493,7 @@ At this time, providers **must** be defined in a `providers.tf` file for this co
 
 ##### Targeting a specific Azure subscription using [subscription_id](https://www.terraform.io/docs/providers/azurerm/index.html#subscription_id)
 
-To mirror the `assume_role` functionality for AWS core deployments in Gaia, Azure supports deploying to Azure core accounts using the `subscription_id` field in the provider. For example:
+To mirror the `assume_role` functionality for AWS core deployments in Terrascale, Azure supports deploying to Azure core accounts using the `subscription_id` field in the provider. For example:
 
 ```hcl
 provider "azurerm" {
@@ -401,11 +502,11 @@ provider "azurerm" {
 }
 ```
 
-When using this functionality, you can only specifiy an account in the `core_account_ids_map` Terraform variable. If this value is not specified, Gaia will deploy to the account that was specified by the `ARM_SUBSCRIPTION_ID` environment variable.
+When using this functionality, you can only specifiy an account in the `core_account_ids_map` Terraform variable. If this value is not specified, Terrascale will deploy to the account that was specified by the `ARM_SUBSCRIPTION_ID` environment variable.
 
 ###### Supported parameters
 
-The `gaia_target_account_id` and any key available in the `core_account_ids_map` input variable can be used in the `provider.assume_role.role_arn` value. For example, to deploy infrastructure only the AWS Bridge Logging accounts the configuration would minimally need to include:
+The `terrascale_target_account_id` and any key available in the `core_account_ids_map` input variable can be used in the `provider.assume_role.role_arn` value. For example, to deploy infrastructure only the AWS Bridge Logging accounts the configuration would minimally need to include:
 
 ```hcl
 provider "aws" {
@@ -421,7 +522,7 @@ In this example the terraform `creds_id` and `account_id` input variables will m
 
 #### Working with Secrets
 
-Secrets within Gaia should be stored within AWS SSM Parameter Store as encrypted parameters. Gaia utilizes a naming hierarchy for scoping the secrets.
+Secrets within Terrascale should be stored within AWS SSM Parameter Store as encrypted parameters. Terrascale utilizes a naming hierarchy for scoping the secrets.
 
 This hierarchy goes as `/bedrock/delivery/{csp}/{stage}/{track}/{step}/{ring}/param-{parameter}`
 
@@ -435,11 +536,11 @@ See the appropriate unit tests for how this works [here](pkg/params/params_test.
 
 ##### Count
 
-The most common and terraform friendly to implement deployment specific configuration is via `count` and simple `if` statements in the terraform code based on the passed in `var.gaia_deployment_ring` value.
+The most common and terraform friendly to implement deployment specific configuration is via `count` and simple `if` statements in the terraform code based on the passed in `var.terrascale_deployment_ring` value.
 
 #### Override Files
 
-The alternative option is using terraform's [override feature](https://www.terraform.io/docs/configuration/override.html). Gaia handles this based on the `override` directory within a step.
+The alternative option is using terraform's [override feature](https://www.terraform.io/docs/configuration/override.html). Terrascale handles this based on the `override` directory within a step.
 
 The supported override files are below:
 
@@ -502,12 +603,8 @@ A common use case for this feature is controlling terraform `lifecycle` paramete
 
 ### Running Locally
 
-Terrascale is only executed locally via it's unit tests. To execute Gaia child projects locally, one would need to build this container first.
+Terrascale is only executed locally via it's unit tests. To execute Terrascale child projects locally, one would need to build this container first.
 
 ```bash
 $ DOCKER_BUILDKIT=1 docker build -t terrascale .
-# Now one can build the child containers (launchpad_core_aws, bedrock_aws, etc)
 ```
-
-> NOTE: Optum Healthcare Public Cloud team, further local instructions are available [here](https://new-wiki.optum.com/display/COMCLDDLV/Launchpad%3A+Local+Configuration)
-

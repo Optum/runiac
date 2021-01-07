@@ -20,8 +20,13 @@ func DoWithRetry(actionDescription string, maxRetries int, sleepBetweenRetries t
 			return nil
 		}
 
-		logger.WithError(err).Warningf("%s returned an error: %s. Sleeping for %s and will try again. Retry Count: %v.", actionDescription, err.Error(), sleepBetweenRetries, i)
-		time.Sleep(sleepBetweenRetries)
+		// don't sleep after the final retry attempt
+		if i < maxRetries {
+			logger.WithError(err).Warningf("%s returned an error: %s. Sleeping for %s and will try again. Retry Count: %v.", actionDescription, err.Error(), sleepBetweenRetries, i)
+			time.Sleep(sleepBetweenRetries)
+		} else {
+			logger.WithError(err).Warningf("%s returned an error: %s. Retry Count: %v.", actionDescription, err.Error(), i)
+		}
 	}
 
 	return MaxRetriesExceeded{Description: actionDescription, MaxRetries: maxRetries}

@@ -22,12 +22,14 @@ const (
 	AWSProvider TFProviderType = iota
 	// AzurermProvider is the Azurerm TF provider
 	AzurermProvider
+	// Google Provider is the Google TF provider
+	GoogleProvider
 	// UnknownProvider represents a provider that could not be determined
 	UnknownProvider
 )
 
 func (p TFProviderType) String() string {
-	return [...]string{"aws", "azurerm", "unknown"}[p]
+	return [...]string{"aws", "azurerm", "google", "unknown"}[p]
 }
 
 // StringToProviderType converts a string to a ProviderType
@@ -35,6 +37,7 @@ func StringToProviderType(s string) (TFProviderType, error) {
 	providers := map[string]TFProviderType{
 		"aws":     AWSProvider,
 		"azurerm": AzurermProvider,
+		"google":  GoogleProvider,
 	}
 
 	val, exists := providers[s]
@@ -50,6 +53,10 @@ type TFBackendType int
 const (
 	// S3Backend backend
 	S3Backend TFBackendType = iota
+	// Azure Storage Account backend
+	AzureStorageAccount
+	// Google Cloud Storage backend
+	GCSBackend
 	// LocalBackend backend
 	LocalBackend
 	// UnknownBackend represents an unknown backend
@@ -57,14 +64,16 @@ const (
 )
 
 func (b TFBackendType) String() string {
-	return [...]string{"s3", "local", "unknown"}[b]
+	return [...]string{"s3", "azurerm", "gcs", "local", "unknown"}[b]
 }
 
 // StringToBackendType converts a string to a ProviderType
 func StringToBackendType(s string) (TFBackendType, error) {
 	backends := map[string]TFBackendType{
-		"s3":    S3Backend,
-		"local": LocalBackend,
+		"s3":      S3Backend,
+		"azurerm": AzureStorageAccount,
+		"gcs":     GCSBackend,
+		"local":   LocalBackend,
 	}
 
 	val, exists := backends[s]
@@ -83,11 +92,15 @@ type TerraformProvider struct {
 
 // TerraformBackend is a structure that represents a terraform backend file
 type TerraformBackend struct {
-	Type      TFBackendType
-	Key       string
-	S3RoleArn string
-	S3Bucket  string
-	Config    map[string]interface{}
+	Type                  TFBackendType
+	Key                   string
+	S3RoleArn             string
+	S3Bucket              string
+	AZUResourceGroupName  string
+	AZUStorageAccountName string
+	GCSBucket             string
+	GCSPrefix             string
+	Config                map[string]interface{}
 }
 
 // TFBackendParser is a function type that handles parsing a backend.tf file
@@ -149,7 +162,35 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 	bucketMatch := bRegex.FindStringSubmatch(s)
 
 	if len(bucketMatch) > 0 {
-		backend.S3Bucket = bucketMatch[1]
+		if backendType == S3Backend {
+			backend.S3Bucket = bucketMatch[1]
+		} else if backendType == GCSBackend {
+			backend.GCSBucket = bucketMatch[1]
+		}
+	}
+
+	// Prefix
+	pRegex, _ := regexp.Compile(`prefix\s*=\s*"(.+)"`)
+	prefixMatch := pRegex.FindStringSubmatch(s)
+
+	if backendType == GCSBackend && len(prefixMatch) > 0 {
+		backend.GCSPrefix = prefixMatch[1]
+	}
+
+	// Resource group (Azure)
+	rgRegex, _ := regexp.Compile(`resource_group_name\s*=\s*"(.+)"`)
+	resourceGroupMatch := rgRegex.FindStringSubmatch(s)
+
+	if len(resourceGroupMatch) > 0 {
+		backend.AZUResourceGroupName = resourceGroupMatch[1]
+	}
+
+	// Storage account (Azure)
+	stRegex, _ := regexp.Compile(`storage_account_name\s*=\s*"(.+)"`)
+	storageAccountMatch := stRegex.FindStringSubmatch(s)
+
+	if len(storageAccountMatch) > 0 {
+		backend.AZUStorageAccountName = storageAccountMatch[1]
 	}
 
 	return
@@ -209,7 +250,7 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 
 			// check for variable arn:aws:iam::${var.core_account_ids_map.logging_final_destination}:role/OrganizationAccountAccessRole
 			checkForCoreAccount := strings.Split(accountID, "var.core_account_ids_map.")
-			checkForTargetAccount := strings.Contains(accountID, "var.gaia_target_account_id")
+			checkForTargetAccount := strings.Contains(accountID, "var.terrascale_target_account_id")
 
 			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", strings.Join(checkForCoreAccount, ", ")))
 
@@ -219,7 +260,7 @@ func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds m
 				accountIDKey = strings.Split(checkForCoreAccount[1], "}")[0]
 
 			} else if checkForTargetAccount {
-				accountIDKey = "gaia_target_account_id"
+				accountIDKey = "terrascale_target_account_id"
 			}
 
 			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountIDKey))

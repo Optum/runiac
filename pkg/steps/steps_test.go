@@ -109,7 +109,7 @@ func TestParseBackend_ShouldParseRoleArnWhenSet(t *testing.T) {
 	_ = afero.WriteFile(fs, "testbackend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/aws/core/logging/${var.gaia_deployment_ring}-consumeraas_aws.tfstate"
+		key         = "/aws/core/logging/${var.terrascale_deployment_ring}-stub.tfstate"
 		role_arn    = "stubrolearn"
 	  }
 	}
