@@ -4,5 +4,5 @@ This directory contains several example projects that you can use as a starting 
 
 ## Index
 
-* [azure](azure/README.md): deploy infrastructure to Microsoft Azure
-* [gcp](gcp/README.md): deploy infrastructure to Google Cloud Platform
+* [azure](azure/): deploy infrastructure to Microsoft Azure
+* [gcp](gcp/): deploy infrastructure to Google Cloud Platform
