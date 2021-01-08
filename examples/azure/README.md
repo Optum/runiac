@@ -39,7 +39,7 @@ Review the output to validate that your infrastructure changes have been deploye
 Finally, You can clean up any resources that were created by running Terrscale with the `--self-destroy` flag:
 
 ```bash
-./deploy.sh -a your-gcp-project-id --self-destroy
+./deploy.sh -a your-azure-subscription-id --self-destroy
 ```
 
 ## Important Notes
