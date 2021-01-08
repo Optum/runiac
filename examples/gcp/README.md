@@ -38,7 +38,13 @@ To deploy infrastructure changes, you can run the following command instead:
 ./deploy.sh -a your-gcp-project-id
 ```
 
-Once again, review the output to validate that your infrastructure changes have been deployed.
+Review the output to validate that your infrastructure changes have been deployed.
+
+Finally, You can clean up any resources that were created by running Terrscale with the `--self-destroy` flag:
+
+```bash
+./deploy.sh -a your-gcp-project-id --self-destroy
+```
 
 ## Important Notes
 

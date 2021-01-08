@@ -71,6 +71,7 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg TERRASCALE_CONTAINER="$BASE_CONTAINER" .
 
 docker run \
+  --mount src="$(pwd)/state",target=/opt/tfstate,type=bind \
   -e VERSION="$VERSION" \
   -e CSP="GCP" \
   -e ACCOUNT_ID="$ACCOUNT_ID" \

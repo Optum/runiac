@@ -72,6 +72,7 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg TERRASCALE_CONTAINER="$BASE_CONTAINER" .
 
 docker run \
+  --mount src="$(pwd)/state",target=/opt/tfstate,type=bind \
   -v $AZURE_CONFIG_DIR:/root/.azure \
   -e VERSION="$VERSION" \
   -e CSP="AZU" \

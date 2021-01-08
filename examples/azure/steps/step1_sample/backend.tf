@@ -1,5 +1,5 @@
 terraform {
   backend "local" {
-    path = "/opt/tfstates/default.tfstate"
+    path = "/opt/tfstate/default.tfstate"
   }
 }
