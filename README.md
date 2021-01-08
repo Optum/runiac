@@ -17,6 +17,8 @@ An opinionated framework and tool for scaling Terraform with ease.
 
 ## Quick Start
 
+Be sure to check out the [examples](examples/) directory for some starter projects you can use!
+
 ### Inputs
 
 Configuration for executing Terrascale is done through environment variables. For a list of options, see the code [here](pkg/config/config.go).
