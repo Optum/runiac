@@ -3,6 +3,8 @@
 This example will provide a simple starting point for working with Terrascale and deploying resources into
 a Google Cloud Platform project.
 
+The following steps assume you are running on a Linux or macOS system, but the process will most likely be similar on Windows.
+
 ## Requirements
 
 You'll need a project on Google Cloud Platform where you can deploy resources. Google offers a [free tier](https://cloud.google.com/free) for

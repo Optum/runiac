@@ -3,7 +3,7 @@
 This example will provide a simple starting point for working with Terrascale and deploying resources into
 a Microsoft Azure subscription.
 
-The following steps assume you are running on a Liunx or macOS system, but the process will most likely be similar to Windows.
+The following steps assume you are running on a Linux or macOS system, but the process will most likely be similar on Windows.
 
 ## Requirements
 
