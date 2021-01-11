@@ -56,7 +56,6 @@ if [ -z "$ENVIRONMENT" ]; then echo "-e or --environment is required"; exit 1; f
 if [ "$ENVIRONMENT" = "local" ]; then 
   NAMESPACE="$(whoami)"
   VERSION="$(whoami)"
-  AZURE_CONFIG_DIR="$HOME/.azure"
 fi
 
 # list which steps to execute
@@ -73,9 +72,8 @@ DOCKER_BUILDKIT=1 docker build \
 
 docker run \
   --mount src="$(pwd)/state",target=/opt/tfstate,type=bind \
-  -v $AZURE_CONFIG_DIR:/root/.azure \
   -e VERSION="$VERSION" \
-  -e CSP="AZU" \
+  -e CSP="GCP" \
   -e ACCOUNT_ID="$ACCOUNT_ID" \
   -e ENVIRONMENT="$ENVIRONMENT" \
   -e NAMESPACE="$NAMESPACE" \
@@ -85,5 +83,4 @@ docker run \
   -e TERRASCALE_SELF_DESTROY="$SELF_DESTROY" \
   -e LOG_LEVEL="$LOG_LEVEL" \
   -e DEPLOYMENT_RING="$DEPLOYMENT_RING" \
-  -e TERRASCALE_REGION_GROUPS="{\"azu\":{\"uk\":[\"uksouth\",\"ukwest\"],\"eu\":[\"northeurope\",\"westeurope\"],\"us\":[\"southcentralus\", \"northcentralus\"]}}" \
   $INTERACTIVE_FLAG tssample

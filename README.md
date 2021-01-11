@@ -17,6 +17,8 @@ An opinionated framework and tool for scaling Terraform with ease.
 
 ## Quick Start
 
+Be sure to check out the [examples](examples/) directory for some starter projects you can use!
+
 ### Inputs
 
 Configuration for executing Terrascale is done through environment variables. For a list of options, see the code [here](pkg/config/config.go).
@@ -383,7 +385,7 @@ tracks/iamsso/step1_aws/
 │   └── step_test.go
 ├── backend.tf
 ├── outputs.tf
-├── provider.tf
+├── providers.tf
 ├── read_only_role.tf
 ├── shared.tf
 ├── variables.tf
@@ -398,7 +400,7 @@ tracks/iamsso/step1_aws/
 │   └── tests.test
 ├── backend.tf
 ├── outputs.tf
-├── provider.tf
+├── providers.tf
 ├── read_only_role.tf
 ├── shared.tf
 ├── variables.tf
@@ -485,7 +487,7 @@ At this time, providers **must** be defined in a `providers.tf` file for this co
 
 ##### [AssumeRole](https://www.terraform.io/docs/providers/aws/index.html#assume-role)
 
-By convention Terrascale will assume role into the `OrganizationAccountAccessRole` of the `ACCOUNT_ID` environment variable prior to executing any steps. However, sometimes there is value in explicitly defining terraform infrastructure for multiple accounts in the same repository, for example a subset of "Core" accounts all other accounts share. To support this, Bedrock container will use the `provider.assume_role.role_arn` value in the step's `provider.tf` where one can explicitly set which account the terraform will be executed in via the assume role arn.
+By convention Terrascale will assume role into the `OrganizationAccountAccessRole` of the `ACCOUNT_ID` environment variable prior to executing any steps. However, sometimes there is value in explicitly defining terraform infrastructure for multiple accounts in the same repository, for example a subset of "Core" accounts all other accounts share. To support this, Bedrock container will use the `provider.assume_role.role_arn` value in the step's `providers.tf` where one can explicitly set which account the terraform will be executed in via the assume role arn.
 
 #### Provider (Azurerm)
 
@@ -563,7 +565,7 @@ tracks/iamsso/step1_aws/
 │   └── ring_prod_override.tf
 ├── backend.tf
 ├── outputs.tf
-├── provider.tf
+├── providers.tf
 ├── read_only_role.tf
 ├── shared.tf
 ├── variables.tf
