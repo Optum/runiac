@@ -1,14 +1,11 @@
 package cloudaccountdeployment
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.optum.com/healthcarecloud/terrascale/pkg/auth"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -80,44 +77,42 @@ var StepDeployments = map[string]ExecutionResult{}
 var Cfg, _ = config.GetConfig()
 
 func RecordStepStart(logger *logrus.Entry, accountID string, track string, step string, regionDeployType string, region string, dryRun bool, csp string, version string, executionID string, stepFunctionName string, codePipelineExecutionID string, stage string, terrascaleTargetRegions []string) {
-	deployPhase := PreDeploy
-	result := InProgress
-	resultMessage := ""
-
-	// only record start of primary region
-	if regionDeployType != "primary" {
-		return
-	}
-
-	if dryRun {
-		logger.Info("Skipping updateStatus during DryRun")
-		return
-	}
-
-	logger.Debug("Updating deployment status...")
-
-	p := UpdateStatusPayload{
-		Product:             stage,
-		AccountID:           accountID,
-		CSP:                 csp,
-		DeploymentPhase:     deployPhase.String(),
-		Version:             version,
-		Result:              result.String(),
-		ResultMessage:       resultMessage,
-		Tool:                "StepFn",
-		AccountDeploymentID: executionID,
-		RingDeploymentID:    stepFunctionName,
-		ReleaseDeploymentID: codePipelineExecutionID,
-		Stage:               stage,
-		Step:                step,
-		Track:               track,
-		PrimaryRegion:       region,
-		TargetRegions:       terrascaleTargetRegions,
-	}
-
-	if Cfg.ReporterDynamodb {
-		_ = InvokeLambdaFunc(logger, p)
-	}
+	//deployPhase := PreDeploy
+	//result := InProgress
+	//resultMessage := ""
+	//
+	//// only record start of primary region
+	//if regionDeployType != "primary" {
+	//	return
+	//}
+	//
+	//if dryRun {
+	//	logger.Info("Skipping updateStatus during DryRun")
+	//	return
+	//}
+	//
+	//logger.Debug("Updating deployment status...")
+	//
+	//p := UpdateStatusPayload{
+	//	Product:             stage,
+	//	AccountID:           accountID,
+	//	CSP:                 csp,
+	//	DeploymentPhase:     deployPhase.String(),
+	//	Version:             version,
+	//	Result:              result.String(),
+	//	ResultMessage:       resultMessage,
+	//	Tool:                "StepFn",
+	//	AccountDeploymentID: executionID,
+	//	RingDeploymentID:    stepFunctionName,
+	//	ReleaseDeploymentID: codePipelineExecutionID,
+	//	Stage:               stage,
+	//	Step:                step,
+	//	Track:               track,
+	//	PrimaryRegion:       region,
+	//	TargetRegions:       terrascaleTargetRegions,
+	//}
+	//
+	//InvokeLambdaFunc(logger, p)
 }
 
 func RecordStepSuccess(logger *logrus.Entry, csp string, track string, step string, regionDeployType string, region string, executionID string, stage string, terrascaleTargetRegions []string) {
@@ -248,10 +243,6 @@ func FlushTrack(logger *logrus.Entry, track string) (steps map[string]*UpdateReg
 		}
 
 		logger.Infof("%s: %s", stepID, v.ResultMessage)
-
-		if Cfg.ReporterDynamodb {
-			_ = InvokeLambdaFunc(logger.WithField("accountStepDeployID", v.AccountStepDeploymentID), *v)
-		}
 	}
 
 	// reset step deployments
@@ -260,46 +251,4 @@ func FlushTrack(logger *logrus.Entry, track string) (steps map[string]*UpdateReg
 	}
 
 	return steps, err
-}
-
-type InvokeLambda func(logger *logrus.Entry, p interface{}) map[string]interface{}
-
-var InvokeLambdaFunc InvokeLambda
-
-var Auth auth.Authenticator
-var UpdateStatusLambda string
-
-func InvokeLambdaSDK(logger *logrus.Entry, p interface{}) map[string]interface{} {
-	platformSession := Auth.GetPlatformSession()
-
-	svc := lambda.New(platformSession)
-
-	payload, err := json.Marshal(p)
-	logger.Debugf("Calling deployment status update with payload: %s\n", payload)
-
-	if err != nil {
-		logger.WithError(err).Error("Json Marshalling Error")
-	}
-
-	input := &lambda.InvokeInput{
-		FunctionName:   aws.String(UpdateStatusLambda),
-		InvocationType: aws.String("RequestResponse"),
-		LogType:        aws.String("Tail"),
-		Payload:        payload,
-	}
-
-	resp, err := svc.Invoke(input)
-	if err != nil {
-		logger.WithError(err).Error("Error invoking update status lambda")
-		return nil
-	}
-
-	if resp.FunctionError != nil {
-		logger.WithField("requestPayload", payload).WithError(fmt.Errorf(string(resp.Payload))).Error("Lambda execution error occurred")
-	}
-
-	var m map[string]interface{}
-	json.Unmarshal(resp.Payload, &m)
-
-	return m
 }

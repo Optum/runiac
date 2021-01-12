@@ -35,10 +35,14 @@ RUN \
     python3 -m pip --no-cache-dir install azure-cli==${AZURE_CLI_VERSION} && \
     apk del --purge build
 
+
 WORKDIR /app
 
 COPY --from=builder /app/steps /app/steps
 
 RUN mkdir -p $HOME/.terraform.d/plugin-cache
+COPY entrypoint.sh entrypoint.sh
+RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["terrascale"]
+
+ENTRYPOINT ["bash", "-c", "./entrypoint.sh"]

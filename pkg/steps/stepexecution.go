@@ -13,7 +13,6 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/auth"
 	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
@@ -24,40 +23,39 @@ import (
 type TerraformStepper struct{}
 
 type ExecutionConfig struct {
-	RegionDeployType                            RegionDeployType
-	Region                                      string `json:"region"`
-	Logger                                      *logrus.Entry
-	Fs                                          afero.Fs
-	UniqueExternalExecutionID                   string
-	RegionGroupRegions                          []string
-	TerrascaleTargetAccountID                   string
-	RegionGroup                                 string
-	PrimaryRegion                               string
-	Dir                                         string
-	TFProvider                                  TerraformProvider
-	TFBackend                                   TerraformBackend
-	CSP                                         string
-	Environment                                 string `json:"environment"`
-	AppVersion                                  string `json:"app_version"`
-	CredsID                                     string `json:"creds_id"`
-	AccountID                                   string `json:"account_id"`
-	AccountOwnerID                              string `json:"account_owner_msid"`
-	MaxRetries                                  int
-	MaxTestRetries                              int
-	CoreAccounts                                map[string]config.Account
-	RegionGroups                                config.RegionGroupsMap
-	Namespace                                   string
-	CommonRegion                                string
-	StepName                                    string
-	StepID                                      string
-	DeploymentRing                              string
-	Project                                     string
-	TrackName                                   string
-	DryRun                                      bool
-	TerrascaleConfig                            TerrascaleConfig
+	RegionDeployType          RegionDeployType
+	Region                    string `json:"region"`
+	Logger                    *logrus.Entry
+	Fs                        afero.Fs
+	UniqueExternalExecutionID string
+	RegionGroupRegions        []string
+	TerrascaleTargetAccountID string
+	RegionGroup               string
+	PrimaryRegion             string
+	Dir                       string
+	TFProvider                TerraformProvider
+	TFBackend                 TerraformBackend
+	CSP                       string
+	Environment               string `json:"environment"`
+	AppVersion                string `json:"app_version"`
+	CredsID                   string `json:"creds_id"`
+	AccountID                 string `json:"account_id"`
+	AccountOwnerID            string `json:"account_owner_msid"`
+	MaxRetries                int
+	MaxTestRetries            int
+	CoreAccounts              map[string]config.Account
+	RegionGroups              config.RegionGroupsMap
+	Namespace                 string
+	CommonRegion              string
+	StepName                  string
+	StepID                    string
+	DeploymentRing            string
+	Project                   string
+	TrackName                 string
+	DryRun                    bool
+	TerrascaleConfig          TerrascaleConfig
 
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
-	Authenticator              auth.Authenticator
 	OptionalStepParams         map[string]string
 	RequiredStepParams         map[string]interface{}
 }
@@ -102,43 +100,39 @@ func (exec ExecutionConfig) GetTerraformEnvVars() map[string]string {
 
 		output["core_account_ids_map"] = coreAccounts
 	}
-	output["account_owner_msid"] = exec.AccountOwnerID
-	output["creds_id"] = exec.CredsID
+	// output["account_owner_msid"] = exec.AccountOwnerID
+	// output["creds_id"] = exec.CredsID
 
 	return output
 }
 
 func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType RegionDeployType, region string, defaultStepOutputVariables map[string]map[string]string) ExecutionConfig {
 	return ExecutionConfig{
-		RegionDeployType:                         regionDeployType,
-		Region:                                   region,
-		Fs:                                       fs,
-		TerrascaleTargetAccountID:                s.DeployConfig.TerrascaleTargetAccountID,
-		RegionGroup:                              s.DeployConfig.TerrascaleRegionGroup,
-		DefaultStepOutputVariables:               defaultStepOutputVariables,
-		Environment:                              s.DeployConfig.Environment,
-		AppVersion:                               s.DeployConfig.Version,
-		CredsID:                                  s.DeployConfig.CredsID,
-		AccountID:                                s.DeployConfig.AccountID,
-		AccountOwnerID:                           s.DeployConfig.AccountOwnerLabel,
-		CoreAccounts:                             s.DeployConfig.CoreAccounts,
-		StepName:                                 s.Name,
-		StepID:                                   s.ID,
-		Namespace:                                s.DeployConfig.Namespace,
-		CommonRegion:                             s.DeployConfig.CommonRegion,
-		Authenticator:                            s.DeployConfig.Authenticator,
-		Dir:                                      s.Dir,
-		CSP:                                      s.DeployConfig.CSP,
-		DeploymentRing:                           s.DeployConfig.DeploymentRing,
-		DryRun:                                   s.DeployConfig.DryRun,
-		MaxRetries:                               s.DeployConfig.MaxRetries,
-		MaxTestRetries:                           s.DeployConfig.MaxTestRetries,
-		Project:                                  s.DeployConfig.Project,
-		TrackName:                                s.TrackName,
-		RegionGroupRegions:                       s.DeployConfig.TerrascaleTargetRegions,
-		UniqueExternalExecutionID:                s.DeployConfig.UniqueExternalExecutionID,
-		RegionGroups:                             s.DeployConfig.RegionGroups,
-		TerrascaleConfig:                         s.TerrascaleConfig,
+		RegionDeployType:           regionDeployType,
+		Region:                     region,
+		Fs:                         fs,
+		TerrascaleTargetAccountID:  s.DeployConfig.TerrascaleTargetAccountID,
+		RegionGroup:                s.DeployConfig.TerrascaleRegionGroup,
+		DefaultStepOutputVariables: defaultStepOutputVariables,
+		Environment:                s.DeployConfig.Environment,
+		AppVersion:                 s.DeployConfig.Version,
+		AccountID:                  s.DeployConfig.AccountID,
+		CoreAccounts:               s.DeployConfig.CoreAccounts,
+		StepName:                   s.Name,
+		StepID:                     s.ID,
+		Namespace:                  s.DeployConfig.Namespace,
+		Dir:                        s.Dir,
+		CSP:                        s.DeployConfig.CSP,
+		DeploymentRing:             s.DeployConfig.DeploymentRing,
+		DryRun:                     s.DeployConfig.DryRun,
+		MaxRetries:                 s.DeployConfig.MaxRetries,
+		MaxTestRetries:             s.DeployConfig.MaxTestRetries,
+		Project:                    s.DeployConfig.Project,
+		TrackName:                  s.TrackName,
+		RegionGroupRegions:         s.DeployConfig.TerrascaleTargetRegions,
+		UniqueExternalExecutionID:  s.DeployConfig.UniqueExternalExecutionID,
+		RegionGroups:               s.DeployConfig.RegionGroups,
+		TerrascaleConfig:           s.TerrascaleConfig,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
@@ -177,9 +171,9 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 
 	accounts := map[string]config.Account{
 		"terrascale_target_account_id": {
-			ID:               exec.TerrascaleTargetAccountID,
-			CredsID:          exec.CredsID,
-			CSP:              exec.CSP,
+			ID:                exec.TerrascaleTargetAccountID,
+			CredsID:           exec.CredsID,
+			CSP:               exec.CSP,
 			AccountOwnerLabel: exec.AccountOwnerID,
 		},
 	}
@@ -233,8 +227,8 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	}
 
 	exec.Logger = exec.Logger.WithFields(logrus.Fields{
-		"credsID":          exec.CredsID,
-		"accountID":        exec.AccountID,
+		"credsID":           exec.CredsID,
+		"accountID":         exec.AccountID,
 		"AccountOwnerLabel": exec.AccountOwnerID,
 	})
 

@@ -9,8 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/auth"
-	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/logging"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
@@ -26,7 +24,7 @@ var log *logrus.Entry
 func main() {
 	initFunc()
 
-	log.Debugf("Beginning Account Deployment: %s with %s CREDS_ID...", deployment.Config.AccountID, deployment.Config.CredsID)
+	log.Debugf("Beginning Account Deployment: %s", deployment.Config.AccountID)
 
 	log.Debug("Executing tracks...")
 
@@ -145,9 +143,9 @@ func initFunc() {
 	}
 
 	log = logger.WithFields(logrus.Fields{
-		"accountID":                     deployment.Config.AccountID,
-		"deploymentRing":                deployment.Config.DeploymentRing,
-		"credsID":                       deployment.Config.CredsID,
+		"accountID":      deployment.Config.AccountID,
+		"deploymentRing": deployment.Config.DeploymentRing,
+		//"credsID":                       deployment.Config.CredsID,
 		"csp":                           deployment.Config.CSP,
 		"project":                       deployment.Config.Project,
 		"terrascaleTargetAccountID":     deployment.Config.TerrascaleTargetAccountID,
@@ -158,12 +156,12 @@ func initFunc() {
 		"regionGroup":                   deployment.Config.TerrascaleRegionGroup,
 	})
 
-	// read deployment artifact version string from version.json first, if it exists
-	deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")
-	if err != nil {
-		// defer to the VERSION environment variable instead
-		deployment.Config.Version = deployment.DeployMetadata.Version
-	}
+	//// read deployment artifact version string from version.json first, if it exists
+	//deployment.DeployMetadata, err = config.GetVersionJSON(log, fs, "version.json")
+	//if err != nil {
+	//	// defer to the VERSION environment variable instead
+	//	deployment.Config.Version = deployment.DeployMetadata.Version
+	//}
 
 	if len(deployment.Config.Version) == 0 {
 		log.Warn("No version.json or VERSION environment variable specified")
@@ -171,10 +169,10 @@ func initFunc() {
 	}
 
 	log = log.WithFields(logrus.Fields{
-		"version": deployment.DeployMetadata.Version,
+		"version": deployment.Config.Version,
 	})
 
-	j, _ := json.Marshal(deployment)
+	j, _ := json.MarshalIndent(deployment, "", "    ")
 
 	log.Infof("Parsed configuration: %s", string(j))
 
@@ -187,16 +185,6 @@ func initFunc() {
 		Log: log,
 		Fs:  fs,
 	}
-
-	deployment.Config.Authenticator = &auth.SDKAuthenticator{
-		Logger:              log,
-		BedrockCommonRegion: deployment.Config.CommonRegion,
-		AzuCredCache:        make(map[string]*auth.AZUCredentials),
-	}
-
-	cloudaccountdeployment.InvokeLambdaFunc = cloudaccountdeployment.InvokeLambdaSDK
-	cloudaccountdeployment.Auth = deployment.Config.Authenticator
-	cloudaccountdeployment.UpdateStatusLambda = deployment.Config.UpdateStatusLambda
 
 	// prepare basic parameters for executing terraform version
 	// disable checkpoints since we just want to print the version string alone

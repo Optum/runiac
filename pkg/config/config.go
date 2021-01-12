@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -10,12 +9,9 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/params"
 
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.optum.com/healthcarecloud/terrascale/pkg/auth"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 )
 
 var httpClient = &http.Client{Timeout: 10 * time.Second}
@@ -26,38 +22,36 @@ var validate = validator.New()
 // Config struct is a representation of the environment variables passed into the container
 type Config struct {
 	// Set by container overrides
-	AccountID                                   string   `envconfig:"ACCOUNT_ID"`                                                        // The subscription id to deploy to
-	TerrascaleTargetAccountID                   string   `envconfig:"ACCOUNT_ID"`                                                        // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
-	CredsID                                     string   `envconfig:"CREDS_ID"`                                                          // The identifier that determines which set of credentials to use (for which tenant)
-	TerrascaleReleaseDeploymentID               string   `envconfig:"CODEPIPELINE_EXECUTION_ID"`                                         // The execution id of the CodePipeline that triggered these tasks
-	TerrascaleRingDeploymentID                  string   `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`                                     // The name of the Step Fn that triggered these tasks
-	UpdateStatusLambda                          string   `envconfig:"UPDATE_STATUS_LAMBDA"`                                              // The name of the Lambda that is invoke to update the deployment status
-	TerrascaleTargetRegions                     []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Terrascale will apply regional step deployments across these regions
-	TerrascaleRegionGroup                       string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
-	TerrascaleRegionGroupRegions                []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
-	UniqueExternalExecutionID                   string
-	CSP                                         string   `required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
-	DeploymentRing                              string   `envconfig:"DEPLOYMENT_RING"`
-	SelfDestroy                                 bool     `envconfig:"TERRASCALE_SELF_DESTROY"`   // Destroy will automatically execute Terraform Destroy after running deployments & tests
-	DryRun                                      bool     `envconfig:"TERRASCALE_DRY_RUN"`        // DryRun will only execute up to Terraform plan, describing what will happen if deployed
-	StepWhitelist                               []string `envconfig:"TERRASCALE_STEP_WHITELIST"` // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
-	TargetAll                                   bool     `envconfig:"TERRASCALE_TARGET_ALL"`     // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
-	CommonRegion                                string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
-	AccountOwnerLabel                           string   `envconfig:"ACCOUNT_OWNER"` // Owner's MSID of the passed in ACCOUNT_ID
-	Version                                     string   `envconfig:"VERSION"`       // Version override
-	MaxRetries                                  int      `envconfig:"GAIA_MAX_RETRIES" default:"3"`
-	MaxTestRetries                              int      `envconfig:"GAIA_MAX_TEST_RETRIES" default:"2"`
-	LogLevel                                    string   `envconfig:"LOG_LEVEL" default:"info"`
-	TerrascalePrimaryRegionOverride             string
-	CoreAccounts                                CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
-	RegionGroups                                RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
+	AccountID                 string `envconfig:"TERRASCALE_ACCOUNT_ID"` // The subscription id to deploy to
+	TerrascaleTargetAccountID string `envconfig:"TERRASCALE_ACCOUNT_ID"` // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
+	// CredsID                         string   `envconfig:"TERRASCALE_CREDS_ID"`                                               // The identifier that determines which set of credentials to use (for which tenant)
+	TerrascaleReleaseDeploymentID string `envconfig:"TERRASCALE_RELEASE_DEPLOYMENT_ID"` // The execution id of the CodePipeline that triggered these tasks
+	TerrascaleRingDeploymentID    string `envconfig:"TERRASCALE_RING_DEPLOYMENT_ID"`    // The name of the Step Fn that triggered these tasks
+	// UpdateStatusLambda              string   `envconfig:"UPDATE_STATUS_LAMBDA"`                                              // The name of the Lambda that is invoke to update the deployment status
+	TerrascaleTargetRegions      []string `envconfig:"TERRASCALE_TARGET_REGIONS"`                                         // Terrascale will apply regional step deployments across these regions
+	TerrascaleRegionGroup        string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
+	TerrascaleRegionGroupRegions []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
+	UniqueExternalExecutionID    string
+	CSP                          string   `envconfig:"TERRASCALE_CSP" required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
+	DeploymentRing               string   `envconfig:"TERRASCALE_DEPLOYMENT_RING"`
+	SelfDestroy                  bool     `envconfig:"TERRASCALE_SELF_DESTROY"`              // Destroy will automatically execute Terraform Destroy after running deployments & tests
+	DryRun                       bool     `envconfig:"TERRASCALE_DRY_RUN"`                   // DryRun will only execute up to Terraform plan, describing what will happen if deployed
+	StepWhitelist                []string `envconfig:"TERRASCALE_STEP_WHITELIST"`            // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
+	TargetAll                    bool     `envconfig:"TERRASCALE_TARGET_ALL" default:"true"` // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
+	// CommonRegion                    string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
+	// AccountOwnerLabel               string   `envconfig:"TERRASCALE_ACCOUNT_OWNER"` // Owner's ID of the passed in ACCOUNT_ID
+	Version                         string          `envconfig:"TERRASCALE_VERSION"` // Version override
+	MaxRetries                      int             `envconfig:"TERRASCALE_MAX_RETRIES" default:"3"`
+	MaxTestRetries                  int             `envconfig:"TERRASCALE_MAX_TEST_RETRIES" default:"2"`
+	LogLevel                        string          `envconfig:"TERRASCALE_LOG_LEVEL" default:"info"`
+	TerrascalePrimaryRegionOverride string          `envconfig:"TERRASCALE_PRIMARY_REGION"`
+	CoreAccounts                    CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
+	RegionGroups                    RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
 	// Set at task definition creation
-	Namespace        string `required:"true" envconfig:"NAMESPACE"` // The namespace to use in the Terraform run. This should only be used when ENVIRONMENT != prod
-	Environment      string `required:"true"`                       // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
-	ReporterDynamodb bool   `envconfig:"TERRASCALE_REPORTER_DYNAMODB"`
-	Authenticator    auth.Authenticator
-	StepParameters   params.StepParameters
-	Project          string `envconfig:"TERRASCALE_PROJECT" default:"terrascale"`
+	Namespace      string `envconfig:"TERRASCALE_NAMESPACE"`                   // The namespace to use in the Terraform run.
+	Environment    string `required:"true" envconfig:"TERRASCALE_ENVIRONMENT"` // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
+	StepParameters params.StepParameters
+	Project        string `required:"true" envconfig:"TERRASCALE_PROJECT" default:"terrascale"`
 }
 
 type RegionGroupsMap map[string]map[string][]string
@@ -74,11 +68,11 @@ func (ipd *CoreAccountsMap) Decode(value string) error {
 
 // Deployment ...
 type Deployment struct {
-	Phase                 string
-	Result                string
-	ResultMessage         string
-	Config                Config
-	DeployMetadata        DeployMetadata
+	Phase         string
+	Result        string
+	ResultMessage string
+	Config        Config
+	//DeployMetadata        DeployMetadata
 	PlatformAccessSession *session.Session
 }
 
@@ -91,16 +85,16 @@ type DeployMetadata struct {
 
 // Account is a struct that represents details about an Account
 type Account struct {
-	ID               string
-	CredsID          string
-	CSP              string
+	ID                string
+	CredsID           string
+	CSP               string
 	AccountOwnerLabel string
 }
 
 // GetPrimaryRegionByCSP retrieves the primary region by CSP
 func (cfg Config) GetPrimaryRegionByCSP(csp string) string {
 	// support adhoc targeting of other primary regions, in e.g. ephemeral environments
-	if strings.ToLower(csp) == strings.ToLower(cfg.CSP) && cfg.TerrascalePrimaryRegionOverride != "" {
+	if cfg.TerrascalePrimaryRegionOverride != "" {
 		return cfg.TerrascalePrimaryRegionOverride
 	}
 
@@ -152,31 +146,8 @@ func GetConfig() (config Config, err error) {
 	if len(config.TerrascaleTargetRegions) == 0 {
 		config.TerrascaleTargetRegions = []string{config.GetPrimaryRegionByCSP(config.CSP)}
 	}
-	
+
 	err = validate.Struct(config)
-
-	return
-}
-
-func GetVersionJSON(log *logrus.Entry, fs afero.Fs, file string) (versionJSON DeployMetadata, err error) {
-	// Open our jsonFile
-	jsonFile, err := fs.Open(file)
-	// if we os.Open returns an error then handle it
-	if err != nil {
-		log.Debug(err)
-		return
-	}
-
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
-
-	// read our opened xmlFile as a byte array.
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-
-	json.Unmarshal(byteValue, &versionJSON)
-	if versionJSON.Region == "" {
-		versionJSON.Region = "us-east-1"
-	}
 
 	return
 }
@@ -190,15 +161,6 @@ func InputValidation(sl validator.StructLevel) {
 		// This prevents developers from modifying a higher environment from their local device
 		if input.Namespace == "" && input.DryRun == false {
 			sl.ReportError(input.Namespace, "namespace", "Namespace", "required-in-pr-local-when-dryrun-false", "")
-		}
-	}
-
-	if input.ReporterDynamodb {
-		if input.TerrascaleRingDeploymentID == "" {
-			sl.ReportError(input.TerrascaleRingDeploymentID, "TERRASCALE_RING_DEPLOYMENT_ID", "TerrascaleRingDeploymentID", "required-with-reporter-dynamodb", "")
-		}
-		if input.UpdateStatusLambda == "" {
-			sl.ReportError(input.UpdateStatusLambda, "UPDATE_STATUS_LAMBDA", "UpdateStatusLambda", "required-with-reporter-dynamodb", "")
 		}
 	}
 }
