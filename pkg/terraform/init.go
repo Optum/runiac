@@ -9,7 +9,7 @@ import (
 
 // Init calls terraform init and return stdout/stderr.
 func Init(options *Options) (out string, err error) {
-	args := []string{"init", "-force-copy", "-get-plugins=false"}
+	args := []string{"init", "-force-copy"}
 	backendArgs := FormatTerraformBackendConfigAsArgs(options.BackendConfig)
 	args = append(args, backendArgs...)
 
