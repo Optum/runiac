@@ -45,25 +45,15 @@ func (f *TerrascaleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	if _, ok := entry.Data["action"]; ok {
-		step := entry.Data["step"]
+		step := fmt.Sprintf("%v", entry.Data["step"])
+		regionDeployType := fmt.Sprintf("%v", entry.Data["regionDeployType"])
+		region := fmt.Sprintf("%v", entry.Data["region"])
+		track := fmt.Sprintf("%v", entry.Data["track"])
 
-		if step == nil {
-			step = ""
-		}
+		stepId := []string{track, step, regionDeployType, region}
 
-		regionDeployType := entry.Data["regionDeployType"]
-
-		if regionDeployType == nil {
-			regionDeployType = ""
-		}
-
-		region := entry.Data["region"]
-
-		if region == nil {
-			region = ""
-		}
-
-		fmt.Fprintf(b, "(%s %s/%s/%s/%s)   ", entry.Data["action"], entry.Data["track"], step, regionDeployType, region)
+		//fmt.Fprintf(b, "(%s %s/%s/%s/%s)   ", entry.Data["action"], entry.Data["track"], step, regionDeployType, region)
+		fmt.Fprintf(b, "(%s %s)   ", entry.Data["action"], strings.Join(stepId, "/"))
 	}
 
 	fmt.Fprintf(b, "%s", entry.Message)

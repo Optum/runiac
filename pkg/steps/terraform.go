@@ -100,6 +100,7 @@ type TerraformBackend struct {
 	AZUStorageAccountName string
 	GCSBucket             string
 	GCSPrefix             string
+	Path                  string
 	Config                map[string]interface{}
 }
 
@@ -191,6 +192,14 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 
 	if len(storageAccountMatch) > 0 {
 		backend.AZUStorageAccountName = storageAccountMatch[1]
+	}
+
+	// Storage account (Azure)
+	pathRegex, _ := regexp.Compile(`path\s*=\s*"(.+)"`)
+	pathMatch := pathRegex.FindStringSubmatch(s)
+
+	if len(pathMatch) > 0 {
+		backend.Path = pathMatch[1]
 	}
 
 	return

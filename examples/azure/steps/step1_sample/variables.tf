@@ -1,19 +1,20 @@
-variable "account_id" {
+variable account_id {
     type = string
 }
 
-variable "namespace" {
+variable region {
     type = string
 }
 
-variable "region" {
+variable environment {
     type = string
 }
 
-variable "environment" {
+variable resource_group {
     type = string
+    default = "rg-terrascale-sample"
 }
 
-variable "app_version" {
+variable terrascale_step {
     type = string
 }

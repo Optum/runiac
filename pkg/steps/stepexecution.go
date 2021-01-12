@@ -70,10 +70,8 @@ func (exec ExecutionConfig) GetCredentialEnvVars() (map[string]string, error) {
 func (exec ExecutionConfig) GetTerraformCLIVars() map[string]interface{} {
 	vars := map[string]interface{}{
 		"environment": exec.Environment,
-		"app_version": exec.AppVersion,
 		"account_id":  exec.AccountID,
 		"region":      exec.Region,
-		"namespace":   exec.Namespace,
 	}
 
 	return vars
@@ -81,6 +79,15 @@ func (exec ExecutionConfig) GetTerraformCLIVars() map[string]interface{} {
 
 func (exec ExecutionConfig) GetTerraformEnvVars() map[string]string {
 	output := exec.OptionalStepParams
+
+	if exec.Namespace != "" {
+		output["namespace"] = exec.Namespace
+	}
+
+	if exec.AppVersion != "" {
+		output["app_version"] = exec.AppVersion
+	}
+
 	// set core accounts
 	coreAccountsCount := len(exec.CoreAccounts)
 	if exec.CoreAccounts != nil && coreAccountsCount > 0 {
@@ -642,6 +649,14 @@ func GetBackendConfig(exec ExecutionConfig, backendParser TFBackendParser) Terra
 
 	if declaredBackend.AZUStorageAccountName != "" {
 		b["storage_account_name"] = interpolateString(exec, declaredBackend.AZUStorageAccountName)
+	}
+
+	if declaredBackend.AZUStorageAccountName != "" {
+		b["storage_account_name"] = interpolateString(exec, declaredBackend.AZUStorageAccountName)
+	}
+
+	if declaredBackend.Path != "" {
+		b["path"] = interpolateString(exec, declaredBackend.Path)
 	}
 
 	declaredBackend.Config = b

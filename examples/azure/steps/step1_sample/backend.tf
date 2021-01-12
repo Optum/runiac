@@ -1,5 +1,5 @@
 terraform {
   backend "local" {
-    path = "/opt/tfstate/default.tfstate"
+    path = "/tfstate/${var.terrascale_step}/terraform.tfstate"
   }
 }
