@@ -256,16 +256,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	params["terrascale_primary_region"] = exec.PrimaryRegion
 	params["terrascale_region_groups"] = terraformer.OutputToString(rgs)
 
-	// TODO: pre-step param store plugin for integrating "just-in-time" variables from param store
-	if s.DeployConfig.StepParameters != nil {
-		paramStoreParams := s.DeployConfig.StepParameters.GetParamsForStep(exec.Logger, exec.CSP, exec.Project, exec.TrackName, exec.StepName, exec.DeploymentRing)
-
-		// Add to params
-		for k, v := range paramStoreParams {
-			params[k] = v
-		}
-	}
-
+	// TODO: pre-step plugin for integrating "just-in-time" variables from external source
 	exec.Logger.Debugf("output variables: %s", KeysStringMap(exec.DefaultStepOutputVariables))
 
 	// Add previous step outputs from the track into stepParams

@@ -6,10 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.optum.com/healthcarecloud/terrascale/pkg/params"
-
-	"github.com/aws/aws-sdk-go/aws/session"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -48,10 +44,9 @@ type Config struct {
 	CoreAccounts                    CoreAccountsMap `envconfig:"TERRASCALE_CORE_ACCOUNTS"`
 	RegionGroups                    RegionGroupsMap `envconfig:"TERRASCALE_REGION_GROUPS"`
 	// Set at task definition creation
-	Namespace      string `envconfig:"TERRASCALE_NAMESPACE"`                   // The namespace to use in the Terraform run.
-	Environment    string `required:"true" envconfig:"TERRASCALE_ENVIRONMENT"` // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
-	StepParameters params.StepParameters
-	Project        string `required:"true" envconfig:"TERRASCALE_PROJECT" default:"terrascale"`
+	Namespace   string `envconfig:"TERRASCALE_NAMESPACE"`                   // The namespace to use in the Terraform run.
+	Environment string `required:"true" envconfig:"TERRASCALE_ENVIRONMENT"` // The name of the environment (e.g. pr, nonprod, prod) which comes from the CodeBuild project
+	Project     string `required:"true" envconfig:"TERRASCALE_PROJECT" default:"terrascale"`
 }
 
 type RegionGroupsMap map[string]map[string][]string
@@ -73,7 +68,6 @@ type Deployment struct {
 	ResultMessage string
 	Config        Config
 	//DeployMetadata        DeployMetadata
-	PlatformAccessSession *session.Session
 }
 
 // DeployMetadata ...
