@@ -147,13 +147,11 @@ func initFunc() {
 		"deploymentRing": deployment.Config.DeploymentRing,
 		//"credsID":                       deployment.Config.CredsID,
 		//"csp":                           deployment.Config.CSP, // TODO(config:logging): allow additional logging fields to be passed in
-		"project":                       deployment.Config.Project,
-		"terrascaleTargetAccountID":     deployment.Config.TerrascaleTargetAccountID,
-		"terrascaleRingDeploymentID":    deployment.Config.TerrascaleRingDeploymentID,
-		"terrascaleReleaseDeploymentID": deployment.Config.TerrascaleReleaseDeploymentID,
-		"environment":                   deployment.Config.Environment,
-		"namespace":                     deployment.Config.Namespace,
-		"regionGroup":                   deployment.Config.TerrascaleRegionGroup,
+		"project":                   deployment.Config.Project,
+		"terrascaleTargetAccountID": deployment.Config.TerrascaleTargetAccountID,
+		"environment":               deployment.Config.Environment,
+		"namespace":                 deployment.Config.Namespace,
+		//"regionGroup":               deployment.Config.TerrascaleRegionGroup, // TODO(config:logging): allow additional logging fields to be passed in
 	})
 
 	//// read deployment artifact version string from version.json first, if it exists
@@ -172,7 +170,7 @@ func initFunc() {
 		"version": deployment.Config.Version,
 	})
 
-	j, _ := json.MarshalIndent(deployment, "", "    ")
+	j, _ := json.MarshalIndent(deployment.Config, "", "    ")
 
 	log.Infof("Parsed configuration: %s", string(j))
 

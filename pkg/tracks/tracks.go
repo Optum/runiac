@@ -579,7 +579,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 	primaryOutChan := make(chan RegionExecution, 1)
 	primaryInChan := make(chan RegionExecution, 1)
 
-	region := cfg.TerrascalePrimaryRegionOverride // TODO(cfg:region): allow this to be overridden
+	region := cfg.PrimaryRegion // TODO(cfg:region): allow this to be overridden
 
 	primaryRegionExecution := RegionExecution{
 		TrackName:                  t.Name,
@@ -626,7 +626,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		return
 	}
 
-	targetRegions := cfg.TerrascaleTargetRegions // TODO(cfg:region): allow this to be overridden
+	targetRegions := cfg.RegionalRegions // TODO(cfg:region): allow this to be overridden
 	targetRegionsCount := len(targetRegions)
 	regionOutChan := make(chan RegionExecution, targetRegionsCount)
 	regionInChan := make(chan RegionExecution, targetRegionsCount)
@@ -711,8 +711,8 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		regionOutChan := make(chan RegionExecution)
 		regionInChan := make(chan RegionExecution)
 
-		targetRegions := cfg.TerrascaleTargetRegions
-		targetRegionsCount := len(cfg.TerrascaleTargetRegions)
+		targetRegions := cfg.RegionalRegions
+		targetRegionsCount := len(cfg.RegionalRegions)
 
 		for i := 0; i < targetRegionsCount; i++ {
 			go DestroyTrackRegion(regionInChan, regionOutChan)
@@ -752,7 +752,7 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 	primaryOutChan := make(chan RegionExecution, 1)
 	primaryInChan := make(chan RegionExecution, 1)
 
-	region := cfg.TerrascalePrimaryRegionOverride // TODO(cfg:region): allow this to be overridden
+	region := cfg.PrimaryRegion // TODO(cfg:region): allow this to be overridden
 
 	primaryExecution := RegionExecution{
 		TrackName:                  t.Name,

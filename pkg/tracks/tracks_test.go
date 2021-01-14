@@ -239,7 +239,7 @@ func TestGetTracksWithStepTarget_ShouldReturnCorrectTracks(t *testing.T) {
 	// act
 	mockTracks := sut.GatherTracks(config.Config{
 		StepWhitelist: stubStepWhitelist,
-		Project:         "core",
+		Project:       "core",
 	})
 
 	// assert
@@ -508,9 +508,8 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 				Output:         tracks.ExecutionOutput{},
 				StepperFactory: stubStepperFactory,
 			}, config.Config{
-				TerrascaleTargetRegions: test.stubTargetRegions,
-				TerrascaleRegionGroup:   test.regionGroup,
-				CSP:                     "aws",
+				RegionalRegions:       test.stubTargetRegions,
+				TerrascaleRegionGroup: test.regionGroup,
 			}, tracks.Track{
 				RegionalDeployment: test.stubRegionalDeployment,
 			}, trackChan)

@@ -31,7 +31,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 			DeploymentRing:            "stubDeploymentRing",
 			Project:                   "stubProject",
 			DryRun:                    true,
-			TerrascaleTargetRegions:   []string{"stub"},
+			RegionalRegions:           []string{"stub"},
 			UniqueExternalExecutionID: "stubExecutionID",
 			MaxRetries:                3,
 			MaxTestRetries:            2,
@@ -51,7 +51,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.DeployConfig.DryRun, mock.DryRun, "DryRun should match stub value")
 	require.Equal(t, stubStep.TrackName, mock.TrackName, "TrackName should match stub value")
 	require.Equal(t, stubStep.DeployConfig.UniqueExternalExecutionID, mock.UniqueExternalExecutionID, "UniqueExternalExecutionID should match stub value")
-	require.Equal(t, stubStep.DeployConfig.TerrascaleTargetRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
+	require.Equal(t, stubStep.DeployConfig.RegionalRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxRetries, mock.MaxRetries, "MaxRetries should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxTestRetries, mock.MaxTestRetries, "MaxTestRetries should match stub value")
 

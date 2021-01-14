@@ -133,7 +133,7 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		MaxTestRetries:             s.DeployConfig.MaxTestRetries,
 		Project:                    s.DeployConfig.Project,
 		TrackName:                  s.TrackName,
-		RegionGroupRegions:         s.DeployConfig.TerrascaleTargetRegions,
+		RegionGroupRegions:         s.DeployConfig.RegionalRegions,
 		UniqueExternalExecutionID:  s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:               s.DeployConfig.RegionGroups,
 		TerrascaleConfig:           s.TerrascaleConfig,
@@ -235,7 +235,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	params["terrascale_step"] = strings.ToLower(exec.StepName)
 	params["terrascale_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
 	params["terrascale_region_group"] = strings.ToLower(exec.RegionGroup)
-	params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.TerrascaleTargetRegions), " ", ",", -1)
+	params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.RegionalRegions), " ", ",", -1)
 	params["terrascale_primary_region"] = exec.PrimaryRegion
 	params["terrascale_region_groups"] = terraformer.OutputToString(rgs)
 
@@ -252,7 +252,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 			params[k] = terraform.OutputToString(v)
 		}
 	} else {
-		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, "", exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Project, s.DeployConfig.TerrascaleTargetRegions)
+		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, "", exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, "", "", exec.Project, s.DeployConfig.RegionalRegions)
 	}
 
 	exec.OptionalStepParams = stepParams
