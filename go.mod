@@ -1,6 +1,6 @@
 module github.optum.com/healthcarecloud/terrascale
 
-go 1.12
+go 1.15
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
@@ -9,10 +9,10 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/gruntwork-io/gruntwork-cli v0.4.2
 	github.com/gruntwork-io/terratest v0.17.5
-	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/otiai10/copy v1.4.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.4.0
