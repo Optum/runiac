@@ -46,7 +46,6 @@ type Step struct {
 	CommonInputVariables   map[string]string // Common input variables that all steps receive
 	Output                 StepOutput
 	TestOutput             StepTestOutput
-	TFProvider             TerraformProvider
 	TFBackend              TerraformBackend
 	TerrascaleConfig       TerrascaleConfig
 }

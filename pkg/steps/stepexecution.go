@@ -33,27 +33,25 @@ type ExecutionConfig struct {
 	RegionGroup               string
 	PrimaryRegion             string
 	Dir                       string
-	TFProvider                TerraformProvider
 	TFBackend                 TerraformBackend
-	CSP                       string
 	Environment               string `json:"environment"`
 	AppVersion                string `json:"app_version"`
-	CredsID                   string `json:"creds_id"`
-	AccountID                 string `json:"account_id"`
-	AccountOwnerID            string `json:"account_owner_msid"`
-	MaxRetries                int
-	MaxTestRetries            int
-	CoreAccounts              map[string]config.Account
-	RegionGroups              config.RegionGroupsMap
-	Namespace                 string
-	CommonRegion              string
-	StepName                  string
-	StepID                    string
-	DeploymentRing            string
-	Project                   string
-	TrackName                 string
-	DryRun                    bool
-	TerrascaleConfig          TerrascaleConfig
+	//CredsID                   string `json:"creds_id"`
+	AccountID string `json:"account_id"`
+	//AccountOwnerID   string `json:"account_owner_msid"`
+	MaxRetries       int
+	MaxTestRetries   int
+	CoreAccounts     map[string]config.Account
+	RegionGroups     config.RegionGroupsMap
+	Namespace        string
+	CommonRegion     string
+	StepName         string
+	StepID           string
+	DeploymentRing   string
+	Project          string
+	TrackName        string
+	DryRun           bool
+	TerrascaleConfig TerrascaleConfig
 
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
 	OptionalStepParams         map[string]string
@@ -129,7 +127,6 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		StepID:                     s.ID,
 		Namespace:                  s.DeployConfig.Namespace,
 		Dir:                        s.Dir,
-		CSP:                        s.DeployConfig.CSP,
 		DeploymentRing:             s.DeployConfig.DeploymentRing,
 		DryRun:                     s.DeployConfig.DryRun,
 		MaxRetries:                 s.DeployConfig.MaxRetries,
@@ -178,65 +175,51 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 
 	accounts := map[string]config.Account{
 		"terrascale_target_account_id": {
-			ID:                exec.TerrascaleTargetAccountID,
-			CredsID:           exec.CredsID,
-			CSP:               exec.CSP,
-			AccountOwnerLabel: exec.AccountOwnerID,
+			ID: exec.TerrascaleTargetAccountID,
 		},
 	}
 	for k, v := range exec.CoreAccounts {
 		accounts[k] = v
 	}
 
-	provider, err := ParseTFProvider(exec.Fs, exec.Logger, exec.Dir, accounts)
-
-	if err != nil {
-		exec.Logger.WithError(err).Error(err)
-		return exec, err
-	}
-
-	exec.TFProvider = provider
-
 	// always ensure we have correct primary region set based on terraform provider csp setting
-	providerTypeToCSP := map[TFProviderType]string{
-		AWSProvider:     "AWS",
-		AzurermProvider: "AZU",
-	}
+	//providerTypeToCSP := map[TFProviderType]string{
+	//	AWSProvider:     "AWS",
+	//	AzurermProvider: "AZU",
+	//}
 
-	providerCSP := ""
-	if csp, ok := providerTypeToCSP[provider.Type]; ok {
-		providerCSP = csp
-	}
+	// TODO(config:region):  allow this to be set via external configuration (terrascale.yml)
+	//providerCSP := ""
+	//if csp, ok := providerTypeToCSP[provider.Type]; ok {
+	//	providerCSP = csp
+	//}
+	//
+	//if providerCSP != "" {
+	//	exec.PrimaryRegion = s.DeployConfig.GetPrimaryRegionByCSP(providerCSP)
+	//
+	//	if exec.RegionDeployType == PrimaryRegionDeployType {
+	//		exec.Region = exec.PrimaryRegion
+	//
+	//		exec.Logger = exec.Logger.WithField("region", exec.Region)
+	//		exec.Logger.Infof("Set region to %s based on %s provider's primary region", exec.Region, providerCSP)
+	//	}
+	//}
 
-	if providerCSP != "" {
-		exec.PrimaryRegion = s.DeployConfig.GetPrimaryRegionByCSP(providerCSP)
-
-		if exec.RegionDeployType == PrimaryRegionDeployType {
-			exec.Region = exec.PrimaryRegion
-
-			exec.Logger = exec.Logger.WithField("region", exec.Region)
-			exec.Logger.Infof("Set region to %s based on %s provider's primary region", exec.Region, providerCSP)
-		}
-	}
-
-	if provider.AccountOverridden {
-		exec.AccountID = provider.AssumeRoleAccount.ID
-		exec.CredsID = provider.AssumeRoleAccount.CredsID
-		exec.CSP = provider.AssumeRoleAccount.CSP
-		exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerLabel
-
-		// if no account was originally targeted in this run, use this specific step's "AccountOveridden" account id
-		if exec.TerrascaleTargetAccountID == "" {
-			exec.TerrascaleTargetAccountID = exec.AccountID
-		}
-
-		exec.Logger.Infof("Overriding account to %v/%v based on provider.tf", exec.AccountID, exec.CredsID)
-	}
+	//if provider.AccountOverridden {
+	//	exec.AccountID = provider.AssumeRoleAccount.ID
+	//	exec.CredsID = provider.AssumeRoleAccount.CredsID
+	//	exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerLabel
+	//
+	//	// if no account was originally targeted in this run, use this specific step's "AccountOveridden" account id
+	//	if exec.TerrascaleTargetAccountID == "" {
+	//		exec.TerrascaleTargetAccountID = exec.AccountID
+	//	}
+	//
+	//	exec.Logger.Infof("Overriding account to %v/%v based on provider.tf", exec.AccountID, exec.CredsID)
+	//}
 
 	exec.Logger = exec.Logger.WithFields(logrus.Fields{
-		"credsID":           exec.CredsID,
-		"accountID":         exec.AccountID,
-		"AccountOwnerLabel": exec.AccountOwnerID,
+		"accountID": exec.AccountID,
 	})
 
 	var params = map[string]string{}
@@ -269,7 +252,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 			params[k] = terraform.OutputToString(v)
 		}
 	} else {
-		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, exec.CSP, exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Project, s.DeployConfig.TerrascaleTargetRegions)
+		cloudaccountdeployment.RecordStepStart(exec.Logger, exec.AccountID, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.DryRun, "", exec.AppVersion, s.DeployConfig.UniqueExternalExecutionID, s.DeployConfig.TerrascaleRingDeploymentID, s.DeployConfig.TerrascaleReleaseDeploymentID, exec.Project, s.DeployConfig.TerrascaleTargetRegions)
 	}
 
 	exec.OptionalStepParams = stepParams
@@ -388,7 +371,7 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 
 	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), exec.MaxTestRetries, 20*time.Second, exec.Logger, func(retryCount int) error {
 		retryLogger := exec.Logger.WithField("retryCount", retryCount)
-		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s-%s", exec.CSP, exec.Project, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
+		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s", exec.Project, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
 		cmd := shell.Command{
 			Command: "gotestsum",
 			//Command:        "/bin/bash",
@@ -412,19 +395,19 @@ func (stepper TerraformStepper) ExecuteStepTests(exec ExecutionConfig) (output S
 
 func postStep(exec ExecutionConfig, output StepOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	} else if output.Status == Fail {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
 	} else if output.Status == Unstable {
-		cloudaccountdeployment.RecordStepFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
+		cloudaccountdeployment.RecordStepFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
 	} else {
-		cloudaccountdeployment.RecordStepSuccess(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions)
+		cloudaccountdeployment.RecordStepSuccess(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions)
 	}
 }
 
 func postStepTest(exec ExecutionConfig, output StepTestOutput) {
 	if output.Err != nil {
-		cloudaccountdeployment.RecordStepTestFail(exec.Logger, exec.CSP, exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
+		cloudaccountdeployment.RecordStepTestFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	}
 }
 

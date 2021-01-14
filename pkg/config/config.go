@@ -28,12 +28,12 @@ type Config struct {
 	TerrascaleRegionGroup        string   `envconfig:"TERRASCALE_REGION_GROUP" validate:"eq=us|eq=eu|eq=uk" default:"us"` // The identified region group being executed in, this will derive primary region for primary step deployments; MUST NOT contain spaces, underscores or hypens
 	TerrascaleRegionGroupRegions []string `envconfig:"TERRASCALE_REGION_GROUP_REGIONS"`                                   // Terrascale will execute regional step deployments across these regions, running destroy in the regions that do not intersect with `TERRASCALE_TARGET_REGIONS`
 	UniqueExternalExecutionID    string
-	CSP                          string   `envconfig:"TERRASCALE_CSP" required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
-	DeploymentRing               string   `envconfig:"TERRASCALE_DEPLOYMENT_RING"`
-	SelfDestroy                  bool     `envconfig:"TERRASCALE_SELF_DESTROY"`              // Destroy will automatically execute Terraform Destroy after running deployments & tests
-	DryRun                       bool     `envconfig:"TERRASCALE_DRY_RUN"`                   // DryRun will only execute up to Terraform plan, describing what will happen if deployed
-	StepWhitelist                []string `envconfig:"TERRASCALE_STEP_WHITELIST"`            // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
-	TargetAll                    bool     `envconfig:"TERRASCALE_TARGET_ALL" default:"true"` // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
+	//CSP                          string   `envconfig:"TERRASCALE_CSP" required:"true" validate:"eq=AZU|eq=AWS|eq=GCP"` // CSP being run against (CloudServiceProvider)
+	DeploymentRing string   `envconfig:"TERRASCALE_DEPLOYMENT_RING"`
+	SelfDestroy    bool     `envconfig:"TERRASCALE_SELF_DESTROY"`              // Destroy will automatically execute Terraform Destroy after running deployments & tests
+	DryRun         bool     `envconfig:"TERRASCALE_DRY_RUN"`                   // DryRun will only execute up to Terraform plan, describing what will happen if deployed
+	StepWhitelist  []string `envconfig:"TERRASCALE_STEP_WHITELIST"`            // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
+	TargetAll      bool     `envconfig:"TERRASCALE_TARGET_ALL" default:"true"` // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
 	// CommonRegion                    string   `envconfig:"TERRASCALE_COMMON_REGION" default:"us-east-1"`
 	// AccountOwnerLabel               string   `envconfig:"TERRASCALE_ACCOUNT_OWNER"` // Owner's ID of the passed in ACCOUNT_ID
 	Version                         string          `envconfig:"TERRASCALE_VERSION"` // Version override
@@ -137,9 +137,9 @@ func GetConfig() (config Config, err error) {
 	}
 
 	// if not regions specifically targeted, default to primary region
-	if len(config.TerrascaleTargetRegions) == 0 {
-		config.TerrascaleTargetRegions = []string{config.GetPrimaryRegionByCSP(config.CSP)}
-	}
+	//if len(config.TerrascaleTargetRegions) == 0 {
+	//	config.TerrascaleTargetRegions = []string{config.GetPrimaryRegionByCSP(config.CSP)}
+	//}
 
 	err = validate.Struct(config)
 

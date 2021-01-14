@@ -146,7 +146,7 @@ func initFunc() {
 		"accountID":      deployment.Config.AccountID,
 		"deploymentRing": deployment.Config.DeploymentRing,
 		//"credsID":                       deployment.Config.CredsID,
-		"csp":                           deployment.Config.CSP,
+		//"csp":                           deployment.Config.CSP, // TODO(config:logging): allow additional logging fields to be passed in
 		"project":                       deployment.Config.Project,
 		"terrascaleTargetAccountID":     deployment.Config.TerrascaleTargetAccountID,
 		"terrascaleRingDeploymentID":    deployment.Config.TerrascaleRingDeploymentID,

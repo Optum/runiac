@@ -33,7 +33,6 @@ func TestMain(m *testing.M) {
 	stubConfig.Project = "project"
 	stubConfig.UniqueExternalExecutionID = "taskID"
 	stubConfig.AccountID = "accountID"
-	cloudaccountdeployment.Cfg.ReporterDynamodb = true
 
 	flag.Parse()
 	exitCode := m.Run()
@@ -45,12 +44,6 @@ func TestMain(m *testing.M) {
 func TestFlushTracks_ShouldReturnCorrectSuccessesWithMultipleTracks(t *testing.T) {
 	var mockedInput = map[int]interface{}{}
 	var executedInvokeCount int
-
-	cloudaccountdeployment.InvokeLambdaFunc = func(logger *logrus.Entry, p interface{}) (i map[string]interface{}) {
-		mockedInput[executedInvokeCount] = p
-		executedInvokeCount++
-		return nil
-	}
 
 	stubTrackPrefix := "track"
 	stubStepPrefix := "step"
@@ -141,12 +134,6 @@ func TestFlushTrack_ShouldReportAllStepsInSingleTrack(t *testing.T) {
 
 	var mockedInput = map[int]interface{}{}
 	var executedInvokeCount int
-
-	cloudaccountdeployment.InvokeLambdaFunc = func(logger *logrus.Entry, p interface{}) map[string]interface{} {
-		mockedInput[executedInvokeCount] = p
-		executedInvokeCount++
-		return nil
-	}
 
 	// act
 	steps, err := cloudaccountdeployment.FlushTrack(logger, "logging")

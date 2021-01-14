@@ -8,19 +8,19 @@ import (
 	"strconv"
 	"strings"
 
-	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
-
+	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
+	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 )
 
 const (
-	PRE_TRACK_NAME = "_pretrack" // The name of the directory for the pretrack
-	DEFAULT_TRACK_NAME = "default" // The name of the default top-level track
+	PRE_TRACK_NAME     = "_pretrack" // The name of the directory for the pretrack
+	DEFAULT_TRACK_NAME = "default"   // The name of the default top-level track
 )
 
 // ExecuteTrackFunc facilitates track executions across multiple regions and RegionDeployTypes (e.g. Primary us-east-1 and regional us-*)
@@ -121,19 +121,16 @@ type Stage struct {
 // GatherTracks gets all tracks that should be executed based
 // on the directory structure
 func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks []Track) {
-	defaultDir := "./steps"
+	defaultDir := "./"
 	tracksDir := "./tracks"
+	defaultExists := false
 
-	// try to read steps from the default track at the top-level directory, if it exists
-	defaultExists, _ := afero.DirExists(tracker.Fs, defaultDir)
-	if defaultExists {
-		tracker.Log.Debug("Found default track directory")
-
-		t, included, _ := tracker.readTrack(config, DEFAULT_TRACK_NAME, defaultDir)
-		if included && t.StepsCount > 0 {
-			tracker.Log.Println(fmt.Sprintf("Tracks: Adding default track"))
-			tracks = append(tracks, t)
-		}
+	// try to read steps from the default track and step at the top-level directory, if it exists
+	t, included, _ := tracker.readTrack(config, DEFAULT_TRACK_NAME, defaultDir)
+	if included && t.StepsCount > 0 {
+		defaultExists = true
+		tracker.Log.Println(fmt.Sprintf("Tracks: Adding default track"))
+		tracks = append(tracks, t)
 	}
 
 	// read tracks from the usual tracks directory
@@ -156,6 +153,29 @@ func (tracker DirectoryBasedTracker) GatherTracks(config config.Config) (tracks 
 	return
 }
 
+func copyDefault(source, destination string) error {
+	var err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+
+		if strings.HasPrefix(path, "tracks") {
+			return nil
+		}
+
+		var relPath = strings.Replace(path, source, "", 1)
+		if relPath == "" {
+			return nil
+		}
+
+		if strings.HasPrefix(relPath, "step") {
+			fmt.Println(relPath)
+
+			return copy.Copy(path, filepath.Join(destination, relPath))
+		} else {
+			return nil
+		}
+	})
+	return err
+}
+
 func (tracker DirectoryBasedTracker) readTrack(config config.Config, name string, dir string) (Track, bool, error) {
 	t := Track{
 		Name:         name,
@@ -171,9 +191,22 @@ func (tracker DirectoryBasedTracker) readTrack(config config.Config, name string
 		t.IsDefaultTrack = true
 	}
 
+	if t.IsDefaultTrack {
+		matches, _ := afero.Glob(tracker.Fs, "*.tf") // TODO(plugin): shift this check to a plugin to support more than terraform
+		if len(matches) > 0 {
+			_ = tracker.Fs.MkdirAll("./tracks/default/", 0755)
+			err := copyDefault("./", "./tracks/default/")
+			if err != nil {
+				tracker.Log.WithError(err).Error("Failed to set up default track step")
+				return t, false, err
+			}
+		}
+	}
+
 	tConfig := viper.New()
 	tConfig.SetConfigName("terrascale")         // name of config file (without extension)
 	tConfig.AddConfigPath(filepath.Join(t.Dir)) // path to look for the config file in
+
 	if err := tConfig.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found, don't record or log error as this configuration file is optional.
@@ -290,6 +323,7 @@ func (tracker DirectoryBasedTracker) readTrack(config config.Config, name string
 				}
 			}
 		}
+
 		t.StepProgressionsCount = highestProgressionLevel
 	}
 
@@ -545,6 +579,8 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 	primaryOutChan := make(chan RegionExecution, 1)
 	primaryInChan := make(chan RegionExecution, 1)
 
+	region := cfg.TerrascalePrimaryRegionOverride // TODO(cfg:region): allow this to be overridden
+
 	primaryRegionExecution := RegionExecution{
 		TrackName:                  t.Name,
 		TrackDir:                   t.Dir,
@@ -554,7 +590,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		Logger:                     logger,
 		Fs:                         execution.Fs,
 		Output:                     ExecutionOutput{},
-		Region:                     cfg.GetPrimaryRegionByCSP(cfg.CSP),
+		Region:                     region,
 		RegionDeployType:           steps.PrimaryRegionDeployType,
 		StepperFactory:             execution.StepperFactory,
 		DefaultStepOutputVariables: map[string]map[string]string{},
@@ -590,7 +626,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		return
 	}
 
-	targetRegions := cfg.TerrascaleTargetRegions
+	targetRegions := cfg.TerrascaleTargetRegions // TODO(cfg:region): allow this to be overridden
 	targetRegionsCount := len(targetRegions)
 	regionOutChan := make(chan RegionExecution, targetRegionsCount)
 	regionInChan := make(chan RegionExecution, targetRegionsCount)
@@ -606,7 +642,7 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 
 		// Like slices, maps hold references to an underlying data structure. If you pass a map to a function that changes the contents of the map, the changes will be visible in the caller.
 		// https://golang.org/doc/effective_go.html#maps
-		// While map is being used for StepOutputVariables, required to copy value to a new map to avoid regions overwriting each other while inflight regional step variables are added
+		// While map is being used for StepOutputVariables, required to copyDefault value to a new map to avoid regions overwriting each other while inflight regional step variables are added
 		for k, v := range primaryTrackExecution.Output.StepOutputVariables {
 			outputVars[k] = v
 		}
@@ -716,6 +752,8 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 	primaryOutChan := make(chan RegionExecution, 1)
 	primaryInChan := make(chan RegionExecution, 1)
 
+	region := cfg.TerrascalePrimaryRegionOverride // TODO(cfg:region): allow this to be overridden
+
 	primaryExecution := RegionExecution{
 		TrackName:                  t.Name,
 		TrackDir:                   t.Dir,
@@ -724,10 +762,10 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		Logger:                     trackLogger,
 		Fs:                         execution.Fs,
 		Output:                     ExecutionOutput{},
-		Region:                     cfg.GetPrimaryRegionByCSP(cfg.CSP),
+		Region:                     region,
 		RegionDeployType:           steps.PrimaryRegionDeployType,
 		StepperFactory:             execution.StepperFactory,
-		DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.PrimaryRegionDeployType, cfg.GetPrimaryRegionByCSP(cfg.CSP))],
+		DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.PrimaryRegionDeployType, region)],
 	}
 
 	// Add step outputs for primary steps

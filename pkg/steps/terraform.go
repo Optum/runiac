@@ -8,44 +8,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
-
-// TFProviderType represents a Terraform provider type
-type TFProviderType int
-
-const (
-	// AWSProvider is the AWS TF provider
-	AWSProvider TFProviderType = iota
-	// AzurermProvider is the Azurerm TF provider
-	AzurermProvider
-	// Google Provider is the Google TF provider
-	GoogleProvider
-	// UnknownProvider represents a provider that could not be determined
-	UnknownProvider
-)
-
-func (p TFProviderType) String() string {
-	return [...]string{"aws", "azurerm", "google", "unknown"}[p]
-}
-
-// StringToProviderType converts a string to a ProviderType
-func StringToProviderType(s string) (TFProviderType, error) {
-	providers := map[string]TFProviderType{
-		"aws":     AWSProvider,
-		"azurerm": AzurermProvider,
-		"google":  GoogleProvider,
-	}
-
-	val, exists := providers[s]
-	if !exists {
-		return UnknownProvider, errors.New("Invalid provider string")
-	}
-	return val, nil
-}
 
 // TFBackendType represents a Terraform backend type
 type TFBackendType int
@@ -81,13 +47,6 @@ func StringToBackendType(s string) (TFBackendType, error) {
 		return UnknownBackend, errors.New("Invalid backend string")
 	}
 	return val, nil
-}
-
-// TerraformProvider is a structure that represents a terraform providers file
-type TerraformProvider struct {
-	Type              TFProviderType
-	AccountOverridden bool
-	AssumeRoleAccount config.Account
 }
 
 // TerraformBackend is a structure that represents a terraform backend file
@@ -200,119 +159,6 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 
 	if len(pathMatch) > 0 {
 		backend.Path = pathMatch[1]
-	}
-
-	return
-}
-
-// ParseTFProvider parses a providers.tf file
-func ParseTFProvider(fs afero.Fs, logger *logrus.Entry, dir string, accountIds map[string]config.Account) (provider TerraformProvider, err error) {
-
-	file := fmt.Sprintf("%s/providers.tf", dir)
-	// check if file exists
-	exists, err := afero.Exists(fs, file)
-	if !exists {
-		if err != nil {
-			logger.WithError(err).Error(err)
-		}
-		return
-	}
-
-	// read the whole file at once
-	b, err := afero.ReadFile(fs, file)
-	if err != nil {
-		logger.WithError(err).Error(err)
-		return
-	}
-
-	s := string(b)
-
-	// Determine provider type
-	providerSplit := strings.Split(s, " ")
-	providerString := strings.Replace(providerSplit[1], "\"", "", -1)
-	providerType, _ := StringToProviderType(providerString)
-	provider.Type = providerType
-
-	logger.Debugf("Parsed provider type: %s", provider.Type)
-
-	if provider.Type == AWSProvider {
-		var assumeRoleRoleArn string
-
-		// TODO: greatly improve this. likely by leveraging gohcl or terraform packages to properly handle hcl variables and parsing?
-		// also consider attempting assumerole into provided arn (rather than extract account id and use OrganizationAccountAccessRole)
-		r, _ := regexp.Compile(`role_arn\s*=\s*"(.+)"`)
-
-		substring := r.FindStringSubmatch(s)
-
-		if len(substring) > 0 {
-			assumeRoleRoleArn = substring[1]
-		}
-
-		// if assume role arn is set, extract out account id for proper logging
-		if assumeRoleRoleArn != "" {
-			provider.AccountOverridden = true
-
-			// assume_role_arn will match arn:aws:iam::123456789012:role/S3Access
-			accountID := strings.Split(strings.Split(assumeRoleRoleArn, "::")[1], ":role")[0]
-
-			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountID))
-
-			// check for variable arn:aws:iam::${var.core_account_ids_map.logging_final_destination}:role/OrganizationAccountAccessRole
-			checkForCoreAccount := strings.Split(accountID, "var.core_account_ids_map.")
-			checkForTargetAccount := strings.Contains(accountID, "var.terrascale_target_account_id")
-
-			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", strings.Join(checkForCoreAccount, ", ")))
-
-			var accountIDKey string
-			if len(checkForCoreAccount) > 1 {
-				// parse out variable key ${var.core_account_ids_map.logging_final_destination}
-				accountIDKey = strings.Split(checkForCoreAccount[1], "}")[0]
-
-			} else if checkForTargetAccount {
-				accountIDKey = "terrascale_target_account_id"
-			}
-
-			logger.Debug(fmt.Sprintf("Parse Provider Assume Role: %v", accountIDKey))
-
-			if val, ok := accountIds[accountIDKey]; ok {
-				provider.AssumeRoleAccount = val
-			} else {
-				logger.Warnf(`Did not find match for variable "%v" while parsing provider assume role. Possible options include: %v`, accountIDKey, KeysString(accountIds))
-			}
-
-			// TODO(GAIA_FEATURE_DISABLE_CREDS): remove this error return after ensuring all projects have this feature toggle as true
-			if len(provider.AssumeRoleAccount.CredsID) == 0 {
-				return provider, errors.New("Unable to correctly set AssumeRoleAccount from provider.tf assume role override")
-			}
-		}
-	} else if provider.Type == AzurermProvider {
-		var subscriptionID string
-
-		r, _ := regexp.Compile(`subscription_id\s*=\s*(.+)`)
-		substring := r.FindStringSubmatch(s)
-
-		if len(substring) > 0 {
-			subscriptionID = substring[1]
-		}
-
-		if subscriptionID != "" {
-			provider.AccountOverridden = true
-
-			// subscription_id = var.core_account_ids_map.core_azu
-			checkForVariable := strings.Split(subscriptionID, "var.core_account_ids_map.")
-
-			if len(checkForVariable) > 0 {
-				accountIDKey := checkForVariable[1]
-
-				if val, ok := accountIds[accountIDKey]; ok {
-					provider.AssumeRoleAccount = val
-				} else {
-					logger.Errorf(`Did not find match for variable "%v" while parsing subscription id. Possible options include: %v`, accountIDKey, KeysString(accountIds))
-				}
-			} else {
-				return provider, errors.New(fmt.Sprintf("Unsupported subscription id configuration: %v. Unable to find core_account_ids_map.", subscriptionID))
-			}
-		}
 	}
 
 	return

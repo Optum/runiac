@@ -28,7 +28,6 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 		Dir:  "stub",
 		Name: "stubName",
 		DeployConfig: config.Config{
-			CSP:                       "stubCSP",
 			DeploymentRing:            "stubDeploymentRing",
 			Project:                   "stubProject",
 			DryRun:                    true,
@@ -47,7 +46,6 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.Name, mock.StepName, "Name should match stub value")
 	require.Equal(t, stubRegion, mock.Region, "Region should match stub value")
 	require.Equal(t, stubRegionalDeployType, mock.RegionDeployType, "RegionDeployType should match stub value")
-	require.Equal(t, stubStep.DeployConfig.CSP, mock.CSP, "CSP should match stub value")
 	require.Equal(t, stubStep.DeployConfig.DeploymentRing, mock.DeploymentRing, "DeploymentRing should match stub value")
 	require.Equal(t, stubStep.DeployConfig.Project, mock.Project, "Project should match stub value")
 	require.Equal(t, stubStep.DeployConfig.DryRun, mock.DryRun, "DryRun should match stub value")
@@ -96,9 +94,9 @@ func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
 	`), 0644)
 
 	mockResult := GetBackendConfig(ExecutionConfig{
-		Fs:                                       fs,
-		Logger:                                   logger,
-		DeploymentRing:                           "fake",
+		Fs:             fs,
+		Logger:         logger,
+		DeploymentRing: "fake",
 	}, ParseTFBackend)
 
 	require.Equal(t, "fake-bucket", mockResult.Config["bucket"])
@@ -117,9 +115,9 @@ func TestGetBackendConfig_ShouldInterpolateResourceGroupNameField(t *testing.T) 
 	`), 0644)
 
 	mockResult := GetBackendConfig(ExecutionConfig{
-		Fs:                                       fs,
-		Logger:                                   logger,
-		DeploymentRing:                           "fake",
+		Fs:             fs,
+		Logger:         logger,
+		DeploymentRing: "fake",
 	}, ParseTFBackend)
 
 	require.Equal(t, "rg-fake", mockResult.Config["resource_group_name"])
@@ -138,9 +136,9 @@ func TestGetBackendConfig_ShouldInterpolateStorageAccountNameField(t *testing.T)
 	`), 0644)
 
 	mockResult := GetBackendConfig(ExecutionConfig{
-		Fs:                                       fs,
-		Logger:                                   logger,
-		DeploymentRing:                           "fake",
+		Fs:             fs,
+		Logger:         logger,
+		DeploymentRing: "fake",
 	}, ParseTFBackend)
 
 	require.Equal(t, "st-fake", mockResult.Config["storage_account_name"])
@@ -185,7 +183,7 @@ func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorr
 		CoreAccounts: map[string]config.Account{
 			"logging_bridge_aws": {ID: DefaultStubAccountID, CredsID: DefaultStubAccountID, CSP: DefaultStubAccountID, AccountOwnerLabel: DefaultStubAccountID},
 		},
-		AccountID:                              "fun",
+		AccountID: "fun",
 	}, ParseTFBackend)
 
 	require.True(t, strings.HasPrefix(mockResult.Config["key"].(string), "noprefix"), "%s should have no prefix appended when using FeatureToggleDisableS3BackendKeyPrefix", mockResult.Config["key"].(string))
@@ -375,7 +373,6 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 				Logger:                     logger,
 				Fs:                         fs,
 				DefaultStepOutputVariables: map[string]map[string]string{},
-				CredsID:                    "creds",
 				Environment:                tc.environment,
 				Namespace:                  tc.namespace,
 				AccountID:                  "accountID",
@@ -443,7 +440,6 @@ func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrec
 				RegionDeployType:           PrimaryRegionDeployType,
 				Logger:                     logger,
 				Fs:                         fs,
-				CredsID:                    "creds",
 				Environment:                "environment",
 				AccountID:                  tc.accountID,
 				TerrascaleTargetAccountID:  tc.terrascaleTargetAccountID,
