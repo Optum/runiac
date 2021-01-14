@@ -7,13 +7,9 @@ The following steps assume you are running on a Linux or macOS system, but the p
 
 ## Requirements
 
-You'll need an active Microsoft Azure subscription to run this example. Microsoft offers a [free tier](https://azure.microsoft.com/en-us/free/), which
-can suffice for this example. Be sure to [install the Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) on your machine as well.
+See the top-level README for information on obtaining these items:
 
-Once you have a subscription, you'll need to run `az login` and authenticate yourself against Azure. If successful, you should see
-a list of subscriptions that you have access to. Set your default account by providing the subscription ID to the Azure CLI:
-
-`az account set -s YOUR-SUBSCRIPTION-ID`
+- An Azure subscription
 
 ## Running
 

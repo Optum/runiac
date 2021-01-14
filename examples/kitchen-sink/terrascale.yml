@@ -1,0 +1,3 @@
+project: kitchen-sink
+primary_region: centralus
+regional_regions: eastus2,westus2

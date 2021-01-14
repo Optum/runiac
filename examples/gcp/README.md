@@ -7,18 +7,9 @@ The following steps assume you are running on a Linux or macOS system, but the p
 
 ## Requirements
 
-You'll need a project on Google Cloud Platform where you can deploy resources. Google offers a [free tier](https://cloud.google.com/free) for
-evaluation, which can suffice for this example.
+See the top-level README for information on obtaining these items:
 
-After you've acquired a project, you'll need to create a [service account](https://cloud.google.com/iam/docs/service-accounts) with the necessary
-IAM permissions on your project. You should generally only grant the minimal amount of permissions needed to deploy your infrastructure, and add
-permissions as needed down the road. Follow [the Google documentation](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) 
-for setting up service accounts, and make sure to create a key for your account once it's ready.
-
-You can then download the service account key as a JSON file and place it in the root of this example directory. Save it as `credentials.json`.
-This file will be copied to the Terrascale Docker image during the build process.
-
-At this point, you should be all set in terms of required steps prior to deployment.
+- A Google Cloud Platform project
 
 ## Running
 
