@@ -1,5 +1,5 @@
 locals {
-    docker_image = "sample"
+    docker_image = "heroku/nodejs-hello-world:latest"
 }
 
 variable account_id {

@@ -1,19 +1,32 @@
-variable "gcp_project_id" {
+locals {
+    docker_image = "gcr.io/cloudrun/hello"
+
+    region = lookup({
+        "centralus": "us-central1"
+    }, var.region, "centralus")
+}
+
+variable gcp_project_id {
     type = string
 }
 
-variable "namespace" {
+variable account_id {
     type = string
 }
 
-variable "region" {
+variable region {
     type = string
 }
 
-variable "environment" {
+variable environment {
     type = string
 }
 
-variable "app_version" {
+variable resource_group {
+    type = string
+    default = "rg-terrascale-sample"
+}
+
+variable terrascale_step {
     type = string
 }

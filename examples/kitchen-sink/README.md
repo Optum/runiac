@@ -18,10 +18,16 @@ See the top-level README for information on obtaining these items:
 
 ## Running
 
-Assuming you've set up your subscription and login credentials, you can execute Terrascale using the following command:
+Assuming you've set up your subscription and login credentials, you can execute Terrascale using the following Terrascale CLI command:
 
 ```bash
-TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id --dry-run
+TF_VAR_pagerduty_token="your-pagerduty-token" \
+TF_VAR_gcp_project_id="your-gcp-project-od" \
+terrascale apply \
+  -e nonprod \
+  -a your-azure-subscription-id \
+  --base-container "terrascale:azure-azure-gcloud" \
+  --dry-run
 ```
 
 This will run Terrascale without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
@@ -32,7 +38,7 @@ resources under the `steps` directory.
 To deploy infrastructure changes, you can run the following command instead:
 
 ```bash
-TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id
+TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id --base-container "terrascale:azure-gcloud"
 ```
 
 Review the output to validate that your infrastructure changes have been deployed.
@@ -40,5 +46,5 @@ Review the output to validate that your infrastructure changes have been deploye
 Finally, You can clean up any resources that were created by running Terrscale with the `--self-destroy` flag:
 
 ```bash
-TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id --self-destroy
+TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id --base-container "terrascale:azure-gcloud" --self-destroy
 ```
