@@ -8,27 +8,21 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.optum.com/healthcarecloud/terrascale/mocks"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-var DefaultStubAccountID string
-var StubVersion string
-
 var fs afero.Fs
 var logger *logrus.Entry
-var stepperFactory steps.StepperFactory
 var sut tracks.Tracker
 
 var stubTrackCount int
 var stubStepTestsCount int
 
-var stubStepWithTests steps.Step
+var stubStepWithTests config.Step
 var stubTracks map[string]tracks.Track
 var stubPreTrackName string
 var stubTrackNameA string
@@ -42,9 +36,6 @@ func TestMain(m *testing.M) {
 	logs.SetReportCaller(true)
 	logger = logs.WithField("environment", "unittest")
 
-	DefaultStubAccountID = "1"
-	StubVersion = "v0.0.5"
-
 	tracks.DestroyTrack = tracks.ExecuteDestroyTrack
 	tracks.DeployTrack = tracks.ExecuteDeployTrack
 	tracks.DeployTrackRegion = tracks.ExecuteDeployTrackRegion
@@ -56,7 +47,7 @@ func TestMain(m *testing.M) {
 		Log: logger,
 	}
 
-	stubStepWithTests = steps.Step{
+	stubStepWithTests = config.Step{
 		Name:                   "a11",
 		TestsExist:             true,
 		ProgressionLevel:       1,
@@ -72,7 +63,7 @@ func TestMain(m *testing.M) {
 		stubPreTrackName: {
 			Name:                  stubPreTrackName,
 			StepProgressionsCount: 1,
-			OrderedSteps: map[int][]steps.Step{
+			OrderedSteps: map[int][]config.Step{
 				1: {
 					stubStepWithTests,
 					{
@@ -86,7 +77,7 @@ func TestMain(m *testing.M) {
 		stubTrackNameA: {
 			Name:                  stubTrackNameA,
 			StepProgressionsCount: 2,
-			OrderedSteps: map[int][]steps.Step{
+			OrderedSteps: map[int][]config.Step{
 				1: {
 					stubStepWithTests,
 					{
@@ -107,7 +98,7 @@ func TestMain(m *testing.M) {
 		stubTrackNameB: {
 			Name:                  stubTrackNameB,
 			StepProgressionsCount: 1,
-			OrderedSteps: map[int][]steps.Step{
+			OrderedSteps: map[int][]config.Step{
 				1: {
 					{
 						Name:             "b11",
@@ -258,7 +249,7 @@ func TestGetTracksWithStepTarget_ShouldReturnCorrectTracks(t *testing.T) {
 	require.Equal(t, len(stubStepWhitelist), stepCount, "Track steps count should match total steps in defined in whitelist")
 }
 
-func shouldHaveTests(s []steps.Step, e string) bool {
+func shouldHaveTests(s []config.Step, e string) bool {
 	for _, a := range s {
 		if a.Name == e {
 			return a.TestsExist
@@ -267,7 +258,7 @@ func shouldHaveTests(s []steps.Step, e string) bool {
 	return false
 }
 
-func shouldHaveRegionDeployment(s []steps.Step, e string) bool {
+func shouldHaveRegionDeployment(s []config.Step, e string) bool {
 	for _, a := range s {
 		if a.Name == e {
 			return a.RegionalResourcesExist
@@ -285,16 +276,16 @@ func TestExecuteTracks_SkipsAllTracksIfPreTrackFails(t *testing.T) {
 			Executions: []tracks.RegionExecution{
 				{
 					Output: tracks.ExecutionOutput{
-						Steps: map[string]steps.Step{
+						Steps: map[string]config.Step{
 							"project_provisioning": {
-								Output: steps.StepOutput{
-									Status: steps.Fail,
+								Output: config.StepOutput{
+									Status: config.Fail,
 								},
 							},
 						},
 					},
 					Region:           stubPrimaryRegion,
-					RegionDeployType: steps.PrimaryRegionDeployType,
+					RegionDeployType: config.PrimaryRegionDeployType,
 				},
 			},
 		},
@@ -315,7 +306,7 @@ func TestExecuteTracks_SkipsAllTracksIfPreTrackFails(t *testing.T) {
 	}
 
 	// act
-	mockExecution := sut.ExecuteTracks(nil, config.Config{
+	mockExecution := sut.ExecuteTracks(config.Config{
 		TargetAll:   true,
 		SelfDestroy: true,
 	})
@@ -363,7 +354,7 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 						StepOutputVariables: stubPrimaryStepOutputVars,
 					},
 					Region:           stubPrimaryRegion,
-					RegionDeployType: steps.PrimaryRegionDeployType,
+					RegionDeployType: config.PrimaryRegionDeployType,
 				},
 			},
 		},
@@ -376,14 +367,14 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 						StepOutputVariables: stubPrimaryStepOutputVars,
 					},
 					Region:           stubPrimaryRegion,
-					RegionDeployType: steps.PrimaryRegionDeployType,
+					RegionDeployType: config.PrimaryRegionDeployType,
 				},
 				{
 					Output: tracks.ExecutionOutput{
 						StepOutputVariables: stubRegionalStepOutputVars,
 					},
 					Region:           stubRegionalRegion,
-					RegionDeployType: steps.RegionalRegionDeployType,
+					RegionDeployType: config.RegionalRegionDeployType,
 				},
 			},
 		},
@@ -418,7 +409,7 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 	}
 
 	// act
-	mockExecution := sut.ExecuteTracks(nil, config.Config{
+	mockExecution := sut.ExecuteTracks(config.Config{
 		TargetAll:   true,
 		SelfDestroy: true,
 	})
@@ -428,16 +419,14 @@ func TestExecuteTracks_ShouldHandleRegionalAutoDestroyWithRegionalOutputVariable
 	for _, executionSpy := range deployTrackExecutionSpy {
 		require.Contains(t, []string{"_pretrack", "track-a", "track-b"}, executionSpy.Output.Name, "Should execute correct tracks")
 	}
-	require.Equal(t, stubPrimaryStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[steps.PrimaryRegionDeployType.String()+"-"+stubPrimaryRegion], "Should pass primary step output vars to destroy")
-	require.Equal(t, stubRegionalStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[steps.RegionalRegionDeployType.String()+"-"+stubRegionalRegion], "Should pass regional region specific step output vars to destroy")
+	require.Equal(t, stubPrimaryStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[config.PrimaryRegionDeployType.String()+"-"+stubPrimaryRegion], "Should pass primary step output vars to destroy")
+	require.Equal(t, stubRegionalStepOutputVars, destroyTrackASpy.DefaultExecutionStepOutputVariables[config.RegionalRegionDeployType.String()+"-"+stubRegionalRegion], "Should pass regional region specific step output vars to destroy")
 }
 
 func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 	// arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	stubStepperFactory := mocks.NewMockStepperFactory(ctrl)
 
 	var test = map[string]struct {
 		stubExecutedFailCount     int
@@ -503,10 +492,9 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 
 			// act
 			tracks.ExecuteDeployTrack(tracks.Execution{
-				Logger:         logger,
-				Fs:             fs,
-				Output:         tracks.ExecutionOutput{},
-				StepperFactory: stubStepperFactory,
+				Logger: logger,
+				Fs:     fs,
+				Output: tracks.ExecutionOutput{},
 			}, config.Config{
 				RegionalRegions:       test.stubTargetRegions,
 				TerrascaleRegionGroup: test.regionGroup,
@@ -524,7 +512,7 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 
 			require.Equal(t, map[string]map[string]string(nil), executionParams[0].Output.StepOutputVariables, "Primary execution should start with no incoming previous step variables")
 			require.Equal(t, test.stubExecutedFailCount*callCount, mockOutput.Executions[0].Output.FailureCount, "Should correctly set failed step count")
-			require.Equal(t, steps.PrimaryRegionDeployType, executionParams[0].RegionDeployType, "First execution should be primary region")
+			require.Equal(t, config.PrimaryRegionDeployType, executionParams[0].RegionDeployType, "First execution should be primary region")
 			require.Equal(t, test.expectedCallCount, callCount, "Should call DeployTrackRegion() the expected amount of times")
 		})
 	}
@@ -535,7 +523,7 @@ func TestAddToTrackOutput(t *testing.T) {
 	stepOutputVariables["resource_name"] = "my-cool-resource"
 	stepOutputVariables["resource_id"] = "resource/my-cool-resource"
 
-	stepOutput := steps.StepOutput{
+	stepOutput := config.StepOutput{
 		OutputVariables: stepOutputVariables,
 		StepName:        "cool_step1",
 	}
@@ -564,7 +552,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsPrimaryRegionExec
 		},
 		Executions: []tracks.RegionExecution{
 			{
-				RegionDeployType: steps.PrimaryRegionDeployType,
+				RegionDeployType: config.PrimaryRegionDeployType,
 				Region:           "centralus",
 				Output: tracks.ExecutionOutput{
 					StepOutputVariables: map[string]map[string]string{
@@ -575,7 +563,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsPrimaryRegionExec
 				},
 			},
 			{
-				RegionDeployType: steps.RegionalRegionDeployType,
+				RegionDeployType: config.RegionalRegionDeployType,
 				Region:           "centralus",
 				Output: tracks.ExecutionOutput{
 					StepOutputVariables: map[string]map[string]string{
@@ -588,7 +576,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsPrimaryRegionExec
 		},
 	}
 
-	regionDeployType := steps.PrimaryRegionDeployType
+	regionDeployType := config.PrimaryRegionDeployType
 	region := "centralus"
 
 	newDefaultStepOutputVariables := tracks.AppendPreTrackOutputsToDefaultStepOutputVariables(defaultStepOutputVariables, preTrackOutputs, regionDeployType, region)
@@ -628,7 +616,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsRegionalExecution
 		},
 		Executions: []tracks.RegionExecution{
 			{
-				RegionDeployType: steps.PrimaryRegionDeployType,
+				RegionDeployType: config.PrimaryRegionDeployType,
 				Region:           "centralus",
 				Output: tracks.ExecutionOutput{
 					StepOutputVariables: map[string]map[string]string{
@@ -639,7 +627,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsRegionalExecution
 				},
 			},
 			{
-				RegionDeployType: steps.RegionalRegionDeployType,
+				RegionDeployType: config.RegionalRegionDeployType,
 				Region:           "centralus",
 				Output: tracks.ExecutionOutput{
 					StepOutputVariables: map[string]map[string]string{
@@ -650,7 +638,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsRegionalExecution
 				},
 			},
 			{
-				RegionDeployType: steps.RegionalRegionDeployType,
+				RegionDeployType: config.RegionalRegionDeployType,
 				Region:           "eastus",
 				Output: tracks.ExecutionOutput{
 					StepOutputVariables: map[string]map[string]string{
@@ -663,7 +651,7 @@ func TestAppendPreTrackOutputsToDefaultStepOutputVariables_AddsRegionalExecution
 		},
 	}
 
-	regionDeployType := steps.RegionalRegionDeployType
+	regionDeployType := config.RegionalRegionDeployType
 	region := "centralus"
 
 	newDefaultStepOutputVariables := tracks.AppendPreTrackOutputsToDefaultStepOutputVariables(defaultStepOutputVariables, preTrackOutputs, regionDeployType, region)
@@ -693,17 +681,17 @@ func TestAppendTrackOutput_WithRegionalStepDeploymentOutput(t *testing.T) {
 	stepOutputVariables["resource_name"] = "my-cool-resource"
 	stepOutputVariables["resource_id"] = "resource/my-cool-resource"
 
-	stepOutput := steps.StepOutput{
+	stepOutput := config.StepOutput{
 		OutputVariables:  stepOutputVariables,
 		StepName:         "cool_step1",
-		RegionDeployType: steps.RegionalRegionDeployType,
+		RegionDeployType: config.RegionalRegionDeployType,
 	}
 
 	trackOutputVars := make(map[string]map[string]string)
 
 	mockPrevStepVars := tracks.AppendTrackOutput(trackOutputVars, stepOutput)
 
-	key := fmt.Sprintf("%s-%s", stepOutput.StepName, steps.RegionalRegionDeployType.String())
+	key := fmt.Sprintf("%s-%s", stepOutput.StepName, config.RegionalRegionDeployType.String())
 
 	for k, v := range stepOutputVariables {
 		require.Equal(t, v, mockPrevStepVars[key][k], "The track output should match the stubbed key value: %s, %s", k, v)
@@ -725,8 +713,8 @@ func TestExecuteDeployTrackRegion_ShouldPassRegionalVariables(t *testing.T) {
 		"var": "var",
 	}
 
-	tracks.ExecuteStep = func(stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
-		s steps.Step, out chan<- steps.Step, destroy bool) {
+	tracks.ExecuteStep = func(region string, regionDeployType config.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
+		s config.Step, out chan<- config.Step, destroy bool) {
 		trackOutputVars = append(trackOutputVars, spyExecuteStep{
 			OutputVars: defaultStepOutputVariables,
 			StepName:   s.Name,
@@ -734,7 +722,7 @@ func TestExecuteDeployTrackRegion_ShouldPassRegionalVariables(t *testing.T) {
 
 		if s.ProgressionLevel == 1 {
 			s.Output.OutputVariables = stubStepP1OutputVars
-			s.Output.Status = steps.Success
+			s.Output.Status = config.Success
 			s.Output.StepName = s.Name
 		}
 		s.Output.RegionDeployType = regionDeployType
@@ -748,7 +736,7 @@ func TestExecuteDeployTrackRegion_ShouldPassRegionalVariables(t *testing.T) {
 		TrackDir:                   "",
 		TrackStepProgressionsCount: 2,
 		TrackStepsWithTestsCount:   0,
-		TrackOrderedSteps: map[int][]steps.Step{
+		TrackOrderedSteps: map[int][]config.Step{
 			1: {
 				{
 					Name:                   "step1_p1",
@@ -772,8 +760,7 @@ func TestExecuteDeployTrackRegion_ShouldPassRegionalVariables(t *testing.T) {
 		Fs:               fs,
 		Output:           tracks.ExecutionOutput{},
 		Region:           "",
-		RegionDeployType: steps.RegionalRegionDeployType,
-		StepperFactory:   nil,
+		RegionDeployType: config.RegionalRegionDeployType,
 		DefaultStepOutputVariables: map[string]map[string]string{
 			"step1_p1": {
 				"primaryvarkey": "primaryvarvalue",
@@ -817,14 +804,14 @@ func TestExecuteDeployTrackRegion_ShouldNotExecuteSecondProgressionWhenFirstFail
 	primaryOutChan := make(chan tracks.RegionExecution, 1)
 	primaryInChan := make(chan tracks.RegionExecution, 1)
 
-	executeStepSpy := map[string]steps.Step{}
+	executeStepSpy := map[string]config.Step{}
 
-	tracks.ExecuteStep = func(stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
-		s steps.Step, out chan<- steps.Step, destroy bool) {
+	tracks.ExecuteStep = func(region string, regionDeployType config.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
+		s config.Step, out chan<- config.Step, destroy bool) {
 		executeStepSpy[s.Name] = s
 
-		s.Output = steps.StepOutput{
-			Status: steps.Fail,
+		s.Output = config.StepOutput{
+			Status: config.Fail,
 		}
 		out <- s
 		return
@@ -834,7 +821,7 @@ func TestExecuteDeployTrackRegion_ShouldNotExecuteSecondProgressionWhenFirstFail
 		Fs:                         fs,
 		Output:                     tracks.ExecutionOutput{},
 		TrackStepProgressionsCount: 2,
-		TrackOrderedSteps: map[int][]steps.Step{
+		TrackOrderedSteps: map[int][]config.Step{
 			1: {
 				{
 					ID:        "",
@@ -866,14 +853,14 @@ func TestExecuteDeployTrackRegion_ShouldSkipWhenPrimaryFails(t *testing.T) {
 	primaryOutChan := make(chan tracks.RegionExecution, 1)
 	primaryInChan := make(chan tracks.RegionExecution, 1)
 
-	executeStepSpy := map[string]steps.Step{}
+	executeStepSpy := map[string]config.Step{}
 
-	tracks.ExecuteStep = func(stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
-		s steps.Step, out chan<- steps.Step, destroy bool) {
+	tracks.ExecuteStep = func(region string, regionDeployType config.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
+		s config.Step, out chan<- config.Step, destroy bool) {
 		executeStepSpy[s.Name] = s
 
-		s.Output = steps.StepOutput{
-			Status: steps.Fail,
+		s.Output = config.StepOutput{
+			Status: config.Fail,
 		}
 		out <- s
 		return
@@ -884,7 +871,7 @@ func TestExecuteDeployTrackRegion_ShouldSkipWhenPrimaryFails(t *testing.T) {
 		Fs:                         fs,
 		Output:                     tracks.ExecutionOutput{},
 		TrackStepProgressionsCount: 2,
-		TrackOrderedSteps: map[int][]steps.Step{
+		TrackOrderedSteps: map[int][]config.Step{
 			1: {
 				{
 					ID:        "",
@@ -914,7 +901,7 @@ func TestExecuteDeployTrackRegion_ShouldNaWhenRegionalResourcesDoNotExist(t *tes
 		Fs:                         fs,
 		Output:                     tracks.ExecutionOutput{},
 		TrackStepProgressionsCount: 2,
-		TrackOrderedSteps: map[int][]steps.Step{
+		TrackOrderedSteps: map[int][]config.Step{
 			1: {
 				{
 					ID:                     "",
@@ -925,7 +912,7 @@ func TestExecuteDeployTrackRegion_ShouldNaWhenRegionalResourcesDoNotExist(t *tes
 				},
 			},
 		},
-		RegionDeployType: steps.RegionalRegionDeployType,
+		RegionDeployType: config.RegionalRegionDeployType,
 	}
 
 	go tracks.ExecuteDeployTrackRegion(primaryInChan, primaryOutChan)
@@ -933,5 +920,5 @@ func TestExecuteDeployTrackRegion_ShouldNaWhenRegionalResourcesDoNotExist(t *tes
 	primaryTrackExecution := <-primaryOutChan
 
 	require.NotNil(t, primaryTrackExecution)
-	require.Equal(t, steps.Na, primaryTrackExecution.Output.Steps["step_p1"].Output.Status)
+	require.Equal(t, config.Na, primaryTrackExecution.Output.Steps["step_p1"].Output.Status)
 }

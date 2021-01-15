@@ -39,6 +39,7 @@ func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeploy
 		RegionGroupRegions:         s.DeployConfig.RegionalRegions,
 		UniqueExternalExecutionID:  s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:               s.DeployConfig.RegionGroups,
+		Stepper:                    s.Runner,
 		//TerrascaleConfig:           s.TerrascaleConfig,
 		SelfDestroy: s.DeployConfig.SelfDestroy,
 		Logger: logger.WithFields(logrus.Fields{
@@ -64,6 +65,9 @@ func ExecuteStep(stepper config.Stepper, exec config.StepExecution) config.StepO
 	//		OutputVariables:  nil,
 	//	}
 	//}
+
+	exec.Logger.Debugf("%v", exec.RequiredStepParams)
+	exec.Logger.Debugf("%v", exec.OptionalStepParams)
 
 	output := stepper.ExecuteStep(exec)
 	postStep(exec, output)

@@ -11,9 +11,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var sut config.Stepper
 var logger = logrus.NewEntry(logrus.New())
-var DefaultStubAccountID = "1"
 
 func TestNewExecution_ShouldSetFields(t *testing.T) {
 	t.Parallel()

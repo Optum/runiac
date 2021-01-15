@@ -57,6 +57,7 @@ type Step struct {
 	CommonInputVariables   map[string]string // Common input variables that all steps receive
 	Output                 StepOutput
 	TestOutput             StepTestOutput
+	Runner                 Stepper
 	//TerrascaleConfig       TerrascaleConfig
 }
 

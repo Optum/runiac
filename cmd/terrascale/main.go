@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/afero"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/logging"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
 )
@@ -28,8 +27,7 @@ func main() {
 
 	log.Debug("Executing tracks...")
 
-	// assume terraform for all steps
-	output := tracker.ExecuteTracks(steps.TerraformOnlyStepperFactory{}, deployment.Config)
+	output := tracker.ExecuteTracks(deployment.Config)
 
 	log.Debug("Completed executing tracks...")
 
@@ -54,9 +52,9 @@ func main() {
 
 			for _, s := range tExecution.Output.Steps {
 				switch s.Output.Status {
-				case steps.Fail:
+				case config.Fail:
 					failedSteps = append(failedSteps, fmt.Sprintf("%v/%v/%v/%v", t.Name, s.Name, tExecution.RegionDeployType, tExecution.Region))
-				case steps.Skipped:
+				case config.Skipped:
 					skippedSteps = append(skippedSteps, fmt.Sprintf("%v/%v/%v/%v", t.Name, s.Name, tExecution.RegionDeployType, tExecution.Region))
 				}
 			}

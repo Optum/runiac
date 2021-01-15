@@ -7,7 +7,6 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
 	"github.optum.com/healthcarecloud/terrascale/pkg/shell"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 	"os"
 	"path/filepath"
@@ -91,10 +90,8 @@ func (stepper TerraformStepper) ExecuteStepTests(exec config.StepExecution) (out
 func GetTerraformCLIVars(exec config.StepExecution) map[string]interface{} {
 	vars := map[string]interface{}{
 		"environment": exec.Environment,
-		"app_version": exec.AppVersion,
 		"account_id":  exec.AccountID,
 		"region":      exec.Region,
-		"namespace":   exec.Namespace,
 	}
 
 	return vars
@@ -121,6 +118,9 @@ func GetTerraformEnvVars(exec config.StepExecution) map[string]string {
 
 		output["core_account_ids_map"] = coreAccounts
 	}
+
+	output["app_version"] = exec.AppVersion
+	output["namespace"] = exec.Namespace
 
 	return output
 }
@@ -455,7 +455,7 @@ func interpolateString(exec config.StepExecution, s string) string {
 			if coreAccount, coreAccountExists := exec.CoreAccounts[coreAccountName]; coreAccountExists {
 				s = strings.ReplaceAll(s, match, coreAccount.ID)
 			} else {
-				exec.Logger.Errorf("Did not find %s in the core accounts map. Core accounts map keys are: %+v", coreAccountName, steps.KeysString(exec.CoreAccounts))
+				exec.Logger.Errorf("Did not find %s in the core accounts map. Core accounts map keys are: %+v", coreAccountName, KeysString(exec.CoreAccounts))
 			}
 		}
 	}

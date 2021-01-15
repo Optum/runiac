@@ -4,10 +4,16 @@ package steps
 
 import (
 	"fmt"
+	plugins_terraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
 	"strings"
 
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 )
+
+func DetermineRunner(s config.Step) config.Stepper {
+	// TODO(plugins): support multiple plugin step runners
+	return plugins_terraform.TerraformStepper{}
+}
 
 // Adds previous step output to stepParams which get added as environment variables
 // during terraform plan
@@ -19,14 +25,6 @@ func AppendToStepParams(stepParams map[string]string, incomingOutputVars map[str
 		}
 	}
 	return stepParams
-}
-
-func KeysString(m map[string]config.Account) string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return "[" + strings.Join(keys, ", ") + "]"
 }
 
 func KeysStringMap(m map[string]map[string]string) string {

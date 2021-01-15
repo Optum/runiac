@@ -2,8 +2,10 @@ package plugins_terraform
 
 import (
 	"fmt"
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"io"
 	"os"
+	"strings"
 )
 
 var CopyFile = CopyFileFunc
@@ -67,4 +69,12 @@ func copyFileContents(src, dst string) (err error) {
 	}
 	err = out.Sync()
 	return
+}
+
+func KeysString(m map[string]config.Account) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return "[" + strings.Join(keys, ", ") + "]"
 }
