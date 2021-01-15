@@ -77,7 +77,7 @@ func RunShellCommandAndGetAndStreamOutput(command Command) (string, error) {
 	if command.SensitiveArgs {
 		command.Logger.Infof("Running command: %s (args redacted)", command.Command)
 	} else {
-		command.Logger.Infof("Running command: %s %s. EnvVars: %s", command.Command, strings.Join(command.Args, " "), KeysStringString(command.Env))
+		command.Logger.Infof("Running command: %s %s.\nEnvVars: %s", command.Command, strings.Join(command.Args, " "), KeysStringString(command.Env))
 	}
 
 	cmd := exec.Command(command.Command, command.Args...)

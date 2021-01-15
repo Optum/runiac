@@ -29,7 +29,7 @@ type ExecuteTrackFunc func(execution Execution, cfg config.Config, t Track, out 
 // ExecuteTrackRegionFunc executes a track within a single region and RegionDeployType (e.g. primary/us-east-1 or regional/us-east-2)
 type ExecuteTrackRegionFunc func(in <-chan RegionExecution, out chan<- RegionExecution)
 
-type ExecuteStepFunc func(stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
+type ExecuteStepFunc func(region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
 	s steps.Step, out chan<- steps.Step, destroy bool)
 
 var DeployTrackRegion ExecuteTrackRegionFunc = ExecuteDeployTrackRegion
@@ -43,7 +43,7 @@ var ExecuteStep ExecuteStepFunc = ExecuteStepImpl
 // Tracker is an interface for working with tracks
 type Tracker interface {
 	GatherTracks(config config.Config) (tracks []Track)
-	ExecuteTracks(stepperFactory steps.StepperFactory, config config.Config) (output Stage)
+	ExecuteTracks(config config.Config) (output Stage)
 }
 
 // DirectoryBasedTracker implements the Tracker interface
@@ -79,7 +79,6 @@ type Execution struct {
 	Logger                              *logrus.Entry
 	Fs                                  afero.Fs
 	Output                              ExecutionOutput
-	StepperFactory                      steps.StepperFactory
 	DefaultExecutionStepOutputVariables map[string]map[string]map[string]string
 	PreTrackOutput                      *Output
 }
@@ -95,7 +94,6 @@ type RegionExecution struct {
 	Output                     ExecutionOutput
 	Region                     string
 	RegionDeployType           steps.RegionDeployType
-	StepperFactory             steps.StepperFactory
 	PrimaryOutput              ExecutionOutput // This value is only set when regiondeploytype == regional
 	DefaultStepOutputVariables map[string]map[string]string
 }
@@ -349,7 +347,7 @@ func exists(fs afero.Fs, filename string) bool {
 // ExecuteTracks executes all tracks in parallel.
 // If a _pretrack exists, this is executed before
 // all other tracks.
-func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperFactory, cfg config.Config) (output Stage) {
+func (tracker DirectoryBasedTracker) ExecuteTracks(cfg config.Config) (output Stage) {
 	output.Tracks = map[string]Track{}
 	var tracks = tracker.GatherTracks(cfg) // **All** tracks
 	var parallelTracks []Track             // Tracks that should be executed in parallel
@@ -377,7 +375,6 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			Logger:                              tracker.Log,
 			Fs:                                  tracker.Fs,
 			Output:                              ExecutionOutput{},
-			StepperFactory:                      stepperFactory,
 			DefaultExecutionStepOutputVariables: map[string]map[string]map[string]string{},
 		}
 		go DeployTrack(preTrackExecution, cfg, preTrack, preTrackChan)
@@ -418,7 +415,6 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 			Logger:                              tracker.Log,
 			Fs:                                  tracker.Fs,
 			Output:                              ExecutionOutput{},
-			StepperFactory:                      stepperFactory,
 			DefaultExecutionStepOutputVariables: map[string]map[string]map[string]string{},
 		}
 		// If there is a pretrack, add its outputs
@@ -462,7 +458,6 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 				Logger:                              tracker.Log,
 				Fs:                                  tracker.Fs,
 				Output:                              ExecutionOutput{},
-				StepperFactory:                      stepperFactory,
 				DefaultExecutionStepOutputVariables: executionStepOutputVariables,
 			}
 			// If there is a pretrack, add its outputs
@@ -499,7 +494,6 @@ func (tracker DirectoryBasedTracker) ExecuteTracks(stepperFactory steps.StepperF
 				Logger:                              tracker.Log,
 				Fs:                                  tracker.Fs,
 				Output:                              ExecutionOutput{},
-				StepperFactory:                      stepperFactory,
 				DefaultExecutionStepOutputVariables: executionStepOutputVariables,
 				PreTrackOutput:                      &preTrack.Output,
 			}
@@ -592,7 +586,6 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 		Output:                     ExecutionOutput{},
 		Region:                     region,
 		RegionDeployType:           steps.PrimaryRegionDeployType,
-		StepperFactory:             execution.StepperFactory,
 		DefaultStepOutputVariables: map[string]map[string]string{},
 	}
 
@@ -658,7 +651,6 @@ func ExecuteDeployTrack(execution Execution, cfg config.Config, t Track, out cha
 			Output:                     ExecutionOutput{},
 			Region:                     reg,
 			RegionDeployType:           steps.RegionalRegionDeployType,
-			StepperFactory:             execution.StepperFactory,
 			DefaultStepOutputVariables: outputVars,
 			PrimaryOutput:              primaryTrackExecution.Output,
 		}
@@ -729,7 +721,6 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 				Output:                     ExecutionOutput{},
 				Region:                     reg,
 				RegionDeployType:           steps.RegionalRegionDeployType,
-				StepperFactory:             execution.StepperFactory,
 				DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.RegionalRegionDeployType, reg)],
 			}
 
@@ -764,7 +755,6 @@ func ExecuteDestroyTrack(execution Execution, cfg config.Config, t Track, out ch
 		Output:                     ExecutionOutput{},
 		Region:                     region,
 		RegionDeployType:           steps.PrimaryRegionDeployType,
-		StepperFactory:             execution.StepperFactory,
 		DefaultStepOutputVariables: execution.DefaultExecutionStepOutputVariables[fmt.Sprintf("%s-%s", steps.PrimaryRegionDeployType, region)],
 	}
 
@@ -807,7 +797,7 @@ func ExecuteDeployTrackRegion(in <-chan RegionExecution, out chan<- RegionExecut
 
 	// Create testing goroutines.
 	for testExecution := 0; testExecution < execution.TrackStepsWithTestsCount; testExecution++ {
-		go executeStepTest(logger, execution.Fs, execution.StepperFactory, execution.Region, execution.RegionDeployType, execution.Output.StepOutputVariables, testInChan, testOutChan)
+		go executeStepTest(logger, execution.Fs, execution.Region, execution.RegionDeployType, execution.Output.StepOutputVariables, testInChan, testOutChan)
 	}
 
 	for progressionLevel := 1; progressionLevel <= execution.TrackStepProgressionsCount; progressionLevel++ {
@@ -844,7 +834,7 @@ func ExecuteDeployTrackRegion(in <-chan RegionExecution, out chan<- RegionExecut
 					sChan <- s
 				}(s, logger)
 			} else {
-				go ExecuteStep(execution.StepperFactory, execution.Region, execution.RegionDeployType, logger, execution.Fs, execution.Output.StepOutputVariables, progressionLevel, s, sChan, false)
+				go ExecuteStep(execution.Region, execution.RegionDeployType, logger, execution.Fs, execution.Output.StepOutputVariables, progressionLevel, s, sChan, false)
 			}
 		}
 
@@ -926,7 +916,7 @@ func ExecuteDestroyTrackRegion(in <-chan RegionExecution, out chan<- RegionExecu
 					sChan <- s
 				}(s)
 			} else {
-				go ExecuteStep(execution.StepperFactory, execution.Region, execution.RegionDeployType, logger, execution.Fs, execution.Output.StepOutputVariables, i, s, sChan, true)
+				go ExecuteStep(execution.Region, execution.RegionDeployType, logger, execution.Fs, execution.Output.StepOutputVariables, i, s, sChan, true)
 			}
 		}
 		N := len(execution.TrackOrderedSteps[i])
@@ -950,11 +940,9 @@ func ExecuteDestroyTrackRegion(in <-chan RegionExecution, out chan<- RegionExecu
 	return
 }
 
-func ExecuteStepImpl(stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType,
+func ExecuteStepImpl(region string, regionDeployType steps.RegionDeployType,
 	logger *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
 	s steps.Step, out chan<- steps.Step, destroy bool) {
-
-	stepper := stepperFactory.Get(s)
 
 	exec, err := s.InitExecution(logger, fs, regionDeployType, region, defaultStepOutputVariables)
 
@@ -975,10 +963,12 @@ func ExecuteStepImpl(stepperFactory steps.StepperFactory, region string, regionD
 
 	var output steps.StepOutput
 
+	exec2, _ := exec.Stepper.PreExecute(exec)
+
 	if destroy {
-		output = stepper.ExecuteStepDestroy(exec)
+		output = exec.Stepper.ExecuteStepDestroy(exec2)
 	} else {
-		output = stepper.ExecuteStep(exec)
+		output = exec.Stepper.ExecuteStep(exec2)
 	}
 
 	s.Output = output
@@ -987,7 +977,7 @@ func ExecuteStepImpl(stepperFactory steps.StepperFactory, region string, regionD
 	return
 }
 
-func executeStepTest(incomingLogger *logrus.Entry, fs afero.Fs, stepperFactory steps.StepperFactory, region string, regionDeployType steps.RegionDeployType, defaultStepOutputVariables map[string]map[string]string, in <-chan steps.Step, out chan<- steps.StepTestOutput) {
+func executeStepTest(incomingLogger *logrus.Entry, fs afero.Fs, region string, regionDeployType steps.RegionDeployType, defaultStepOutputVariables map[string]map[string]string, in <-chan steps.Step, out chan<- steps.StepTestOutput) {
 	s := <-in
 	tOutput := steps.StepTestOutput{}
 
@@ -1008,7 +998,6 @@ func executeStepTest(incomingLogger *logrus.Entry, fs afero.Fs, stepperFactory s
 		logger.Warn("Skipping Tests because step was also skipped")
 	} else {
 		logger.Info("Triggering Step Tests")
-		stepper := stepperFactory.Get(s)
 		exec, err := s.InitExecution(logger, fs, regionDeployType, region, defaultStepOutputVariables)
 
 		// if err initializing, short circuit
@@ -1023,7 +1012,7 @@ func executeStepTest(incomingLogger *logrus.Entry, fs afero.Fs, stepperFactory s
 			return
 		}
 
-		tOutput = stepper.ExecuteStepTests(exec)
+		tOutput = exec.Stepper.ExecuteStepTests(exec)
 
 		if tOutput.Err != nil {
 			logger.WithError(tOutput.Err).Error("Error executing tests for step")
