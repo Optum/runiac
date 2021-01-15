@@ -23,6 +23,7 @@ type Terraformer interface {
 	OutputToString(value interface{}) string
 	Init(options *Options) (out string, err error)
 	Apply(options *Options, tfplan string) (string, error)
+	WorkspaceSelect(options *Options, workspace string) (string, error)
 }
 
 type Terraform struct{}
@@ -57,4 +58,8 @@ func (t Terraform) Apply(options *Options, tfplan string) (string, error) {
 
 func (t Terraform) OutputToString(value interface{}) string {
 	return OutputToString(value)
+}
+
+func (t Terraform) WorkspaceSelect(options *Options, workspace string) (string, error) {
+	return WorkspaceSelect(options, workspace)
 }

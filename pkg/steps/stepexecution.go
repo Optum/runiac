@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
+	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
 	"path/filepath"
 	"strings"
 )

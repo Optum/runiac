@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
 	"os"
 	"strings"
 	"testing"
@@ -29,7 +28,6 @@ func TestMain(m *testing.M) {
 	fs = afero.NewMemMapFs()
 	stubConfig.TerrascaleRegionGroup = "us"
 	stubConfig.RegionalRegions = []string{"us-east-1", "us-east-2", "us-west-2"}
-	stubConfig.CSP = "csp"
 	stubConfig.Project = "project"
 	stubConfig.UniqueExternalExecutionID = "taskID"
 	stubConfig.AccountID = "accountID"
@@ -55,16 +53,16 @@ func TestFlushTracks_ShouldReturnCorrectSuccessesWithMultipleTracks(t *testing.T
 		for i := 0; i < stubStepCount; i++ {
 			stubStep := fmt.Sprintf("%s-%d", stubStepPrefix, i)
 			// primary start
-			cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.UniqueExternalExecutionID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Project, stubConfig.RegionalRegions)
+			cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, config.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.DryRun, "", stubConfig.Version, stubConfig.UniqueExternalExecutionID, "", "", stubConfig.Project, stubConfig.RegionalRegions)
 
 			// primary end
-			cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.UniqueExternalExecutionID, stubConfig.Project, stubConfig.RegionalRegions)
+			cloudaccountdeployment.RecordStepSuccess(logger, "", stubTrack, stubStep, config.PrimaryRegionDeployType.String(), stubPrimaryRegion, stubConfig.UniqueExternalExecutionID, stubConfig.Project, stubConfig.RegionalRegions)
 
 			// regional deploys
 			for _, reg := range stubConfig.RegionalRegions {
-				cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.DryRun, stubConfig.CSP, stubConfig.Version, stubConfig.UniqueExternalExecutionID, stubConfig.TerrascaleRingDeploymentID, stubConfig.TerrascaleReleaseDeploymentID, stubConfig.Project, stubConfig.RegionalRegions)
+				cloudaccountdeployment.RecordStepStart(logger, stubConfig.AccountID, stubTrack, stubStep, config.RegionalRegionDeployType.String(), reg, stubConfig.DryRun, "", stubConfig.Version, stubConfig.UniqueExternalExecutionID, "", "", stubConfig.Project, stubConfig.RegionalRegions)
 
-				cloudaccountdeployment.RecordStepSuccess(logger, stubConfig.CSP, stubTrack, stubStep, steps.RegionalRegionDeployType.String(), reg, stubConfig.UniqueExternalExecutionID, stubConfig.Project, stubConfig.RegionalRegions)
+				cloudaccountdeployment.RecordStepSuccess(logger, "", stubTrack, stubStep, config.RegionalRegionDeployType.String(), reg, stubConfig.UniqueExternalExecutionID, stubConfig.Project, stubConfig.RegionalRegions)
 			}
 		}
 	}

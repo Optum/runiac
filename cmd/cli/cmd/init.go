@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"strings"
-	
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 var BaseContainer string
+var appFS = afero.NewOsFs()
 
 func init() {
 	initCmd.Flags().StringVar(&BaseContainer, "base-container", "terrascale:alpine-azure", "Base Docker image to use containing required tooling")
@@ -21,8 +22,6 @@ var initCmd = &cobra.Command{
 	Short: "Initialize terrascale",
 	Long:  `Initialize terrascale`,
 	Run: func(cmd *cobra.Command, args []string) {
-		appFS := afero.NewOsFs()
-
 		_ = appFS.Mkdir(".terrascalecli", 0755)
 
 		dockerfile := strings.ReplaceAll(Dockerfile, "${BASE_CONTAINER}", BaseContainer)
@@ -37,7 +36,6 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			logrus.WithError(err).Error(err)
 		}
-
 	},
 }
 

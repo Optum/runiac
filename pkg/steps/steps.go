@@ -4,7 +4,7 @@ package steps
 
 import (
 	"fmt"
-	plugins_terraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
+	pluginsterraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
 	"strings"
 
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
@@ -12,7 +12,7 @@ import (
 
 func DetermineRunner(s config.Step) config.Stepper {
 	// TODO(plugins): support multiple plugin step runners
-	return plugins_terraform.TerraformStepper{}
+	return pluginsterraform.TerraformStepper{}
 }
 
 // Adds previous step output to stepParams which get added as environment variables

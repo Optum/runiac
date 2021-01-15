@@ -22,6 +22,7 @@ var SelfDestroy bool
 var Account string
 var LogLevel string
 var Interactive bool
+var Container string
 
 func init() {
 	applyCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
@@ -33,6 +34,7 @@ func init() {
 	applyCmd.Flags().BoolVar(&SelfDestroy, "self-destroy", false, "Teardown after running deploy")
 	applyCmd.Flags().StringVar(&LogLevel, "log-level", "", "Log level")
 	applyCmd.Flags().BoolVar(&Interactive, "interactive", false, "Run Docker container in interactive mode")
+	applyCmd.Flags().StringVarP(&Container, "container", "c", "terrascale:alpine", "The container to execute, defaults 'terrascale:alpine'")
 
 	rootCmd.AddCommand(applyCmd)
 }
@@ -53,7 +55,7 @@ var applyCmd = &cobra.Command{
 		buildKit := "DOCKER_BUILDKIT=1"
 		containerTag := "sample"
 
-		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", ".terrascalecli/Dockerfile", ".")
+		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", ".terrascalecli/Dockerfile", "--build-arg", fmt.Sprintf("TERRASCALE_CONTAINER=%s", Container), ".")
 
 		var stdoutBuf, stderrBuf bytes.Buffer
 		cmdd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
@@ -115,7 +117,7 @@ var applyCmd = &cobra.Command{
 
 		// persist azure cli between container executions
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.terrascalecli/.azure:/root/.azure", dir))
-		
+
 		// persist gcloud cli
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.terrascalecli/.config/gcloud:/root/.config/gcloud", dir))
 
@@ -158,7 +160,7 @@ func checkDockerExists() {
 
 func checkInitialized() bool {
 	fs := afero.NewOsFs()
-	
+
 	ok, err := afero.DirExists(fs, ".terrascalecli")
 	if err != nil {
 		log.Fatalf("Unable to determine if CLI directory exists: %v", err)

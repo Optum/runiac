@@ -14,7 +14,7 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
-	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
+	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
 )
 
 const (

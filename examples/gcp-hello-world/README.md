@@ -1,9 +1,9 @@
-# Basic Terrascale Examples for Google Cloud Platform
+# Hello World Terrascale Project for Google Cloud Platform
 
-This example will provide a simple starting point for working with Terrascale and deploying resources into
+This example will provide a starting point for working with Terrascale and deploying resources into
 a Google Cloud Platform project.
 
-The following steps assume you are running on a Linux or macOS system, but the process will most likely be similar on Windows.
+The following steps assume you are running on a Linux or macOS system, but the process will be similar on Windows.
 
 ## Requirements
 
@@ -16,10 +16,10 @@ See the top-level README for information on obtaining these items:
 Assuming you've set up your service account credentials, you can execute Terrascale using the following command:
 
 ```bash
-./deploy.sh -a your-gcp-project-id --dry-run
+terrascale apply -a your-gcp-project-id --dry-run
 ```
 
-This will run Terrascale without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
+This will run Terrascale without committing any infrastructure changes. You can view the output to see if it aligns with expectations. The example
 creates a [GCP Storage bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) in your project, but
 you can add more resources under the `steps` directory.
 

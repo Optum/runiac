@@ -7,7 +7,7 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
 	"github.optum.com/healthcarecloud/terrascale/pkg/shell"
-	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
+	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -192,6 +192,20 @@ var executeTerraformInDir = func(exec config.StepExecution, destroy bool) (outpu
 	tfOptions.BackendConfig = GetBackendConfig(exec, ParseTFBackend).Config
 	tfOptions.Logger = tfOptions.Logger.WithField("terraform", "init")
 	resp, output.Err = terraformer.Init(tfOptions)
+
+	if output.Err != nil {
+		tfOptions.Logger.WithError(output.Err).Error("Error during terraform init")
+		return
+	}
+
+	tfOptions.Logger = tfOptions.Logger.WithField("terraform", "workspace")
+
+	workspace := fmt.Sprintf("%s-%s", exec.RegionDeployType.String(), exec.Region)
+
+	if exec.Namespace != "" {
+		workspace = fmt.Sprintf("%s-%s", exec.Namespace, workspace)
+	}
+	resp, output.Err = terraformer.WorkspaceSelect(tfOptions, workspace)
 
 	if output.Err != nil {
 		tfOptions.Logger.WithError(output.Err).Error("Error during terraform init")

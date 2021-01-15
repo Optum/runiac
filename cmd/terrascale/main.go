@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/afero"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/logging"
-	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
 	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
+	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
 )
 
 var fs afero.Fs

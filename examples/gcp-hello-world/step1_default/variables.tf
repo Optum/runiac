@@ -1,19 +1,19 @@
-variable "account_id" {
+variable account_id {
     type = string
 }
 
-variable "namespace" {
+variable namespace {
     type = string
 }
 
-variable "region" {
+variable region {
     type = string
 }
 
-variable "environment" {
+variable environment {
     type = string
 }
 
-variable "app_version" {
+variable terrascale_step {
     type = string
 }
