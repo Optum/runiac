@@ -14,99 +14,8 @@ import (
 	"strings"
 )
 
-type ExecutionConfig struct {
-	Stepper                   Stepper
-	RegionDeployType          RegionDeployType
-	Region                    string `json:"region"`
-	Logger                    *logrus.Entry
-	Fs                        afero.Fs
-	UniqueExternalExecutionID string
-	RegionGroupRegions        []string
-	TerrascaleTargetAccountID string
-	RegionGroup               string
-	PrimaryRegion             string
-	Dir                       string
-	TFBackend                 plugins_terraform.TerraformBackend
-	Environment               string `json:"environment"`
-	AppVersion                string `json:"app_version"`
-	//CredsID                   string `json:"creds_id"`
-	AccountID string `json:"account_id"`
-	//AccountOwnerID   string `json:"account_owner_msid"`
-	MaxRetries       int
-	MaxTestRetries   int
-	CoreAccounts     map[string]config.Account
-	RegionGroups     config.RegionGroupsMap
-	Namespace        string
-	CommonRegion     string
-	StepName         string
-	StepID           string
-	DeploymentRing   string
-	Project          string
-	TrackName        string
-	DryRun           bool
-	SelfDestroy      bool
-	TerrascaleConfig TerrascaleConfig
-
-	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
-	OptionalStepParams         map[string]string
-	RequiredStepParams         map[string]interface{}
-}
-
-var terraformer terraform.Terraformer = terraform.Terraform{}
-
-func (exec ExecutionConfig) GetCredentialEnvVars() (map[string]string, error) {
-	creds := map[string]string{}
-	return creds, nil
-}
-
-func (exec ExecutionConfig) GetTerraformCLIVars() map[string]interface{} {
-	vars := map[string]interface{}{
-		"environment": exec.Environment,
-		"account_id":  exec.AccountID,
-		"region":      exec.Region,
-	}
-
-	return vars
-}
-
-func (exec ExecutionConfig) GetTerraformEnvVars() map[string]string {
-	output := exec.OptionalStepParams
-
-	if exec.Namespace != "" {
-		output["namespace"] = exec.Namespace
-	}
-
-	if exec.AppVersion != "" {
-		output["app_version"] = exec.AppVersion
-	}
-
-	// set core accounts
-	coreAccountsCount := len(exec.CoreAccounts)
-	if exec.CoreAccounts != nil && coreAccountsCount > 0 {
-		coreAccounts := "{"
-
-		i := 0
-		for k, v := range exec.CoreAccounts {
-			coreAccounts += fmt.Sprintf(`"%s":"%s"`, k, v.ID)
-
-			if i < coreAccountsCount-1 {
-				coreAccounts += ","
-			}
-			i++
-		}
-
-		coreAccounts += "}"
-
-		output["core_account_ids_map"] = coreAccounts
-	}
-	// output["account_owner_msid"] = exec.AccountOwnerID
-	// output["creds_id"] = exec.CredsID
-
-	return output
-}
-
-func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType RegionDeployType, region string, defaultStepOutputVariables map[string]map[string]string) ExecutionConfig {
-	return ExecutionConfig{
+func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeployType config.RegionDeployType, region string, defaultStepOutputVariables map[string]map[string]string) config.StepExecution {
+	return config.StepExecution{
 		RegionDeployType:           regionDeployType,
 		Region:                     region,
 		Fs:                         fs,
@@ -130,8 +39,8 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 		RegionGroupRegions:         s.DeployConfig.RegionalRegions,
 		UniqueExternalExecutionID:  s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:               s.DeployConfig.RegionGroups,
-		TerrascaleConfig:           s.TerrascaleConfig,
-		SelfDestroy:                s.DeployConfig.SelfDestroy,
+		//TerrascaleConfig:           s.TerrascaleConfig,
+		SelfDestroy: s.DeployConfig.SelfDestroy,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
@@ -139,30 +48,46 @@ func NewExecution(s Step, logger *logrus.Entry, fs afero.Fs, regionDeployType Re
 	}
 }
 
-func ExecuteStep(stepper Stepper, exec ExecutionConfig) StepOutput {
+func ExecuteStep(stepper config.Stepper, exec config.StepExecution) config.StepOutput {
+
+	// Check if the step is filtered in the configuration // TODO: step configuration override
+	//inRegions := exec.TerrascaleConfig.ExecuteWhen.RegionIn
+	//if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
+	//	exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
+	//	return steps.StepOutput{
+	//		Status:           steps.Na,
+	//		RegionDeployType: exec.RegionDeployType,
+	//		Region:           exec.Region,
+	//		StepName:         exec.StepName,
+	//		StreamOutput:     "",
+	//		Err:              nil,
+	//		OutputVariables:  nil,
+	//	}
+	//}
+
 	output := stepper.ExecuteStep(exec)
 	postStep(exec, output)
 	return output
 }
 
-func ExecuteStepDestroy(stepper Stepper, exec ExecutionConfig) StepOutput {
+func ExecuteStepDestroy(stepper config.Stepper, exec config.StepExecution) config.StepOutput {
 	return stepper.ExecuteStepDestroy(exec)
 }
 
-func ExecuteStepTests(stepper Stepper, exec ExecutionConfig) StepTestOutput {
+func ExecuteStepTests(stepper config.Stepper, exec config.StepExecution) config.StepTestOutput {
 	output := stepper.ExecuteStepTests(exec)
 	postStepTest(exec, output)
 	return output
 }
 
-func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
-	regionDeployType RegionDeployType, region string,
+func InitExecution(s config.Step, logger *logrus.Entry, fs afero.Fs,
+	regionDeployType config.RegionDeployType, region string,
 	defaultStepOutputVariables map[string]map[string]string) (
-	ExecutionConfig, error) {
+	config.StepExecution, error) {
 	exec := NewExecution(s, logger, fs, regionDeployType, region, defaultStepOutputVariables)
 
 	// set and create execution directory to enable safe concurrency
-	if exec.RegionDeployType == RegionalRegionDeployType {
+	if exec.RegionDeployType == config.RegionalRegionDeployType {
 		regionalDir := filepath.Join(s.Dir, "regional")
 		execRegionalDir := filepath.Join(s.Dir, fmt.Sprintf("regional-%s", exec.Region))
 		err := exec.Fs.MkdirAll(execRegionalDir, 0700)
@@ -236,7 +161,7 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	var params = map[string]string{}
 
 	// translate custom type to map type for terraformer to parse correctly
-	var rgs map[string]map[string][]string = s.DeployConfig.RegionGroups
+	//var rgs map[string]map[string][]string = s.DeployConfig.RegionGroups
 
 	// Add Terrascale variables to step params
 	params["terrascale_target_account_id"] = exec.TerrascaleTargetAccountID
@@ -246,9 +171,9 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 	params["terrascale_step"] = strings.ToLower(exec.StepName)
 	params["terrascale_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
 	params["terrascale_region_group"] = strings.ToLower(exec.RegionGroup)
-	params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.RegionalRegions), " ", ",", -1)
+	//params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.RegionalRegions), " ", ",", -1) // TODO
 	params["terrascale_primary_region"] = exec.PrimaryRegion
-	params["terrascale_region_groups"] = terraformer.OutputToString(rgs)
+	//params["terrascale_region_groups"] = terraformer.OutputToString(rgs) // TODO
 
 	// TODO: pre-step plugin for integrating "just-in-time" variables from external source
 	exec.Logger.Debugf("output variables: %s", KeysStringMap(exec.DefaultStepOutputVariables))
@@ -268,25 +193,25 @@ func (s Step) InitExecution(logger *logrus.Entry, fs afero.Fs,
 
 	exec.OptionalStepParams = stepParams
 
-	exec.TFBackend = plugins_terraform.GetBackendConfig(exec, plugins_terraform.ParseTFBackend)
+	//exec.TFBackend = plugins_terraform.GetBackendConfig(exec, plugins_terraform.ParseTFBackend)
 	exec.Stepper = plugins_terraform.TerraformStepper{}
 
 	return exec, nil
 }
 
-func postStep(exec ExecutionConfig, output StepOutput) {
+func postStep(exec config.StepExecution, output config.StepOutput) {
 	if output.Err != nil {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
-	} else if output.Status == Fail {
+	} else if output.Status == config.Fail {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded failure with no error thrown"))
-	} else if output.Status == Unstable {
+	} else if output.Status == config.Unstable {
 		cloudaccountdeployment.RecordStepFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, errors.New("step recorded unstable with no error thrown"))
 	} else {
 		cloudaccountdeployment.RecordStepSuccess(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions)
 	}
 }
 
-func postStepTest(exec ExecutionConfig, output StepTestOutput) {
+func postStepTest(exec config.StepExecution, output config.StepTestOutput) {
 	if output.Err != nil {
 		cloudaccountdeployment.RecordStepTestFail(exec.Logger, "", exec.TrackName, exec.StepName, exec.RegionDeployType.String(), exec.Region, exec.UniqueExternalExecutionID, exec.Project, exec.RegionGroupRegions, output.Err)
 	}

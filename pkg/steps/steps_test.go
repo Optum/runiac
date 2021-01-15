@@ -2,20 +2,20 @@ package steps_test
 
 import (
 	"flag"
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	plugins_terraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
 	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
-
-	"github.com/spf13/afero"
 )
 
 var DefaultStubAccountID = "1"
 var StubVersion = "v0.0.5"
 var logger *logrus.Entry
-var sut steps.Stepper
+var sut config.Stepper
 
 func TestMain(m *testing.M) {
 
@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 	logs.SetLevel(logrus.WarnLevel)
 	logger = logrus.NewEntry(logs)
 
-	sut = steps.TerraformStepper{}
+	sut = plugins_terraform.TerraformStepper{}
 
 	flag.Parse()
 	exitCode := m.Run()

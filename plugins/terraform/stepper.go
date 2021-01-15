@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
 	"github.optum.com/healthcarecloud/terrascale/pkg/shell"
 	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
@@ -19,7 +20,7 @@ type TerraformStepper struct{}
 
 var terraformer terraform.Terraformer = terraform.Terraform{}
 
-func (stepper TerraformStepper) PreExecute(exec steps.ExecutionConfig) (steps.ExecutionConfig, error) {
+func (stepper TerraformStepper) PreExecute(exec config.StepExecution) (config.StepExecution, error) {
 	HandleDeployOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
 
 	if exec.SelfDestroy {
@@ -30,41 +31,27 @@ func (stepper TerraformStepper) PreExecute(exec steps.ExecutionConfig) (steps.Ex
 }
 
 // ExecuteStepDestroy destroys a step
-func (stepper TerraformStepper) ExecuteStepDestroy(exec steps.ExecutionConfig) steps.StepOutput {
+func (stepper TerraformStepper) ExecuteStepDestroy(exec config.StepExecution) config.StepOutput {
 	return executeTerraformInDir(exec, true)
 }
 
 // ExecuteStep deploys a step
-func (stepper TerraformStepper) ExecuteStep(exec steps.ExecutionConfig) steps.StepOutput {
+func (stepper TerraformStepper) ExecuteStep(exec config.StepExecution) config.StepOutput {
 	return executeTerraformInDir(exec, false)
 }
 
 // ExecuteStepTests executes the tests for a step
-func (stepper TerraformStepper) ExecuteStepTests(exec steps.ExecutionConfig) (output steps.StepTestOutput) {
+func (stepper TerraformStepper) ExecuteStepTests(exec config.StepExecution) (output config.StepTestOutput) {
 	HandleDeployOverrides(exec.Logger, exec.Dir, exec.DeploymentRing)
 
 	envVars := map[string]string{}
 
-	for k, v := range exec.GetTerraformEnvVars() {
+	for k, v := range GetTerraformEnvVars(exec) {
 		envVars[fmt.Sprintf("TF_VAR_%s", k)] = v
 	}
 
-	for k, v := range exec.GetTerraformCLIVars() {
+	for k, v := range GetTerraformCLIVars(exec) {
 		envVars[fmt.Sprintf("TF_VAR_%s", k)] = fmt.Sprintf("%v", v)
-	}
-
-	// Grab initial creds for the deployment
-	creds, err := exec.GetCredentialEnvVars()
-
-	if err != nil {
-		exec.Logger.WithError(err).Error("unable to retrieve credentials for step tests")
-		output.Err = err
-		return output
-	}
-
-	// set credential environment variables
-	for k, v := range creds {
-		envVars[k] = v
 	}
 
 	testDir := fmt.Sprintf("%s/tests", exec.Dir)
@@ -99,6 +86,43 @@ func (stepper TerraformStepper) ExecuteStepTests(exec steps.ExecutionConfig) (ou
 	})
 
 	return
+}
+
+func GetTerraformCLIVars(exec config.StepExecution) map[string]interface{} {
+	vars := map[string]interface{}{
+		"environment": exec.Environment,
+		"app_version": exec.AppVersion,
+		"account_id":  exec.AccountID,
+		"region":      exec.Region,
+		"namespace":   exec.Namespace,
+	}
+
+	return vars
+}
+
+func GetTerraformEnvVars(exec config.StepExecution) map[string]string {
+	output := exec.OptionalStepParams
+	// set core accounts
+	coreAccountsCount := len(exec.CoreAccounts)
+	if exec.CoreAccounts != nil && coreAccountsCount > 0 {
+		coreAccounts := "{"
+
+		i := 0
+		for k, v := range exec.CoreAccounts {
+			coreAccounts += fmt.Sprintf(`"%s":"%s"`, k, v.ID)
+
+			if i < coreAccountsCount-1 {
+				coreAccounts += ","
+			}
+			i++
+		}
+
+		coreAccounts += "}"
+
+		output["core_account_ids_map"] = coreAccounts
+	}
+
+	return output
 }
 
 // HandleDeployOverrides copy deploy override configurations into the
@@ -149,28 +173,13 @@ func handleOverride(logger *logrus.Entry, execDir string, fileName string) {
 }
 
 // executeTerraformInDir is a helper function for executing terraform in a specified directory
-var executeTerraformInDir = func(exec steps.ExecutionConfig, destroy bool) (output steps.StepOutput) {
+var executeTerraformInDir = func(exec config.StepExecution, destroy bool) (output config.StepOutput) {
 	output.RegionDeployType = exec.RegionDeployType
 	output.Region = exec.Region
 	output.StepName = exec.StepName
-	output.Status = steps.Fail // assume failure
+	output.Status = config.Fail // assume failure
 	var resp string
 	var tfOptions *terraform.Options
-
-	// Check if the step is filtered in the configuration
-	inRegions := exec.TerrascaleConfig.ExecuteWhen.RegionIn
-	if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
-		exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
-		return steps.StepOutput{
-			Status:           steps.Na,
-			RegionDeployType: exec.RegionDeployType,
-			Region:           exec.Region,
-			StepName:         exec.StepName,
-			StreamOutput:     "",
-			Err:              nil,
-			OutputVariables:  nil,
-		}
-	}
 
 	// terraform init
 	tfOptions, output.Err = getCommonTfOptions2(exec)
@@ -180,7 +189,7 @@ var executeTerraformInDir = func(exec steps.ExecutionConfig, destroy bool) (outp
 		return
 	}
 
-	tfOptions.BackendConfig = exec.TFBackend.Config
+	tfOptions.BackendConfig = GetBackendConfig(exec, ParseTFBackend).Config
 	tfOptions.Logger = tfOptions.Logger.WithField("terraform", "init")
 	resp, output.Err = terraformer.Init(tfOptions)
 
@@ -207,12 +216,12 @@ var executeTerraformInDir = func(exec steps.ExecutionConfig, destroy bool) (outp
 		tfOptions.Logger = retryLogger.WithField("terraform", "plan")
 
 		// Set all step parameters as terraform env variables
-		for k, v := range exec.GetTerraformEnvVars() {
+		for k, v := range GetTerraformEnvVars(exec) {
 			tfOptions.Logger.Debugf("Adding parameter to TF_VARs: %s", k)
 			tfOptions.EnvVars[fmt.Sprintf("TF_VAR_%s", k)] = v
 		}
 
-		tfOptions.Vars = exec.GetTerraformCLIVars()
+		tfOptions.Vars = GetTerraformCLIVars(exec)
 
 		resp, output.Err = terraformer.Plan(tfOptions, tfplan, destroy)
 
@@ -298,7 +307,7 @@ var executeTerraformInDir = func(exec steps.ExecutionConfig, destroy bool) (outp
 			baseOptions.Logger.WithError(output.Err).Error("Error running terraform output")
 		}
 
-		output.Status = steps.Success
+		output.Status = config.Success
 
 		return nil
 	})
@@ -308,7 +317,7 @@ var executeTerraformInDir = func(exec steps.ExecutionConfig, destroy bool) (outp
 
 // GetBackendConfig parses a backend.tf file
 // TODO, replace this with a cleaner hcl2json2struct merge where backend.tf configurations take priority over defined defaults here
-func GetBackendConfig(exec steps.ExecutionConfig, backendParser TFBackendParser) TerraformBackend {
+func GetBackendConfig(exec config.StepExecution, backendParser TFBackendParser) TerraformBackend {
 	declaredBackend := backendParser(exec.Fs, exec.Logger, filepath.Join(exec.Dir, "backend.tf"))
 
 	exec.Logger.Debugf("Parsed Backend Type: %s", declaredBackend.Type)
@@ -375,7 +384,7 @@ func GetBackendConfig(exec steps.ExecutionConfig, backendParser TFBackendParser)
 	return declaredBackend
 }
 
-func interpolateString(exec steps.ExecutionConfig, s string) string {
+func interpolateString(exec config.StepExecution, s string) string {
 	if strings.Contains(s, "${var.terrascale_deployment_ring}") {
 		s = strings.ReplaceAll(s, "${var.terrascale_deployment_ring}", exec.DeploymentRing)
 	}
@@ -454,7 +463,7 @@ func interpolateString(exec steps.ExecutionConfig, s string) string {
 	return s
 }
 
-func getCommonTfOptions2(exec steps.ExecutionConfig) (tfOptions *terraform.Options, err error) {
+func getCommonTfOptions2(exec config.StepExecution) (tfOptions *terraform.Options, err error) {
 	tfOptions = &terraform.Options{
 		TerraformDir:             exec.Dir,
 		EnvVars:                  map[string]string{},
@@ -463,17 +472,6 @@ func getCommonTfOptions2(exec steps.ExecutionConfig) (tfOptions *terraform.Optio
 		RetryableTerraformErrors: map[string]string{".*": "General Terraform error occurred."},
 		MaxRetries:               exec.MaxRetries,
 		TimeBetweenRetries:       5 * time.Second,
-	}
-
-	// Grab initial credentials for the deployment
-	creds, err := exec.GetCredentialEnvVars()
-	if err != nil {
-		exec.Logger.WithError(err).Error("failed to retrieve credentials for common tf options")
-	}
-
-	// set credential environment variables
-	for k, v := range creds {
-		tfOptions.EnvVars[k] = v
 	}
 
 	return

@@ -29,8 +29,8 @@ type ExecuteTrackFunc func(execution Execution, cfg config.Config, t Track, out 
 // ExecuteTrackRegionFunc executes a track within a single region and RegionDeployType (e.g. primary/us-east-1 or regional/us-east-2)
 type ExecuteTrackRegionFunc func(in <-chan RegionExecution, out chan<- RegionExecution)
 
-type ExecuteStepFunc func(region string, regionDeployType steps.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
-	s steps.Step, out chan<- steps.Step, destroy bool)
+type ExecuteStepFunc func(region string, regionDeployType config.RegionDeployType, entry *logrus.Entry, fs afero.Fs, defaultStepOutputVariables map[string]map[string]string, stepProgression int,
+	s config.Step, out chan<- config.Step, destroy bool)
 
 var DeployTrackRegion ExecuteTrackRegionFunc = ExecuteDeployTrackRegion
 var DestroyTrackRegion ExecuteTrackRegionFunc = ExecuteDestroyTrackRegion

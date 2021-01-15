@@ -6,6 +6,7 @@ import (
 )
 
 type StepExecution struct {
+	Stepper                   Stepper
 	RegionDeployType          RegionDeployType
 	Region                    string `json:"region"`
 	Logger                    *logrus.Entry
@@ -34,6 +35,7 @@ type StepExecution struct {
 	Project        string
 	TrackName      string
 	DryRun         bool
+	SelfDestroy    bool
 	//TerrascaleConfig TerrascaleConfig
 
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]

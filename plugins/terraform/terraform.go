@@ -8,7 +8,7 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
+	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -67,14 +67,14 @@ type TerraformBackend struct {
 // TFBackendParser is a function type that handles parsing a backend.tf file
 type TFBackendParser func(fs afero.Fs, log *logrus.Entry, file string) (backend TerraformBackend)
 
-func getStateFile(tfStateName string, namespace string, ring string, environment string, region string, regionType steps.RegionDeployType) string {
+func getStateFile(tfStateName string, namespace string, ring string, environment string, region string, regionType config.RegionDeployType) string {
 	var namespacedStateFile = tfStateName
 
 	if namespace != "" {
 		namespacedStateFile = fmt.Sprintf("%s-%s", namespace, namespacedStateFile)
 	}
 
-	if region != "us-east-1" || regionType == steps.RegionalRegionDeployType {
+	if region != "us-east-1" || regionType == config.RegionalRegionDeployType {
 		regionNamespace := fmt.Sprintf("%s-%s", regionType.String(), region)
 		namespacedStateFile = filepath.Join(namespacedStateFile, regionNamespace)
 	}

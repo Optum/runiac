@@ -1,8 +1,6 @@
 package steps
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
@@ -13,7 +11,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var sut Stepper
+var sut config.Stepper
 var logger = logrus.NewEntry(logrus.New())
 var DefaultStubAccountID = "1"
 
@@ -22,9 +20,9 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 
 	fs := afero.NewMemMapFs()
 	stubRegion := "region"
-	stubRegionalDeployType := RegionalRegionDeployType
+	stubRegionalDeployType := config.RegionalRegionDeployType
 
-	stubStep := Step{
+	stubStep := config.Step{
 		Dir:  "stub",
 		Name: "stubName",
 		DeployConfig: config.Config{
@@ -55,22 +53,4 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.DeployConfig.MaxRetries, mock.MaxRetries, "MaxRetries should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxTestRetries, mock.MaxTestRetries, "MaxTestRetries should match stub value")
 
-}
-
-type StubStepper struct{}
-
-func (s StubStepper) PreExecute(execution ExecutionConfig) (exec ExecutionConfig, err error) {
-	return ExecutionConfig{}, err
-}
-
-func (s StubStepper) ExecuteStep(execution ExecutionConfig) (resp StepOutput) {
-	return
-}
-
-func (s StubStepper) ExecuteStepTests(execution ExecutionConfig) (resp StepTestOutput) {
-	return
-}
-
-func (s StubStepper) ExecuteStepDestroy(execution ExecutionConfig) (output StepOutput) {
-	return
 }
