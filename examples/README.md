@@ -5,4 +5,4 @@ This directory contains several example projects that you can use as a starting 
 ## Index
 
 * [azure](azure-hello-world/): deploy infrastructure to Microsoft Azure
-* [gcp](gcp/): deploy infrastructure to Google Cloud Platform
+* [gcp](gcp-hello-world/): deploy infrastructure to Google Cloud Platform

@@ -938,7 +938,7 @@ func ExecuteStepImpl(region string, regionDeployType config.RegionDeployType,
 
 	var output config.StepOutput
 
-	exec2, _ := exec.Stepper.PreExecute(exec)
+	exec2, _ := s.Runner.PreExecute(exec)
 
 	if destroy {
 		output = steps.ExecuteStepDestroy(s.Runner, exec2)

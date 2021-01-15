@@ -6,38 +6,32 @@ import (
 )
 
 type StepExecution struct {
-	Stepper                   Stepper
-	RegionDeployType          RegionDeployType
-	Region                    string `json:"region"`
-	Logger                    *logrus.Entry
-	Fs                        afero.Fs
-	UniqueExternalExecutionID string
-	RegionGroupRegions        []string
-	TerrascaleTargetAccountID string
-	RegionGroup               string
-	PrimaryRegion             string
-	Dir                       string
-	//TFBackend                 TerraformBackend
-	Environment string `json:"environment"`
-	AppVersion  string `json:"app_version"`
-	//CredsID                   string `json:"creds_id"`
-	AccountID string `json:"account_id"`
-	//AccountOwnerID   string `json:"account_owner_msid"`
-	MaxRetries     int
-	MaxTestRetries int
-	CoreAccounts   map[string]Account
-	RegionGroups   RegionGroupsMap
-	Namespace      string
-	CommonRegion   string
-	StepName       string
-	StepID         string
-	DeploymentRing string
-	Project        string
-	TrackName      string
-	DryRun         bool
-	SelfDestroy    bool
-	//TerrascaleConfig TerrascaleConfig
-
+	RegionDeployType           RegionDeployType
+	Region                     string `json:"region"`
+	Logger                     *logrus.Entry
+	Fs                         afero.Fs
+	UniqueExternalExecutionID  string
+	RegionGroupRegions         []string
+	TerrascaleTargetAccountID  string
+	RegionGroup                string
+	PrimaryRegion              string
+	Dir                        string
+	Environment                string `json:"environment"`
+	AppVersion                 string `json:"app_version"`
+	AccountID                  string `json:"account_id"`
+	MaxRetries                 int
+	MaxTestRetries             int
+	CoreAccounts               map[string]Account
+	RegionGroups               RegionGroupsMap
+	Namespace                  string
+	CommonRegion               string
+	StepName                   string
+	StepID                     string
+	DeploymentRing             string
+	Project                    string
+	TrackName                  string
+	DryRun                     bool
+	SelfDestroy                bool
 	DefaultStepOutputVariables map[string]map[string]string // Previous step output variables are available in this map. K=StepName,V=map[VarName:VarVal]
 	OptionalStepParams         map[string]string
 	RequiredStepParams         map[string]interface{}

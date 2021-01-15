@@ -9,7 +9,6 @@ import (
 	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
 	"github.optum.com/healthcarecloud/terrascale/pkg/config"
 	"github.optum.com/healthcarecloud/terrascale/pkg/terraform"
-	plugins_terraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
 	"path/filepath"
 	"strings"
 )
@@ -39,9 +38,7 @@ func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeploy
 		RegionGroupRegions:         s.DeployConfig.RegionalRegions,
 		UniqueExternalExecutionID:  s.DeployConfig.UniqueExternalExecutionID,
 		RegionGroups:               s.DeployConfig.RegionGroups,
-		Stepper:                    s.Runner,
-		//TerrascaleConfig:           s.TerrascaleConfig,
-		SelfDestroy: s.DeployConfig.SelfDestroy,
+		SelfDestroy:                s.DeployConfig.SelfDestroy,
 		Logger: logger.WithFields(logrus.Fields{
 			"step":            s.Name,
 			"stepProgression": s.ProgressionLevel,
@@ -122,50 +119,11 @@ func InitExecution(s config.Step, logger *logrus.Entry, fs afero.Fs,
 		accounts[k] = v
 	}
 
-	// always ensure we have correct primary region set based on terraform provider csp setting
-	//providerTypeToCSP := map[TFProviderType]string{
-	//	AWSProvider:     "AWS",
-	//	AzurermProvider: "AZU",
-	//}
-
-	// TODO(config:region):  allow this to be set via external configuration (terrascale.yml)
-	//providerCSP := ""
-	//if csp, ok := providerTypeToCSP[provider.Type]; ok {
-	//	providerCSP = csp
-	//}
-	//
-	//if providerCSP != "" {
-	//	exec.PrimaryRegion = s.DeployConfig.GetPrimaryRegionByCSP(providerCSP)
-	//
-	//	if exec.RegionDeployType == PrimaryRegionDeployType {
-	//		exec.Region = exec.PrimaryRegion
-	//
-	//		exec.Logger = exec.Logger.WithField("region", exec.Region)
-	//		exec.Logger.Infof("Set region to %s based on %s provider's primary region", exec.Region, providerCSP)
-	//	}
-	//}
-
-	//if provider.AccountOverridden {
-	//	exec.AccountID = provider.AssumeRoleAccount.ID
-	//	exec.CredsID = provider.AssumeRoleAccount.CredsID
-	//	exec.AccountOwnerID = provider.AssumeRoleAccount.AccountOwnerLabel
-	//
-	//	// if no account was originally targeted in this run, use this specific step's "AccountOveridden" account id
-	//	if exec.TerrascaleTargetAccountID == "" {
-	//		exec.TerrascaleTargetAccountID = exec.AccountID
-	//	}
-	//
-	//	exec.Logger.Infof("Overriding account to %v/%v based on provider.tf", exec.AccountID, exec.CredsID)
-	//}
-
 	exec.Logger = exec.Logger.WithFields(logrus.Fields{
 		"accountID": exec.AccountID,
 	})
 
 	var params = map[string]string{}
-
-	// translate custom type to map type for terraformer to parse correctly
-	//var rgs map[string]map[string][]string = s.DeployConfig.RegionGroups
 
 	// Add Terrascale variables to step params
 	params["terrascale_target_account_id"] = exec.TerrascaleTargetAccountID
@@ -196,9 +154,6 @@ func InitExecution(s config.Step, logger *logrus.Entry, fs afero.Fs,
 	}
 
 	exec.OptionalStepParams = stepParams
-
-	//exec.TFBackend = plugins_terraform.GetBackendConfig(exec, plugins_terraform.ParseTFBackend)
-	exec.Stepper = plugins_terraform.TerraformStepper{}
 
 	return exec, nil
 }
