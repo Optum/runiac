@@ -4,11 +4,20 @@ provider "google" {
   region          = var.region
 }
 
+provider "pagerduty" {
+  token = var.pagerduty_token
+}
+
 terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
       version = "~> 3.51.0"
+    }
+    
+    pagerduty = {
+      source  = "PagerDuty/pagerduty"
+      version = "~> 1.8.0"
     }
   }
 }

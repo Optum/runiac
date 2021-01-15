@@ -2,6 +2,7 @@
 
 This example will provide a more complex deployment scenario involving multiple cloud providers and services.
 * A pre-track that deploys PagerDuty monitoring resources
+* A simple track that deploys a Docker image and a storage bucket to a Google Cloud Platform project
 * A complex track that:
   * Primary deployment that deploys a shared Key Vault into a central Azure region
   * Regional deployments that deploy a Docker image into App Service instances in two distinct regions
@@ -18,7 +19,18 @@ See the top-level README for information on obtaining these items:
 
 ## Running
 
-Assuming you've set up your subscription and login credentials, you can execute Terrascale using the following Terrascale CLI command:
+Assuming you've set up your subscription and login credentials, initialize a Terrascale project by running the following command in this
+directory:
+
+```bash
+terrascale init --base-container "terrascale:azure-azure-gcloud"
+```
+
+Since this example relies on an Azure CLI and Google Cloud SDK installation, we request to use the base `terrascale:alpine-azure-gcloud` image.
+Note that `entrypoint.sh` is set up to prompt the user for when credentials are missing or expired. This facilitates getting the example working, 
+but in a real-world scenario, you'll most likely want to follow your Terraform providers' best practices for propagating credentials instead.
+
+You can now execute Terrascale using the following Terrascale CLI command, replacing placeholders with your actual access details:
 
 ```bash
 TF_VAR_pagerduty_token="your-pagerduty-token" \
@@ -26,25 +38,26 @@ TF_VAR_gcp_project_id="your-gcp-project-od" \
 terrascale apply \
   -e nonprod \
   -a your-azure-subscription-id \
-  --base-container "terrascale:azure-azure-gcloud" \
-  --dry-run
+  --interactive
 ```
 
-This will run Terrascale without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
-creates a [resource group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) and an empty
-[storage account](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account), but you can add more 
-resources under the `steps` directory.
-
-To deploy infrastructure changes, you can run the following command instead:
-
-```bash
-TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id --base-container "terrascale:azure-gcloud"
-```
+This will deploy several tracks which target PagerDuty, Azure and GCP. Notice several things about this command:
+* You can provide Terraform variables by providing `TF_VAR_*` environment variables.
+* Specify `-e nonprod` to indicate we are deploying to a non-production environment.
+* Specify `-a` to pass in the account ID of a cloud provider. Since we use both Azure and GCP, we'll provide the Azure subscription ID here.
+* Specify `--interactive` to run the Terrascale container in interactive mode (we need this to interact with the various CLIs).
+  * In a CI/CD context, you'll want to run without this flag and instead provide credentials using environment variables instead.
 
 Review the output to validate that your infrastructure changes have been deployed.
 
 Finally, You can clean up any resources that were created by running Terrscale with the `--self-destroy` flag:
 
 ```bash
-TF_VAR_pagerduty_token="YOUR_PG_TOKEN" terrascale apply -e nonprod -a your-azure-subscription-id --base-container "terrascale:azure-gcloud" --self-destroy
+TF_VAR_pagerduty_token="your-pagerduty-token" \
+TF_VAR_gcp_project_id="your-gcp-project-od" \
+terrascale apply \
+  -e nonprod \
+  -a your-azure-subscription-id \
+  --interactive \
+  --self-destroy
 ```

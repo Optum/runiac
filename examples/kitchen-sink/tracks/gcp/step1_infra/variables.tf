@@ -6,6 +6,14 @@ locals {
     }, var.region, "centralus")
 }
 
+variable pagerduty_token {
+    type = string
+}
+
+variable pretrack-pagerduty-pagerduty_policy_id {
+    type = string
+}
+
 variable gcp_project_id {
     type = string
 }

@@ -2,6 +2,14 @@ locals {
     docker_image = "heroku/nodejs-hello-world:latest"
 }
 
+variable pagerduty_token {
+    type = string
+}
+
+variable pretrack-pagerduty-pagerduty_policy_id {
+    type = string
+}
+
 variable account_id {
     type = string
 }
@@ -20,5 +28,9 @@ variable resource_group {
 }
 
 variable terrascale_step {
+    type = string
+}
+
+variable "terrascale_primary_region" {
     type = string
 }

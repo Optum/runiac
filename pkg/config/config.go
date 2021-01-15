@@ -117,6 +117,8 @@ func GetConfig() (Config, error) {
 	_ = viper.BindEnv("deployment_ring")
 	_ = viper.BindEnv("primary_regions")
 	_ = viper.BindEnv("regional_regions")
+	_ = viper.BindEnv("max_retries")
+	_ = viper.BindEnv("max_test_retries")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {

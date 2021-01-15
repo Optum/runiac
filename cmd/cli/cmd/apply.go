@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,7 @@ var DryRun bool
 var SelfDestroy bool
 var Account string
 var LogLevel string
+var Interactive bool
 
 func init() {
 	applyCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
@@ -30,6 +32,7 @@ func init() {
 	applyCmd.Flags().BoolVar(&DryRun, "dry-run", false, "Dry Run")
 	applyCmd.Flags().BoolVar(&SelfDestroy, "self-destroy", false, "Teardown after running deploy")
 	applyCmd.Flags().StringVar(&LogLevel, "log-level", "", "Log level")
+	applyCmd.Flags().BoolVar(&Interactive, "interactive", false, "Run Docker container in interactive mode")
 
 	rootCmd.AddCommand(applyCmd)
 }
@@ -40,6 +43,12 @@ var applyCmd = &cobra.Command{
 	Long:  `Execute apply across each step`,
 	Run: func(cmd *cobra.Command, args []string) {
 		checkDockerExists()
+
+		ok := checkInitialized()
+		if !ok {
+			fmt.Printf("You need to run 'terrascale init' before you can use the CLI in this directory\n")
+			return
+		}
 
 		buildKit := "DOCKER_BUILDKIT=1"
 		containerTag := "sample"
@@ -88,6 +97,10 @@ var applyCmd = &cobra.Command{
 			cmd2.Args = append(cmd2.Args, "-e", fmt.Sprintf("TERRASCALE_LOG_LEVEL=%s", LogLevel))
 		}
 
+		if Interactive {
+			cmd2.Args = append(cmd2.Args, "-it")
+		}
+
 		for _, env := range cmd2.Env {
 			if strings.HasPrefix(env, "TF_VAR_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
@@ -102,6 +115,9 @@ var applyCmd = &cobra.Command{
 
 		// persist azure cli between container executions
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.terrascalecli/.azure:/root/.azure", dir))
+		
+		// persist gcloud cli
+		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.terrascalecli/.config/gcloud:/root/.config/gcloud", dir))
 
 		// persist local terraform state between container executions
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.terrascalecli/tfstate:/tfstate", dir))
@@ -112,6 +128,7 @@ var applyCmd = &cobra.Command{
 
 		cmd2.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 		cmd2.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+		cmd2.Stdin = os.Stdin
 
 		err2 := cmd2.Run()
 		if err2 != nil {
@@ -137,4 +154,16 @@ func checkDockerExists() {
 	if err != nil {
 		fmt.Printf("please add 'docker' to the path\n")
 	}
+}
+
+func checkInitialized() bool {
+	fs := afero.NewOsFs()
+	
+	ok, err := afero.DirExists(fs, ".terrascalecli")
+	if err != nil {
+		log.Fatalf("Unable to determine if CLI directory exists: %v", err)
+		return false
+	}
+
+	return ok
 }
