@@ -44,7 +44,7 @@ func RunTerraformCommand(streamOutput bool, additionalOptions *Options, addition
 		Logger:            options.Logger,
 	}
 
-	options.Logger.Infof("Executing Command with following Env Vars set: %s", KeysStringString(cmd.Env))
+	options.Logger.Debugf("Executing Command with following Env Vars set: %s", KeysStringString(cmd.Env))
 
 	if streamOutput {
 		return shell.RunShellCommandAndGetAndStreamOutput(cmd)
