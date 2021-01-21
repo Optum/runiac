@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -23,6 +25,9 @@ var Account string
 var LogLevel string
 var Interactive bool
 var Container string
+var Namespace string
+var DeploymentRing string
+var Local bool
 
 func init() {
 	applyCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
@@ -35,6 +40,8 @@ func init() {
 	applyCmd.Flags().StringVar(&LogLevel, "log-level", "", "Log level")
 	applyCmd.Flags().BoolVar(&Interactive, "interactive", false, "Run Docker container in interactive mode")
 	applyCmd.Flags().StringVarP(&Container, "container", "c", "terrascale:alpine", "The container to execute, defaults 'terrascale:alpine'")
+	applyCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
+	applyCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
 
 	rootCmd.AddCommand(applyCmd)
 }
@@ -71,6 +78,25 @@ var applyCmd = &cobra.Command{
 		cmd2 := exec.Command("docker", "run")
 
 		cmd2.Env = append(os.Environ(), buildKit)
+
+		if Local {
+			namespace, err := getMachineName()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			Namespace = namespace
+			DeploymentRing = "local"
+		}
+
+		if DeploymentRing != "" {
+			cmd2.Args = append(cmd2.Args, "-e", fmt.Sprintf("TERRASCALE_DEPLOYMENT_RING=%s", DeploymentRing))
+		}
+
+		if Namespace != "" {
+			cmd2.Args = append(cmd2.Args, "-e", fmt.Sprintf("TERRASCALE_NAMESPACE=%s", Namespace))
+		}
 
 		if Version != "" {
 			cmd2.Args = append(cmd2.Args, "-e", fmt.Sprintf("VERSION=%s", Version))
@@ -168,4 +194,32 @@ func checkInitialized() bool {
 	}
 
 	return ok
+}
+
+func getMachineName() (string, error) {
+	if runtime.GOOS == "windows" {
+		fmt.Println("Hello from Windows")
+		return "", nil
+	} else {
+		cmdd := exec.Command("whoami")
+
+		stdout, err := cmdd.StdoutPipe()
+		if err != nil {
+			return "", err
+		}
+
+		err = cmdd.Start()
+		if err != nil {
+			return "", err
+		}
+
+		out, err := ioutil.ReadAll(stdout)
+
+		if err := cmdd.Wait(); err != nil {
+			return "", err
+		}
+
+		return strings.TrimSuffix(fmt.Sprintf("%s", out), "\n"), err
+	}
+
 }

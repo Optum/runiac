@@ -1,3 +1,7 @@
+locals {
+    terrascale_namespace- = var.namespace == "" ? "" : "${var.namespace}-"
+}
+
 variable account_id {
     type = string
 }

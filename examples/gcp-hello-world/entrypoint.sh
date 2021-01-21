@@ -6,7 +6,7 @@ else
   gcloud auth application-default login
 fi
 
-gcloud config set project "$TERRASCALE_ACCOUNT_ID"
+#gcloud config set project "$TERRASCALE_ACCOUNT_ID"
 
 
 terrascale

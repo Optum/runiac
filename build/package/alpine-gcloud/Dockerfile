@@ -26,6 +26,8 @@ RUN cd /opt && \
 
 ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
 
+RUN gcloud components update
+
 RUN mkdir -p $HOME/.terraform.d/plugins/linux_amd64
 RUN mkdir -p $HOME/.terraform.d/plugin-cache
 
