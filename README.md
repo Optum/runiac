@@ -1,3 +1,5 @@
+
+
 # runiac - Run IaC Code With Ease, Anywhere
 
 ![](./logo.jpg)
@@ -18,7 +20,57 @@ An opinionated tool for running infrastructure as code (e.g. Terraform) with eas
 
 We'd love to hear from you!  Submit github issues for questions, issues or feedback.
 
----
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [How does runiac work?](#how-does-runiac-work)
+- [Demo](#demo)
+- [Tutorial](#tutorial)
+- [Terminology](#terminology)
+  - [Steps](#steps)
+    - [Step Execution Examples](#step-execution-examples)
+      - [Concurrent Steps](#concurrent-steps)
+      - [Sequential Steps](#sequential-steps)
+      - [Concurrent and Sequential Steps](#concurrent-and-sequential-steps)
+    - [Step Deployment Types](#step-deployment-types)
+      - [Primary](#primary)
+      - [Regional](#regional)
+  - [Tracks](#tracks)
+    - [Default Track](#default-track)
+    - [Pre-track](#pre-track)
+- [Using runiac](#using-runiac)
+  - [Inputs](#inputs)
+    - [Choosing which steps to execute](#choosing-which-steps-to-execute)
+      - [Environment Variables](#environment-variables)
+      - [Configuration Files](#configuration-files)
+    - [Versioning](#versioning)
+  - [Provider Plugin Caching](#provider-plugin-caching)
+- [Runners](#runners)
+  - [Terraform](#terraform)
+    - [Using Previous Step Output Variables](#using-previous-step-output-variables)
+      - [Regional Variables](#regional-variables)
+    - [Common Input Variables](#common-input-variables)
+    - [Tests](#tests)
+    - [Test Convention Requirements](#test-convention-requirements)
+  - [Conventions and Supported Configurations](#conventions-and-supported-configurations)
+    - [Backend](#backend)
+      - [Type](#type)
+      - [S3](#s3)
+      - [GCS](#gcs)
+    - [Provider (AWS)](#provider-aws)
+      - [AssumeRole](#assumerole)
+    - [Provider (Azurerm)](#provider-azurerm)
+      - [Targeting a specific Azure subscription using subscription_id](#targeting-a-specific-azure-subscription-using-subscription_id)
+        - [Supported parameters](#supported-parameters)
+    - [Working with Secrets](#working-with-secrets)
+    - [Deployment Ring Specific Configurations](#deployment-ring-specific-configurations)
+      - [Count](#count)
+    - [Override Files](#override-files)
+- [Contributing](#contributing)
+  - [Running Locally](#running-locally)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## How does runiac work?
 
@@ -249,7 +301,9 @@ If both are present, `version.json` takes precedence over the `VERSION` environm
 
 runiac uses [provider plugin caching](https://www.terraform.io/docs/commands/cli-config.html#provider-plugin-cache). Projects that use runiac are responsible for creating the directories that are used for provider caching and also creating their own [.terraformrc](https://www.terraform.io/docs/commands/cli-config.html) file. Please note that with the upgrade to Terraform `v0.13`, projects will need to update their filesystem layout for local copies of providers as stated [here](https://www.terraform.io/upgrade-guides/0-13.html#new-filesystem-layout-for-local-copies-of-providers).
 
-## Overview
+## Runners
+
+### Terraform
 
 #### Using Previous Step Output Variables
 
