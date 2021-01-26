@@ -1,4 +1,4 @@
-# RunIaC
+# runiac - Run IaC Code With Ease, Anywhere
 
 ![](./logo.jpg)
 
