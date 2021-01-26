@@ -41,22 +41,22 @@ func (f *RuniacFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	if f.isColored() {
 		f.prependColored(b, entry.Level)
 	} else {
-		fmt.Fprintf(b, "[%s] ", strings.ToUpper(entry.Level.String()))
+		_, _ = fmt.Fprintf(b, "[%s] ", strings.ToUpper(entry.Level.String()))
 	}
 
 	if _, ok := entry.Data["action"]; ok {
-		step := fmt.Sprintf("%v", entry.Data["step"])
-		regionDeployType := fmt.Sprintf("%v", entry.Data["regionDeployType"])
-		region := fmt.Sprintf("%v", entry.Data["region"])
-		track := fmt.Sprintf("%v", entry.Data["track"])
 
-		stepId := []string{track, step, regionDeployType, region}
+		stepId := []string{}
 
-		//fmt.Fprintf(b, "(%s %s/%s/%s/%s)   ", entry.Data["action"], entry.Data["track"], step, regionDeployType, region)
-		fmt.Fprintf(b, "(%s %s)   ", entry.Data["action"], strings.Join(stepId, "/"))
+		stepId = appendIfSet(stepId, entry, "track")
+		stepId = appendIfSet(stepId, entry, "step")
+		stepId = appendIfSet(stepId, entry, "regionDeployType")
+		stepId = appendIfSet(stepId, entry, "region")
+
+		_, _ = fmt.Fprintf(b, "(%s %s)   ", entry.Data["action"], strings.Join(stepId, "/"))
 	}
 
-	fmt.Fprintf(b, "%s", entry.Message)
+	_, _ = fmt.Fprintf(b, "%s", entry.Message)
 
 	if err, ok := entry.Data["error"]; ok {
 		b.WriteString(fmt.Sprintf("   (%s)", err))
@@ -69,6 +69,14 @@ func (f *RuniacFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	b.WriteByte('\n')
 
 	return b.Bytes(), nil
+}
+
+func appendIfSet(slice []string, entry *logrus.Entry, key string) []string {
+	if _, ok := entry.Data[key]; ok {
+		return append(slice, fmt.Sprintf("%v", entry.Data[key]))
+	}
+
+	return slice
 }
 
 func (f *RuniacFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) {

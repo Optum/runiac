@@ -16,17 +16,17 @@ See the top-level README for information on obtaining these items:
 Assuming you've set up your service account credentials, you can execute runiac using the following command:
 
 ```bash
-runiac apply -a your-gcp-project-id --dry-run
+runiac apply -a <your-gcp-project-id> -e <your-environment-name> --dry-run
 ```
 
 This will run runiac without committing any infrastructure changes. You can view the output to see if it aligns with expectations. The example
-creates a [GCP Storage bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) in your project, but
-you can add more resources under the `steps` directory.
+creates a [GCP Storage bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) in your project,
+you can add more resources under the `step1_default` directory.
 
 To deploy infrastructure changes, you can run the following command instead:
 
 ```bash
-./deploy.sh -a your-gcp-project-id
+runiac -a <your-gcp-project-id> -e <your-environment-name>
 ```
 
 Review the output to validate that your infrastructure changes have been deployed.
@@ -34,7 +34,7 @@ Review the output to validate that your infrastructure changes have been deploye
 Finally, You can clean up any resources that were created by running Terrscale with the `--self-destroy` flag:
 
 ```bash
-./deploy.sh -a your-gcp-project-id --self-destroy
+runiac -a <your-gcp-project-id> -e <your-environment-name> --self-destroy
 ```
 
 ## Important Notes
@@ -52,7 +52,5 @@ and runiac's `namespace` variable to conditionally deploy such resources:
 ```hcl-terraform
 resource "google_project_iam_custom_role" "my-custom-role" {
   count = var.namespace != "" ? 0 : 1
-  
-  ...
 }
 ```

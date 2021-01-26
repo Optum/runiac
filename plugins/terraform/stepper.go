@@ -116,11 +116,11 @@ func GetTerraformEnvVars(exec config.StepExecution) map[string]string {
 
 		coreAccounts += "}"
 
-		output["core_account_ids_map"] = coreAccounts
+		output["runiac_core_account_ids_map"] = coreAccounts
 	}
 
-	output["app_version"] = exec.AppVersion
-	output["namespace"] = exec.Namespace
+	output["runiac_app_version"] = exec.AppVersion
+	output["runiac_namespace"] = exec.Namespace
 
 	return output
 }
