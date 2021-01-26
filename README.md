@@ -10,6 +10,8 @@ A tool for running infrastructure as code (e.g. Terraform) anywhere with ease.
 
 - Ability to change and test infrastructure changes locally with a production like environment
 - Ability to make infrastructure changes without making pipeline changes
+
+
 - Quality developer experience
 - Container-based, execute anywhere and on any CI/CD system
 - Multi-Region deployments built-in
