@@ -1,6 +1,6 @@
-# Terrascale Examples
+# runiac Examples
 
-This directory contains several example projects that you can use as a starting point for Terrascale.
+This directory contains several example projects that you can use as a starting point for runiac.
 
 ## Index
 
@@ -33,7 +33,7 @@ permissions as needed down the road. Follow [the Google documentation](https://c
 for setting up service accounts, and make sure to create a key for your account once it's ready.
 
 You can then download the service account key as a JSON file and place it in the root of this example directory. Save it as `credentials.json`.
-This file will be copied to the Terrascale Docker image during the build process.
+This file will be copied to the runiac Docker image during the build process.
 
 At this point, you should be all set in terms of required steps prior to deployment.
 

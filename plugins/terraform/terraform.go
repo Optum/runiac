@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.optum.com/healthcarecloud/terrascale/pkg/steps StepperFactory,Stepper
+//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.optum.com/healthcarecloud/runiac/pkg/steps StepperFactory,Stepper
 
 package plugins_terraform
 
@@ -8,7 +8,7 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
 	"path/filepath"
 	"regexp"
 	"strings"

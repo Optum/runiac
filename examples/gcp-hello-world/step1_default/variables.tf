@@ -1,5 +1,5 @@
 locals {
-    terrascale_namespace- = var.namespace == "" ? "" : "${var.namespace}-"
+    runiac_namespace- = var.namespace == "" ? "" : "${var.namespace}-"
 }
 
 variable account_id {
@@ -18,6 +18,6 @@ variable environment {
     type = string
 }
 
-variable terrascale_step {
+variable runiac_step {
     type = string
 }

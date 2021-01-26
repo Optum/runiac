@@ -1,5 +1,5 @@
 terraform {
   backend "local" {
-    path = "/tfstate/pretrack/${var.terrascale_step}/terraform.tfstate"
+    path = "/tfstate/pretrack/${var.runiac_step}/terraform.tfstate"
   }
 }

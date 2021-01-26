@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.optum.com/healthcarecloud/terrascale/cmd/cli/cmd"
+	"github.optum.com/healthcarecloud/runiac/cmd/cli/cmd"
 )
 
 func main() {

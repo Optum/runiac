@@ -1,8 +1,8 @@
-# terrascale cli
+# runiac cli
 
 ## Install Locally
 
 ```bash
 $ go install
-$ terrascale help
+$ runiac help
 ```

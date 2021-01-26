@@ -2,7 +2,7 @@ package plugins_terraform
 
 import (
 	"fmt"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
 	"io"
 	"os"
 	"strings"

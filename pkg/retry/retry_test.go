@@ -5,7 +5,7 @@ import (
 	"flag"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
+	"github.optum.com/healthcarecloud/runiac/pkg/retry"
 	"os"
 	"testing"
 	"time"

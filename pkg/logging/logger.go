@@ -17,19 +17,19 @@ const (
 )
 
 // Formatter that is called on by logrus.
-type TerrascaleFormatter struct {
+type RuniacFormatter struct {
 	// DisableTimestamp allows disabling automatic timestamps in output
 	DisableColors bool
 }
 
-func (f *TerrascaleFormatter) isColored() bool {
+func (f *RuniacFormatter) isColored() bool {
 	isColored := runtime.GOOS != "windows"
 
 	return isColored && !f.DisableColors
 }
 
 // Format the log entry. Implements logrus.Formatter.
-func (f *TerrascaleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (f *RuniacFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	var b *bytes.Buffer
 	if entry.Buffer != nil {
@@ -71,7 +71,7 @@ func (f *TerrascaleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func (f *TerrascaleFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) {
+func (f *RuniacFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) {
 	var levelColor int
 	switch lvl {
 	case logrus.DebugLevel, logrus.TraceLevel:
@@ -87,6 +87,6 @@ func (f *TerrascaleFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) 
 	fmt.Fprintf(b, "\x1b[%dm", levelColor)
 }
 
-func (f *TerrascaleFormatter) postpendColored(b *bytes.Buffer) {
+func (f *RuniacFormatter) postpendColored(b *bytes.Buffer) {
 	fmt.Fprint(b, "\x1b[0m")
 }

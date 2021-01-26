@@ -6,4 +6,4 @@ else
   az login;
 fi
 
-terrascale
+runiac

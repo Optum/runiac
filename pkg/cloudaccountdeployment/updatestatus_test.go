@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/cloudaccountdeployment"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
 	"os"
 	"strings"
 	"testing"
@@ -26,7 +26,7 @@ var stubConfig = config.Config{}
 func TestMain(m *testing.M) {
 	logger = logrus.NewEntry(logrus.New())
 	fs = afero.NewMemMapFs()
-	stubConfig.TerrascaleRegionGroup = "us"
+	stubConfig.RegionGroup = "us"
 	stubConfig.RegionalRegions = []string{"us-east-1", "us-east-2", "us-west-2"}
 	stubConfig.Project = "project"
 	stubConfig.UniqueExternalExecutionID = "taskID"

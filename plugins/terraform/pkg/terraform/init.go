@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
+	"github.optum.com/healthcarecloud/runiac/pkg/retry"
 )
 
 // Init calls terraform init and return stdout/stderr.

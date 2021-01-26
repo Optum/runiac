@@ -3,7 +3,7 @@ package steps
 import (
 	"testing"
 
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"

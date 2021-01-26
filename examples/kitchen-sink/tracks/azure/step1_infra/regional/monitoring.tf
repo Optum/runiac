@@ -3,7 +3,7 @@ data "pagerduty_vendor" "azure" {
 }
 
 resource "pagerduty_service" "example" {
-  name                    = "appsvc-terrascale-example-${var.region}"
+  name                    = "appsvc-runiac-example-${var.region}"
   auto_resolve_timeout    = 14400
   acknowledgement_timeout = 600
   escalation_policy       = var.pretrack-pagerduty-pagerduty_policy_id

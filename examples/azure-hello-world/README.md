@@ -1,6 +1,6 @@
-# Basic Terrascale Examples for Azure
+# Basic runiac Examples for Azure
 
-This example will provide a simple starting point for working with Terrascale and deploying resources into
+This example will provide a simple starting point for working with runiac and deploying resources into
 a Microsoft Azure subscription.
 
 The following steps assume you are running on a Linux or macOS system, but the process will most likely be similar on Windows.
@@ -13,13 +13,13 @@ See the top-level README for information on obtaining these items:
 
 ## Running
 
-Assuming you've set up your subscription and login credentials, you can execute Terrascale using the following command:
+Assuming you've set up your subscription and login credentials, you can execute runiac using the following command:
 
 ```bash
 ./deploy.sh -a your-azure-subscription-id --dry-run
 ```
 
-This will run Terrascale without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
+This will run runiac without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
 creates a [resource group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) and an empty
 [storage account](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account), but you can add more 
 resources under the `steps` directory.
@@ -42,7 +42,7 @@ Finally, You can clean up any resources that were created by running Terrscale w
 
 This example assumes you are using your own login credentials to deploy infrastructure. In a real world situation, you most likely will
 want to use a [service principal](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals), especially
-if you intend to use Terrascale in an Azure CI/CD pipeline. A common approach is to use a service principal with a client ID and secret, as 
+if you intend to use runiac in an Azure CI/CD pipeline. A common approach is to use a service principal with a client ID and secret, as 
 [described here](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret).
 
 To do this, you'll need to modify the provided `deploy.sh`, and add the following four environment variables to the Docker container execution:
@@ -61,6 +61,6 @@ In the context of an Azure YAML pipeline, you can obtain these values by setting
 [AzureCLI@2](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/deploy/azure-cli?view=azure-devops) task.
 
 ```bash
-$ (cd ../../../terrascale-cli/ && go build main.go && cp main ../terrascale-oss/examples/azure)
+$ (cd ../../../runiac-cli/ && go build main.go && cp main ../runiac-oss/examples/azure)
 $ ./main apply
 ```

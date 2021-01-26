@@ -4,7 +4,7 @@ resource "azurerm_resource_group" "example" {
 }
 
 resource "azurerm_app_service_plan" "example" {
-  name                = "plan-terrascale-sample-${var.region}"
+  name                = "plan-runiac-sample-${var.region}"
   location            = var.region
   resource_group_name = azurerm_resource_group.example.name
   kind                = "Linux"
@@ -17,7 +17,7 @@ resource "azurerm_app_service_plan" "example" {
 }
 
 resource "azurerm_app_service" "example" {
-  name                = "appsvc-terrascale-example-${var.region}"
+  name                = "appsvc-runiac-example-${var.region}"
   location            = var.region
   resource_group_name = azurerm_resource_group.example.name
   app_service_plan_id = azurerm_app_service_plan.example.id

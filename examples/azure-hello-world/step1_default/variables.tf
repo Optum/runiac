@@ -12,9 +12,9 @@ variable environment {
 
 variable resource_group {
     type = string
-    default = "rg-terrascale-sample"
+    default = "rg-runiac-sample"
 }
 
-variable terrascale_step {
+variable runiac_step {
     type = string
 }

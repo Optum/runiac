@@ -8,11 +8,11 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "hugo",
-	Short: "Hugo is a very fast static site generator",
-	Long: `A Fast and Flexible Static Site Generator built with
-				  love by spf13 and friends in Go.
-				  Complete documentation is available at http://hugo.spf13.com`,
+	Use:   "runiac",
+	Short: "Runiac is a friendly runner for infrastructure as code",
+	Long: `A friendly, portable code runner built with
+love by Optum, tiny-dancer and friends.
+Complete documentation is available at https://github.com/optum/runiac`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Do Stuff Here
 	},

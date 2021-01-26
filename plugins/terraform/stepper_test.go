@@ -2,11 +2,11 @@ package plugins_terraform
 
 import (
 	"fmt"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
+	"github.optum.com/healthcarecloud/runiac/pkg/steps"
 	"strings"
 	"testing"
 
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -65,7 +65,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/${var.terrascale_deployment_ring}-stub.tfstate"
+		key         = "/${var.runiac_deployment_ring}-stub.tfstate"
 		role_arn    = "arn:aws:iam::${var.core_account_ids_map.logging_bridge_aws}:role/OrganizationAccountAccessRole"
 	  }
 	}
@@ -89,7 +89,7 @@ func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		bucket      = "${var.terrascale_deployment_ring}-bucket"
+		bucket      = "${var.runiac_deployment_ring}-bucket"
 	  }
 	}
 	`), 0644)
@@ -110,7 +110,7 @@ func TestGetBackendConfig_ShouldInterpolateResourceGroupNameField(t *testing.T) 
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "azurerm" {
-		resource_group_name  = "rg-${var.terrascale_deployment_ring}"
+		resource_group_name  = "rg-${var.runiac_deployment_ring}"
 	  }
 	}
 	`), 0644)
@@ -131,7 +131,7 @@ func TestGetBackendConfig_ShouldInterpolateStorageAccountNameField(t *testing.T)
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "azurerm" {
-		storage_account_name  = "st-${var.terrascale_deployment_ring}"
+		storage_account_name  = "st-${var.runiac_deployment_ring}"
 	  }
 	}
 	`), 0644)
@@ -152,7 +152,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/${var.terrascale_step}-stub.tfstate"
+		key         = "/${var.runiac_step}-stub.tfstate"
 	  }
 	}
 	`), 0644)
@@ -307,7 +307,7 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 		"ShouldCorrectlyParseGCSBackend": {
 			stubParsedBackend: TerraformBackend{
 				GCSBucket: "test-${var.environment}-tfstate",
-				GCSPrefix: "test/${var.terrascale_deployment_ring}/${var.terrascale_region_deploy_type}/${var.region}/${local.namespace-}test.tfstate",
+				GCSPrefix: "test/${var.runiac_deployment_ring}/${var.runiac_region_deploy_type}/${var.region}/${local.namespace-}test.tfstate",
 				Type:      GCSBackend,
 			},
 			environment:  "prod",
@@ -349,32 +349,32 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 	}
 }
 
-func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrectAccountDirectory2(t *testing.T) {
+func TestGetBackendConfigWithruniacTargetAccountID_ShouldHandleSettingCorrectAccountDirectory2(t *testing.T) {
 	t.Parallel()
 
 	getBackendTests := map[string]struct {
-		accountID                 string
-		terrascaleTargetAccountID string
-		expectedAccountID         string
-		message                   string
+		accountID             string
+		runiacTargetAccountID string
+		expectedAccountID     string
+		message               string
 	}{
 		"ShouldSetCorrectlyWithMatchingValues": {
-			accountID:                 "12",
-			terrascaleTargetAccountID: "12",
-			expectedAccountID:         "12",
-			message:                   "Should set correctly when both values the same",
+			accountID:             "12",
+			runiacTargetAccountID: "12",
+			expectedAccountID:     "12",
+			message:               "Should set correctly when both values the same",
 		},
-		"ShouldPreferTerrascaleTargetAccountIDWithDifferingValues": {
-			accountID:                 "13",
-			terrascaleTargetAccountID: "12",
-			expectedAccountID:         "12",
-			message:                   "Should prefer terrascale target account id when both values set and differ",
+		"ShouldPreferruniacTargetAccountIDWithDifferingValues": {
+			accountID:             "13",
+			runiacTargetAccountID: "12",
+			expectedAccountID:     "12",
+			message:               "Should prefer runiac target account id when both values set and differ",
 		},
-		"ShouldPreferAccountIDWhenTerrascaleTargetAccountIDNotSet": {
-			accountID:                 "12",
-			terrascaleTargetAccountID: "",
-			expectedAccountID:         "12",
-			message:                   "Should account id when terrascale target account id is not set",
+		"ShouldPreferAccountIDWhenruniacTargetAccountIDNotSet": {
+			accountID:             "12",
+			runiacTargetAccountID: "",
+			expectedAccountID:     "12",
+			message:               "Should account id when runiac target account id is not set",
 		},
 	}
 
@@ -397,7 +397,7 @@ func TestGetBackendConfigWithTerrascaleTargetAccountID_ShouldHandleSettingCorrec
 				Fs:                         fs,
 				Environment:                "environment",
 				AccountID:                  tc.accountID,
-				TerrascaleTargetAccountID:  tc.terrascaleTargetAccountID,
+				TargetAccountID:            tc.runiacTargetAccountID,
 				StepName:                   "step1_deploy",
 				Dir:                        "/tracks/step1_deploy",
 				DefaultStepOutputVariables: map[string]map[string]string{},
@@ -488,7 +488,7 @@ func TestParseBackend_ShouldParseRoleArnWhenSet(t *testing.T) {
 	_ = afero.WriteFile(fs, "testbackend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "/aws/core/logging/${var.terrascale_deployment_ring}-stub.tfstate"
+		key         = "/aws/core/logging/${var.runiac_deployment_ring}-stub.tfstate"
 		role_arn    = "stubrolearn"
 	  }
 	}

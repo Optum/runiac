@@ -1,5 +1,5 @@
 resource "pagerduty_service" "example" {
-  name                    = "cr-terrascale-sample-${var.region}"
+  name                    = "cr-runiac-sample-${var.region}"
   auto_resolve_timeout    = 14400
   acknowledgement_timeout = 600
   escalation_policy       = var.pretrack-pagerduty-pagerduty_policy_id
@@ -7,7 +7,7 @@ resource "pagerduty_service" "example" {
 }
 
 resource "pagerduty_service_integration" "example" {
-  name    = "Generic integration - cr-terrascale-sample-${var.region}"
+  name    = "Generic integration - cr-runiac-sample-${var.region}"
   type    = "generic_events_api_inbound_integration"
   service = pagerduty_service.example.id
 }

@@ -1,6 +1,6 @@
 // deploy a storage bucket
 resource "google_storage_bucket" "example" {
-  name          = "terrascale-example-bucket-${local.region}"
+  name          = "runiac-example-bucket-${local.region}"
   location      = local.region
   force_destroy = true
 
@@ -9,7 +9,7 @@ resource "google_storage_bucket" "example" {
 
 // deploy a docker image to a cloud run instance
 resource "google_cloud_run_service" "example" {
-  name     = "cr-terrascale-sample-${local.region}"
+  name     = "cr-runiac-sample-${local.region}"
   location = local.region
 
   template {

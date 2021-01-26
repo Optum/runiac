@@ -9,10 +9,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/logging"
-	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
-	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/logging"
+	"github.optum.com/healthcarecloud/runiac/pkg/tracks"
+	"github.optum.com/healthcarecloud/runiac/plugins/terraform/pkg/terraform"
 )
 
 var fs afero.Fs
@@ -114,7 +114,7 @@ func initFunc() {
 			TimestampFormat: time.RFC3339Nano,
 		})
 	} else {
-		logger.SetFormatter(&logging.TerrascaleFormatter{
+		logger.SetFormatter(&logging.RuniacFormatter{
 			DisableColors: os.Getenv("LOG_DISABLE_COLORS") == "true",
 		})
 	}
@@ -145,11 +145,11 @@ func initFunc() {
 		"deploymentRing": deployment.Config.DeploymentRing,
 		//"credsID":                       deployment.Config.CredsID,
 		//"csp":                           deployment.Config.CSP, // TODO(config:logging): allow additional logging fields to be passed in
-		"project":                   deployment.Config.Project,
-		"terrascaleTargetAccountID": deployment.Config.TerrascaleTargetAccountID,
-		"environment":               deployment.Config.Environment,
-		"namespace":                 deployment.Config.Namespace,
-		//"regionGroup":               deployment.Config.TerrascaleRegionGroup, // TODO(config:logging): allow additional logging fields to be passed in
+		"project":               deployment.Config.Project,
+		"runiacTargetAccountID": deployment.Config.TargetAccountID,
+		"environment":           deployment.Config.Environment,
+		"namespace":             deployment.Config.Namespace,
+		//"regionGroup":               deployment.Config.runiacRegionGroup, // TODO(config:logging): allow additional logging fields to be passed in
 	})
 
 	//// read deployment artifact version string from version.json first, if it exists
