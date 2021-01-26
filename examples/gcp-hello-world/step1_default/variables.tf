@@ -1,23 +1,23 @@
 locals {
-    terrascale_namespace- = var.namespace == "" ? "" : "${var.namespace}-"
+    runiac_namespace- = var.runiac_namespace == "" ? "" : "${var.runiac_namespace}-"
 }
 
-variable account_id {
+variable runiac_account_id {
     type = string
 }
 
-variable namespace {
+variable runiac_namespace {
     type = string
 }
 
-variable region {
+variable runiac_region {
     type = string
 }
 
-variable environment {
+variable runiac_environment {
     type = string
 }
 
-variable terrascale_step {
+variable runiac_step {
     type = string
 }

@@ -19,16 +19,16 @@ var validate = validator.New()
 // Config struct is a representation of the environment variables passed into the container
 type Config struct {
 	// Set by container overrides
-	AccountID                 string   `mapstructure:"account_id"`       // The cloud account id to deploy to (AWS Account, Azure Subscription or GCP Project)
-	TerrascaleTargetAccountID string   `mapstructure:"account_id"`       // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
-	RegionalRegions           []string `mapstructure:"regional_regions"` // Terrascale will apply regional step deployments across these regions
-	PrimaryRegion             string   `mapstructure:"primary_region" required:"true"`
-	DryRun                    bool     `mapstructure:"dry_run"` // DryRun will only execute up to Terraform plan, describing what will happen if deployed
+	AccountID       string   `mapstructure:"account_id"`       // The cloud account id to deploy to (AWS Account, Azure Subscription or GCP Project)
+	TargetAccountID string   `mapstructure:"account_id"`       // The target account being deployed to using the delivery framework (use ACCOUNT_ID env for compatibility)
+	RegionalRegions []string `mapstructure:"regional_regions"` // runiac will apply regional step deployments across these regions
+	PrimaryRegion   string   `mapstructure:"primary_region" required:"true"`
+	DryRun          bool     `mapstructure:"dry_run"` // DryRun will only execute up to Terraform plan, describing what will happen if deployed
 
 	UniqueExternalExecutionID string
 	DeploymentRing            string `mapstructure:"deployment_ring"`
 	SelfDestroy               bool   `mapstructure:"self_destroy"` // Destroy will automatically execute Terraform Destroy after running deployments & tests
-	TerrascaleRegionGroup     string
+	RegionGroup               string
 	StepWhitelist             []string        `mapstructure:"step_whitelist"` // Target_Steps is a comma separated list of step ids to reflect the whitelisted steps to be executed, e.g. core#logging#final_destination_bucket, core#logging#bridge_azu
 	TargetAll                 bool            // This is a global whitelist and overrules targeted tracks and targeted steps, primarily for dev and testing
 	Version                   string          `mapstructure:"version"` // Version override
@@ -101,10 +101,10 @@ type Account struct {
 
 // GetConfig retrieves a deployment config
 func GetConfig() (Config, error) {
-	viper.SetConfigName("terrascale") // name of config file (without extension)
+	viper.SetConfigName("runiac") // name of config file (without extension)
 
 	viper.AddConfigPath(".")
-	viper.SetEnvPrefix("terrascale")
+	viper.SetEnvPrefix("runiac")
 	viper.AutomaticEnv()
 
 	// https://github.com/spf13/viper/issues/188#issuecomment-255519149
@@ -133,7 +133,7 @@ func GetConfig() (Config, error) {
 		MaxTestRetries: 2,
 		MaxRetries:     3,
 		LogLevel:       logrus.InfoLevel.String(),
-		Project:        "terrascale",
+		Project:        "runiac",
 		TargetAll:      true,
 	}
 	err := viper.Unmarshal(conf)

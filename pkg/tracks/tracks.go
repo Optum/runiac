@@ -11,10 +11,10 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
-	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
+	"github.optum.com/healthcarecloud/runiac/pkg/cloudaccountdeployment"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/steps"
+	"github.optum.com/healthcarecloud/runiac/plugins/terraform/pkg/terraform"
 )
 
 const (
@@ -202,13 +202,13 @@ func (tracker DirectoryBasedTracker) readTrack(cfg config.Config, name string, d
 
 	// TODO(step:config)
 	//tConfig := viper.New()
-	//tConfig.SetConfigName("terrascale")         // name of cfg file (without extension)
+	//tConfig.SetConfigName("runiac")         // name of cfg file (without extension)
 	//tConfig.AddConfigPath(filepath.Join(t.Dir)) // path to look for the cfg file in
 
 	//if err := tConfig.ReadInConfig(); err != nil {
 	//	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 	//		// Config file not found, don't record or log error as this configuration file is optional.
-	//		tracker.Log.Debug("Track is not using a terrascale.yaml configuration file")
+	//		tracker.Log.Debug("Track is not using a runiac.yaml configuration file")
 	//	} else {
 	//		tracker.Log.WithError(err).Error("Error reading configuration file")
 	//	}

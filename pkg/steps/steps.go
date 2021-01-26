@@ -1,13 +1,13 @@
-//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.optum.com/healthcarecloud/terrascale/pkg/steps StepperFactory,Stepper
+//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.optum.com/healthcarecloud/runiac/pkg/steps StepperFactory,Stepper
 
 package steps
 
 import (
 	"fmt"
-	pluginsterraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
+	pluginsterraform "github.optum.com/healthcarecloud/runiac/plugins/terraform"
 	"strings"
 
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
 )
 
 func DetermineRunner(s config.Step) config.Stepper {

@@ -6,9 +6,9 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.optum.com/healthcarecloud/terrascale/pkg/cloudaccountdeployment"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
+	"github.optum.com/healthcarecloud/runiac/pkg/cloudaccountdeployment"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/plugins/terraform/pkg/terraform"
 	"path/filepath"
 	"strings"
 )
@@ -18,8 +18,8 @@ func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeploy
 		RegionDeployType:           regionDeployType,
 		Region:                     region,
 		Fs:                         fs,
-		TerrascaleTargetAccountID:  s.DeployConfig.TerrascaleTargetAccountID,
-		RegionGroup:                s.DeployConfig.TerrascaleRegionGroup,
+		TargetAccountID:            s.DeployConfig.TargetAccountID,
+		RegionGroup:                s.DeployConfig.RegionGroup,
 		DefaultStepOutputVariables: defaultStepOutputVariables,
 		Environment:                s.DeployConfig.Environment,
 		AppVersion:                 s.DeployConfig.Version,
@@ -49,7 +49,7 @@ func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeploy
 func ExecuteStep(stepper config.Stepper, exec config.StepExecution) config.StepOutput {
 
 	// Check if the step is filtered in the configuration // TODO: step configuration override
-	//inRegions := exec.TerrascaleConfig.ExecuteWhen.RegionIn
+	//inRegions := exec.runiacConfig.ExecuteWhen.RegionIn
 	//if len(inRegions) > 0 && !contains(inRegions, exec.Region) {
 	//	exec.Logger.Warn("Skipping execution. Region is not included in the execute_when.region_in configuration")
 	//	return steps.StepOutput{
@@ -111,8 +111,8 @@ func InitExecution(s config.Step, logger *logrus.Entry, fs afero.Fs,
 	}
 
 	accounts := map[string]config.Account{
-		"terrascale_target_account_id": {
-			ID: exec.TerrascaleTargetAccountID,
+		"runiac_target_account_id": {
+			ID: exec.TargetAccountID,
 		},
 	}
 	for k, v := range exec.CoreAccounts {
@@ -125,17 +125,17 @@ func InitExecution(s config.Step, logger *logrus.Entry, fs afero.Fs,
 
 	var params = map[string]string{}
 
-	// Add Terrascale variables to step params
-	params["terrascale_target_account_id"] = exec.TerrascaleTargetAccountID
-	params["terrascale_deployment_ring"] = exec.DeploymentRing
-	params["terrascale_project"] = strings.ToLower(exec.Project)
-	params["terrascale_track"] = strings.ToLower(exec.TrackName)
-	params["terrascale_step"] = strings.ToLower(exec.StepName)
-	params["terrascale_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
-	params["terrascale_region_group"] = strings.ToLower(exec.RegionGroup)
-	//params["terrascale_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.RegionalRegions), " ", ",", -1) // TODO
-	params["terrascale_primary_region"] = exec.PrimaryRegion
-	//params["terrascale_region_groups"] = terraformer.OutputToString(rgs) // TODO
+	// Add runiac variables to step params
+	params["runiac_target_account_id"] = exec.TargetAccountID
+	params["runiac_deployment_ring"] = exec.DeploymentRing
+	params["runiac_project"] = strings.ToLower(exec.Project)
+	params["runiac_track"] = strings.ToLower(exec.TrackName)
+	params["runiac_step"] = strings.ToLower(exec.StepName)
+	params["runiac_region_deploy_type"] = strings.ToLower(exec.RegionDeployType.String())
+	params["runiac_region_group"] = strings.ToLower(exec.RegionGroup)
+	//params["runiac_region_group_regions"] = strings.Replace(terraformer.OutputToString(s.DeployConfig.RegionalRegions), " ", ",", -1) // TODO
+	params["runiac_primary_region"] = exec.PrimaryRegion
+	//params["runiac_region_groups"] = terraformer.OutputToString(rgs) // TODO
 
 	// TODO: pre-step plugin for integrating "just-in-time" variables from external source
 	exec.Logger.Debugf("output variables: %s", KeysStringMap(exec.DefaultStepOutputVariables))

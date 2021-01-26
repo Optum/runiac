@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gruntwork-io/terratest/modules/collections"
-	"github.optum.com/healthcarecloud/terrascale/pkg/shell"
+	"github.optum.com/healthcarecloud/runiac/pkg/shell"
 )
 
 // GetCommonOptions extracts commons terraform options

@@ -12,7 +12,7 @@ type StepExecution struct {
 	Fs                         afero.Fs
 	UniqueExternalExecutionID  string
 	RegionGroupRegions         []string
-	TerrascaleTargetAccountID  string
+	TargetAccountID            string
 	RegionGroup                string
 	PrimaryRegion              string
 	Dir                        string
@@ -52,7 +52,7 @@ type Step struct {
 	Output                 StepOutput
 	TestOutput             StepTestOutput
 	Runner                 Stepper
-	//TerrascaleConfig       TerrascaleConfig
+	//runiacConfig       runiacConfig
 }
 
 // StepTestOutput represents the output of a step's test
@@ -78,10 +78,10 @@ type RegionDeployType int
 
 const (
 	// Primary region typedeploys to the designated primary region, this usually consists of global resources such as IAM
-	// In Terrascale world, this means it would only deploy the step's parent directory resources
+	// In runiac world, this means it would only deploy the step's parent directory resources
 	PrimaryRegionDeployType RegionDeployType = iota
 	// Regional region type deploys to each of the targeted regions, this consists of region specific resources and does not include global resources such as IAM
-	// In Terrascale world, this means it would only deploy the step's /regional/ directory resources to each of the targeted regions
+	// In runiac world, this means it would only deploy the step's /regional/ directory resources to each of the targeted regions
 	RegionalRegionDeployType
 )
 

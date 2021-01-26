@@ -17,19 +17,19 @@ const (
 )
 
 // Formatter that is called on by logrus.
-type TerrascaleFormatter struct {
+type RuniacFormatter struct {
 	// DisableTimestamp allows disabling automatic timestamps in output
 	DisableColors bool
 }
 
-func (f *TerrascaleFormatter) isColored() bool {
+func (f *RuniacFormatter) isColored() bool {
 	isColored := runtime.GOOS != "windows"
 
 	return isColored && !f.DisableColors
 }
 
 // Format the log entry. Implements logrus.Formatter.
-func (f *TerrascaleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (f *RuniacFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	var b *bytes.Buffer
 	if entry.Buffer != nil {
@@ -41,22 +41,22 @@ func (f *TerrascaleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	if f.isColored() {
 		f.prependColored(b, entry.Level)
 	} else {
-		fmt.Fprintf(b, "[%s] ", strings.ToUpper(entry.Level.String()))
+		_, _ = fmt.Fprintf(b, "[%s] ", strings.ToUpper(entry.Level.String()))
 	}
 
 	if _, ok := entry.Data["action"]; ok {
-		step := fmt.Sprintf("%v", entry.Data["step"])
-		regionDeployType := fmt.Sprintf("%v", entry.Data["regionDeployType"])
-		region := fmt.Sprintf("%v", entry.Data["region"])
-		track := fmt.Sprintf("%v", entry.Data["track"])
 
-		stepId := []string{track, step, regionDeployType, region}
+		stepId := []string{}
 
-		//fmt.Fprintf(b, "(%s %s/%s/%s/%s)   ", entry.Data["action"], entry.Data["track"], step, regionDeployType, region)
-		fmt.Fprintf(b, "(%s %s)   ", entry.Data["action"], strings.Join(stepId, "/"))
+		stepId = appendIfSet(stepId, entry, "track")
+		stepId = appendIfSet(stepId, entry, "step")
+		stepId = appendIfSet(stepId, entry, "regionDeployType")
+		stepId = appendIfSet(stepId, entry, "region")
+
+		_, _ = fmt.Fprintf(b, "(%s %s)   ", entry.Data["action"], strings.Join(stepId, "/"))
 	}
 
-	fmt.Fprintf(b, "%s", entry.Message)
+	_, _ = fmt.Fprintf(b, "%s", entry.Message)
 
 	if err, ok := entry.Data["error"]; ok {
 		b.WriteString(fmt.Sprintf("   (%s)", err))
@@ -71,7 +71,15 @@ func (f *TerrascaleFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func (f *TerrascaleFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) {
+func appendIfSet(slice []string, entry *logrus.Entry, key string) []string {
+	if _, ok := entry.Data[key]; ok {
+		return append(slice, fmt.Sprintf("%v", entry.Data[key]))
+	}
+
+	return slice
+}
+
+func (f *RuniacFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) {
 	var levelColor int
 	switch lvl {
 	case logrus.DebugLevel, logrus.TraceLevel:
@@ -87,6 +95,6 @@ func (f *TerrascaleFormatter) prependColored(b *bytes.Buffer, lvl logrus.Level) 
 	fmt.Fprintf(b, "\x1b[%dm", levelColor)
 }
 
-func (f *TerrascaleFormatter) postpendColored(b *bytes.Buffer) {
+func (f *RuniacFormatter) postpendColored(b *bytes.Buffer) {
 	fmt.Fprint(b, "\x1b[0m")
 }

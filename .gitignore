@@ -100,4 +100,4 @@ main
 tests.test
 
 output/
-.terrascalecli
+.runiac

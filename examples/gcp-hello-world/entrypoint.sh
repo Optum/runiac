@@ -4,9 +4,9 @@ if gcloud auth application-default print-access-token ; then
   echo "already logged in to gcp..."
 else
   gcloud auth application-default login
+  gcloud config set project "$RUNIAC_ACCOUNT_ID"
 fi
 
-#gcloud config set project "$TERRASCALE_ACCOUNT_ID"
 
 
-terrascale
+runiac

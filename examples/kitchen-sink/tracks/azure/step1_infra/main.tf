@@ -6,7 +6,7 @@ resource "azurerm_resource_group" "example" {
 }
 
 resource "azurerm_key_vault" "example" {
-  name                        = "kv-terrascale-${var.region}"
+  name                        = "kv-runiac-${var.region}"
   location                    = azurerm_resource_group.example.location
   resource_group_name         = azurerm_resource_group.example.name
   enabled_for_disk_encryption = true

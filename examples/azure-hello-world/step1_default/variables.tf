@@ -1,20 +1,28 @@
-variable account_id {
+locals {
+    namespace- = var.runiac_namespace == "" ? "" : "${var.runiac_namespace}-"
+}
+
+variable runiac_account_id {
     type = string
 }
 
-variable region {
+variable runiac_region {
     type = string
 }
 
-variable environment {
+variable runiac_environment {
+    type = string
+}
+
+variable runiac_namespace {
+    type = string
+}
+
+variable runiac_step {
     type = string
 }
 
 variable resource_group {
     type = string
-    default = "rg-terrascale-sample"
-}
-
-variable terrascale_step {
-    type = string
+    default = "rg-runiac-sample"
 }

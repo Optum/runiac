@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/retry"
-	"github.optum.com/healthcarecloud/terrascale/pkg/shell"
-	"github.optum.com/healthcarecloud/terrascale/plugins/terraform/pkg/terraform"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/retry"
+	"github.optum.com/healthcarecloud/runiac/pkg/shell"
+	"github.optum.com/healthcarecloud/runiac/plugins/terraform/pkg/terraform"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -89,9 +89,9 @@ func (stepper TerraformStepper) ExecuteStepTests(exec config.StepExecution) (out
 
 func GetTerraformCLIVars(exec config.StepExecution) map[string]interface{} {
 	vars := map[string]interface{}{
-		"environment": exec.Environment,
-		"account_id":  exec.AccountID,
-		"region":      exec.Region,
+		"runiac_environment": exec.Environment,
+		"runiac_account_id":  exec.AccountID,
+		"runiac_region":      exec.Region,
 	}
 
 	return vars
@@ -116,11 +116,11 @@ func GetTerraformEnvVars(exec config.StepExecution) map[string]string {
 
 		coreAccounts += "}"
 
-		output["core_account_ids_map"] = coreAccounts
+		output["runiac_core_account_ids_map"] = coreAccounts
 	}
 
-	output["app_version"] = exec.AppVersion
-	output["namespace"] = exec.Namespace
+	output["runiac_app_version"] = exec.AppVersion
+	output["runiac_namespace"] = exec.Namespace
 
 	return output
 }
@@ -399,23 +399,23 @@ func GetBackendConfig(exec config.StepExecution, backendParser TFBackendParser) 
 }
 
 func interpolateString(exec config.StepExecution, s string) string {
-	if strings.Contains(s, "${var.terrascale_deployment_ring}") {
-		s = strings.ReplaceAll(s, "${var.terrascale_deployment_ring}", exec.DeploymentRing)
+	if strings.Contains(s, "${var.runiac_deployment_ring}") {
+		s = strings.ReplaceAll(s, "${var.runiac_deployment_ring}", exec.DeploymentRing)
 	}
 
-	if strings.Contains(s, "${var.terrascale_target_account_id}") {
+	if strings.Contains(s, "${var.runiac_target_account_id}") {
 		s = strings.ReplaceAll(s,
-			"${var.terrascale_target_account_id}", exec.TerrascaleTargetAccountID)
+			"${var.runiac_target_account_id}", exec.TargetAccountID)
 	}
 
-	if strings.Contains(s, "${var.terrascale_step}") {
+	if strings.Contains(s, "${var.runiac_step}") {
 		s = strings.ReplaceAll(s,
-			"${var.terrascale_step}", exec.StepName)
+			"${var.runiac_step}", exec.StepName)
 	}
 
-	if strings.Contains(s, "${var.terrascale_region_deploy_type}") {
+	if strings.Contains(s, "${var.runiac_region_deploy_type}") {
 		s = strings.ReplaceAll(s,
-			"${var.terrascale_region_deploy_type}", exec.RegionDeployType.String())
+			"${var.runiac_region_deploy_type}", exec.RegionDeployType.String())
 	}
 
 	if strings.Contains(s, "${var.region}") {
@@ -436,7 +436,7 @@ func interpolateString(exec config.StepExecution, s string) string {
 
 	if strings.Contains(s, "${var.region}") {
 		s = strings.ReplaceAll(s,
-			"${var.terrascale_step}", exec.StepName)
+			"${var.runiac_step}", exec.StepName)
 	}
 
 	if strings.Contains(s, "${var.environment}") {

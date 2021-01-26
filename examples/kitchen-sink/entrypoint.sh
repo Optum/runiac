@@ -13,4 +13,4 @@ else
   gcloud config set account "$TF_VAR_gcp_project_id"
 fi
 
-terrascale
+runiac

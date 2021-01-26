@@ -1,5 +1,5 @@
 # Configure the Azure Provider
 provider "google" {
-  project         = var.account_id
-  region          = var.region
+  project         = var.runiac_account_id
+  region          = var.runiac_region
 }

@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 
-ARG TERRASCALE_CONTAINER="terrascale:alpine-azure"
+ARG runiac_CONTAINER="runiac:alpine-azure"
 
 FROM golang:1.13 as builder
 
@@ -20,7 +20,7 @@ RUN declare -A p; \
     for provider in "${!p[@]}"; do version=${p[$provider]} && curl -o ${provider}.zip "https://releases.hashicorp.com/terraform-provider-${provider}/${version}/terraform-provider-${provider}_${version}_linux_amd64.zip" && unzip ${provider}.zip -d "/app/linux_amd64" && rm -f ${provider}.zip & done; wait;
 
 
-FROM $TERRASCALE_CONTAINER
+FROM $runiac_CONTAINER
 
 COPY --from=builder /app/linux_amd64/ /root/.terraform.d/plugins/linux_amd64
 

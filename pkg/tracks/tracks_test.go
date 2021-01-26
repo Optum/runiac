@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	"github.optum.com/healthcarecloud/terrascale/pkg/tracks"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
+	"github.optum.com/healthcarecloud/runiac/pkg/tracks"
 	"os"
 	"path/filepath"
 	"testing"
@@ -496,8 +496,8 @@ func TestExecuteDeployTrack_ShouldExecuteCorrectStepsAndRegions(t *testing.T) {
 				Fs:     fs,
 				Output: tracks.ExecutionOutput{},
 			}, config.Config{
-				RegionalRegions:       test.stubTargetRegions,
-				TerrascaleRegionGroup: test.regionGroup,
+				RegionalRegions: test.stubTargetRegions,
+				RegionGroup:     test.regionGroup,
 			}, tracks.Track{
 				RegionalDeployment: test.stubRegionalDeployment,
 			}, trackChan)

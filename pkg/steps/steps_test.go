@@ -2,14 +2,14 @@ package steps_test
 
 import (
 	"flag"
-	"github.optum.com/healthcarecloud/terrascale/pkg/config"
-	plugins_terraform "github.optum.com/healthcarecloud/terrascale/plugins/terraform"
+	"github.optum.com/healthcarecloud/runiac/pkg/config"
+	plugins_terraform "github.optum.com/healthcarecloud/runiac/plugins/terraform"
 	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.optum.com/healthcarecloud/terrascale/pkg/steps"
+	"github.optum.com/healthcarecloud/runiac/pkg/steps"
 )
 
 var DefaultStubAccountID = "1"
