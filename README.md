@@ -22,7 +22,32 @@ We'd love to hear from you!  Submit github issues for questions, issues or feedb
 
 ## How does runiac work?
 
+runiac's primary goal is to enable developers to spend more time iterating on valuable infrastructure changes rather than pipeline or glue code.  
+It enables this by following the `smart endpoints, dumb pipelines`, `portability`, and `fun` principles defined at `doeac`.  
+
+- Infrastructure changes do not require pipeline changes
+- Ability to change and test infrastructure changes locally with a production like environment
+
+What expo did for react native development, runiac does for terraform.
+What webpack did for react development, runiac does for terraform.
+
+- Directory layout
+- Steps
+    - Primary deployment type
+    - Regional
+- Config
+    - Primary Regions
+    - Regional Regions
+    - Project
+    - Environment
+    - Account
+    - Namespace
+    - `--local`
+- Tracks
+
 ## Demo
+
+- Record Gif Here of running `runiac`
 
 ## Tutorial
 
@@ -32,14 +57,15 @@ For more detailed examples of runiac, be sure to check out the [examples](exampl
 
 ### Steps
 
-- All _Steps_ need to be defined within a _Track_
 - _Steps_ follow a folder naming convention of `step{progressionLevel}_{stepName}`
-    - A _Step_'s _Progression Level_ orders the execution of steps.
+    - A Step's _Progression Level_ identifies the ordering of execution.
 - All steps receive a common set of input variables (see below)
 - All steps receive the output variables of the steps in the progression level ahead of them.
-  a. For example, output variables of `step1` will be sent into `step2`, output variables of `step1` and `step2` will be passed into `step3`, so on and so forth
+  - For example:
+    - output variables of `step1` will be sent into `step2`
+    - output variables of `step1` and `step2` will be passed into `step3`
+    - so on, so forth
 - Steps will automatically execute tests after a successful deployment, these are primarily used for smoke testing (see below)
-- All steps have their own statefile.
 - Steps have two types of deployment, `Primary` and `Regional`.
 
 #### Step Execution Examples
@@ -85,11 +111,14 @@ tracks/network
 
 #### Step Deployment Types
 
-Step deployment types facilitate multi-region deployments. runiac will first execute every primary step deployment type in a track. Assuming successful execution, it will then proceed through each step regional deployment type concurrently across each region.
+Step deployment types facilitate multi-region deployments. runiac will first execute every primary step deployment type in a track.
+If the primary region deployment is successful, runiac will then run each step's regional deployment type (`regional`) concurrently across each region defined in `regional_regions`.
 
 ##### Primary
 
-Primary deployments represent all terraform in the top level directory of the executing step. Currently the primary type is executed _once per region group_. For example, in the `us` region group, the primary code would only be executed in the primary region of the `us` region group, `us-east-1`.
+Primary deployments represent all iac in the top level directory of the executing step.
+Currently, the primary deployment type is executed _once per region group_. 
+For example, in the `us` region group, the primary code would only be executed in the primary region of the `us` region group, `us-east-1`.
 
 ```bash
 tracks/network
@@ -99,7 +128,7 @@ tracks/network
 
 ##### Regional
 
-Regional deployments represent all terraform in the `/regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `-e runiac_TARGET_REGIONS` configuration.
+Regional deployments represent iac in the `regional` directory of the executing step. This code will be executed concurrently `N` times based on `N` count of regions defined in `regional_regions` configuration.
 
 ```bash
 tracks/network
@@ -118,8 +147,8 @@ tracks/network
 
 #### Default Track
 
-For projects that are relatively straightforward and don't require multiple tracks, you can opt to organize your steps under a single
-"default" track. The benefit of this approach is a simpler directory hierarchy, and you still have the possibility to scale out with
+For projects that are relatively straightforward and don't require multiple tracks, you do not need to use tracks in your folder heiarachy. 
+The benefit of this approach is a simpler directory hierarchy, and you still have the possibility to scale out with
 multiple tracks down the road.
 
 Be aware that with this simpler approach, you cannot use pre-tracks (see below).
@@ -129,22 +158,22 @@ A sample structure from the root directory of your project might look like this:
 ```bash
 step1_sample/
 step1_another_one/
+runiac.yml
 ```
 
-To whitelist steps for execution when using a default track, omit the track name from the step list, like so:
+To whitelist steps for execution when using a default track, use the track name `default` in your `step_whitelist`:
 
 ```bash
-RUNIAC_STEP_WHITELIST="#runiac#sample,#runiac#another_one"
+RUNIAC_STEP_WHITELIST="#runiac#default#sample,#runiac#default#another_one"
 ```
 
 #### Pre-track
 
 A pre-track is a track that runs before **all** other tracks. After this track completes, the remaining tracks are executed in parallel. If the pre-track execution fails, no other tracks will be attempted. To create a pre-track, create a directory called `_pretrack` in the `tracks` directory.
 
-
 ## Using runiac
 
-To use runiac to deploy your infrastracture as code, you will need:
+To use runiac to deploy your infrastructure as code, you will need:
 
 1. `Docker` installed locally
 2. `runiac` installed locally
