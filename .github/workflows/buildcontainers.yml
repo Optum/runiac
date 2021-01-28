@@ -33,6 +33,3 @@ jobs:
           echo "REF:  $GITHUB_REF , SHA: $GITHUB_SHA , ACTION:  $GITHUB_ACTION "
       - name: "build containers"
         run: ./scripts/build_containers.sh
-
-      - name: "Build with compose"
-        run:  cp -f docker-compose/docker-compose-build.yaml  ./docker-compose.yaml &&  docker-compose build
