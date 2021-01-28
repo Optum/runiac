@@ -10,8 +10,6 @@ A tool for running infrastructure as code (e.g. Terraform) anywhere with ease.
 
 - Ability to change and test infrastructure changes locally with a production like environment
 - Ability to make infrastructure changes without making pipeline changes
-
-
 - Quality developer experience
 - Container-based, execute anywhere and on any CI/CD system
 - Multi-Region deployments built-in
@@ -19,6 +17,11 @@ A tool for running infrastructure as code (e.g. Terraform) anywhere with ease.
 - Enabling "terraservices"
 - Keeping Your Pipelines Simple
 - Plugin-based
+
+runiac's primary goal is enabling easy, meaningful local development that mimics a production deployment.  
+This enables two large benefits:
+
+- Changes can be tested quickly and reliably from a local machine, knowing the
 
 [comment]: <> (runiac is meant to be run as an image.  We do **not** recommend running the `runiac` executor binary in another image, as it might not work.)
 
