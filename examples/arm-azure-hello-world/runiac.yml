@@ -1,0 +1,4 @@
+project: azure-hello-world
+primary_region: southcentralus
+regional_regions: centralus
+runner: arm

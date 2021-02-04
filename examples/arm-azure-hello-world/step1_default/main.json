@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "rgName": {
+        "type": "string",
+        "defaultValue": "rg-arm"
+      },
+      "rgLocation": {
+        "type": "string",
+        "defaultValue": "southcentralus"
+      },
+      "storagePrefix": {
+        "type": "string",
+        "maxLength": 11,
+        "defaultValue": "st"
+      }
+    },
+    "variables": {
+      "storageName": "[concat(parameters('storagePrefix'), uniqueString(subscription().id, parameters('rgName')))]"
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Resources/resourceGroups",
+        "apiVersion": "2020-06-01",
+        "name": "[parameters('rgName')]",
+        "location": "[parameters('rgLocation')]",
+        "properties": {}
+      },
+      {
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2020-06-01",
+        "name": "storageDeployment",
+        "resourceGroup": "[parameters('rgName')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Resources/resourceGroups/', parameters('rgName'))]"
+        ],
+        "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {},
+            "variables": {},
+            "resources": [
+              {
+                "type": "Microsoft.Storage/storageAccounts",
+                "apiVersion": "2019-06-01",
+                "name": "[variables('storageName')]",
+                "location": "[parameters('rgLocation')]",
+                "sku": {
+                  "name": "Standard_LRS"
+                },
+                "kind": "StorageV2"
+              }
+            ],
+            "outputs": {}
+          }
+        }
+      }
+    ],
+    "outputs": {}
+  }
