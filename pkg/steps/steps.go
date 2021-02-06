@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.com/optum/runiac/pkg/steps StepperFactory,Stepper
+//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.com/optum/runiac/pkg/config Stepper
 
 package steps
 
