@@ -1,3 +1,16 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [runiac Examples](#runiac-examples)
+  - [Index](#index)
+  - [Common Requirements](#common-requirements)
+    - [Azure](#azure)
+    - [Google Cloud Platform](#google-cloud-platform)
+    - [PagerDuty](#pagerduty)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # runiac Examples
 
 This directory contains several example projects that you can use as a starting point for runiac.
