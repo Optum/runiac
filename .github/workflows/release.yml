@@ -1,4 +1,4 @@
-name: goreleaser
+name: release
 
 on:
   push:
@@ -6,6 +6,15 @@ on:
       - '*'
 
 jobs:
+  dockerhub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Log into registry"
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD}}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME}}" --password-stdin
+      - name: "Build containers"
+        run: ./scripts/build_containers.sh --push
+
   goreleaser:
     runs-on: ubuntu-latest
     steps:
