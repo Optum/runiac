@@ -6,16 +6,22 @@ on:
       - '*'
 
 jobs:
-  dockerhub:
+  dockerhub-core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Extract tag name
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tag/})"
+        id: extract_tag
       - name: "Log into registry"
         run: echo "${{ secrets.DOCKER_HUB_PASSWORD}}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME}}" --password-stdin
       - name: "Build containers"
         run: ./scripts/build_containers.sh --push
+        env:
+          VERSION: ${{ steps.extract_tag.outputs.tag }}
 
-  goreleaser:
+  goreleaser-cli:
     runs-on: ubuntu-latest
     steps:
       -
