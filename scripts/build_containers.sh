@@ -36,7 +36,7 @@ for d in build/package/*/ ; do
     VERSION=$(whoami)
   fi
 
-  image="runiac:$VERSION-$cleanDir"
+  image="optum/runiac:$VERSION-$cleanDir"
   DOCKER_BUILDKIT=1 docker build -f "$d/Dockerfile" -t "$image" . &
 
   if [ "$push" == "true"  ]
