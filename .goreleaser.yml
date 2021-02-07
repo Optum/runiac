@@ -40,6 +40,7 @@ brews:
       name: homebrew-tap
       # Optionally a token can be provided, if it differs from the token provided to GoReleaser
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      folder: Formula
     commit_author:
       name: goreleaserbot
       email: goreleaser@optum.com
