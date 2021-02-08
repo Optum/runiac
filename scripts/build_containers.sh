@@ -40,7 +40,7 @@ for d in build/package/*/ ; do
 
   echo "building ${image}"
 
-  DOCKER_BUILDKIT=1 docker build -f "$d/Dockerfile" -t "$image" . &
+  DOCKER_BUILDKIT=1 docker build -f "$d/Dockerfile" -t "$image" .
 
   if [ "$push" == "true"  ]
   then
@@ -50,5 +50,3 @@ for d in build/package/*/ ; do
   fi
 
 done
-
-wait
