@@ -42,8 +42,8 @@ for d in build/package/*/ ; do
   if [ "$push" == "true"  ]
   then
     echo "pushing..."
-    docker tag "$image" "optumopensource/$image" || exit 1
-    docker push "optumopensource/$image"
+#    docker tag "$image" "optumopensource/$image" || exit 1
+    docker push "$image"
   fi
 
 done
