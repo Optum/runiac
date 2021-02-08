@@ -2,7 +2,6 @@ package plugins_terraform
 
 import (
 	"fmt"
-	"github.com/optum/runiac/pkg/steps"
 	"strings"
 	"testing"
 
@@ -17,46 +16,6 @@ import (
 var sut config.Stepper
 var logger = logrus.NewEntry(logrus.New())
 var DefaultStubAccountID = "1"
-
-func TestNewExecution_ShouldSetFields(t *testing.T) {
-	t.Parallel()
-
-	fs := afero.NewMemMapFs()
-	stubRegion := "region"
-	stubRegionalDeployType := config.RegionalRegionDeployType
-
-	stubStep := config.Step{
-		Dir:  "stub",
-		Name: "stubName",
-		DeployConfig: config.Config{
-			DeploymentRing:            "stubDeploymentRing",
-			Project:                   "stubProject",
-			DryRun:                    true,
-			RegionalRegions:           []string{"stub"},
-			UniqueExternalExecutionID: "stubExecutionID",
-			MaxRetries:                3,
-			MaxTestRetries:            2,
-		},
-		TrackName: "stubTrackName",
-	}
-	// act
-	mock := steps.NewExecution(stubStep, logger, fs, stubRegionalDeployType, stubRegion, map[string]map[string]string{})
-
-	// assert
-	require.Equal(t, stubStep.Dir, mock.Dir, "Dir should match stub value")
-	require.Equal(t, stubStep.Name, mock.StepName, "Name should match stub value")
-	require.Equal(t, stubRegion, mock.Region, "Region should match stub value")
-	require.Equal(t, stubRegionalDeployType, mock.RegionDeployType, "RegionDeployType should match stub value")
-	require.Equal(t, stubStep.DeployConfig.DeploymentRing, mock.DeploymentRing, "DeploymentRing should match stub value")
-	require.Equal(t, stubStep.DeployConfig.Project, mock.Project, "Project should match stub value")
-	require.Equal(t, stubStep.DeployConfig.DryRun, mock.DryRun, "DryRun should match stub value")
-	require.Equal(t, stubStep.TrackName, mock.TrackName, "TrackName should match stub value")
-	require.Equal(t, stubStep.DeployConfig.UniqueExternalExecutionID, mock.UniqueExternalExecutionID, "UniqueExternalExecutionID should match stub value")
-	require.Equal(t, stubStep.DeployConfig.RegionalRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
-	require.Equal(t, stubStep.DeployConfig.MaxRetries, mock.MaxRetries, "MaxRetries should match stub value")
-	require.Equal(t, stubStep.DeployConfig.MaxTestRetries, mock.MaxTestRetries, "MaxTestRetries should match stub value")
-
-}
 
 func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *testing.T) {
 	t.Parallel()
@@ -101,6 +60,31 @@ func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
 	}, ParseTFBackend)
 
 	require.Equal(t, "fake-bucket", mockResult.Config["bucket"])
+}
+
+func TestGetBackendConfig_ShouldInterpolateAzureRMKeyField(t *testing.T) {
+	t.Parallel()
+	fs := afero.NewMemMapFs()
+
+	_ = afero.WriteFile(fs, "backend.tf", []byte(`
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "rg-things"
+    storage_account_name = "tfstate"
+    container_name       = "tfstate"
+    key                  = "${var.runiac_environment}-${var.runiac_step}.tfstate"
+  }
+}
+	`), 0644)
+
+	mockResult := GetBackendConfig(config.StepExecution{
+		Fs:             fs,
+		Logger:         logger,
+		DeploymentRing: "fake",
+		Environment:    "stub",
+	}, ParseTFBackend)
+
+	require.Equal(t, "stub-.tfstate", mockResult.Config["key"])
 }
 
 func TestGetBackendConfig_ShouldInterpolateResourceGroupNameField(t *testing.T) {
@@ -230,7 +214,7 @@ func TestGetBackendConfig_ShouldReturnSameValueForKeyAsStepAsNoKey(t *testing.T)
 func TestHandleOverrides_ShouldSetFields(t *testing.T) {
 	var overrideSrc, overrideDst string
 
-	steps.CopyFile = func(src, dst string) (err error) {
+	CopyFile = func(src, dst string) (err error) {
 		overrideSrc = src
 		overrideDst = dst
 		return nil
