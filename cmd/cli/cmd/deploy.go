@@ -43,7 +43,7 @@ func init() {
 	deployCmd.Flags().StringVarP(&Container, "container", "c", "runiac:alpine", "The container to execute, defaults 'runiac:alpine'")
 	deployCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
 	deployCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
-	deployCmd.Flags().StringVar(&PullRequest, "pull-request", "", "Pre-configure settings to create an isolated configuration specific to a pull request")
+	deployCmd.Flags().StringVar(&PullRequest, "pull-request", "", "Pre-configure settings to create an isolated configuration specific to a pull request, provide pull request identifier")
 
 	rootCmd.AddCommand(deployCmd)
 }
