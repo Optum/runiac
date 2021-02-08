@@ -28,6 +28,7 @@ var Container string
 var Namespace string
 var DeploymentRing string
 var Local bool
+var PullRequest string
 
 func init() {
 	deployCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
@@ -42,6 +43,7 @@ func init() {
 	deployCmd.Flags().StringVarP(&Container, "container", "c", "runiac:alpine", "The container to execute, defaults 'runiac:alpine'")
 	deployCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
 	deployCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
+	deployCmd.Flags().StringVar(&PullRequest, "pull-request", "", "Pre-configure settings to create an isolated configuration specific to a pull request")
 
 	rootCmd.AddCommand(deployCmd)
 }
@@ -89,6 +91,9 @@ var deployCmd = &cobra.Command{
 
 			Namespace = namespace
 			DeploymentRing = "local"
+		} else if PullRequest != "" {
+			Namespace = PullRequest
+			DeploymentRing = "pr"
 		}
 
 		cmd2.Args = appendEIfSet(cmd2.Args, "DEPLOYMENT_RING", DeploymentRing)
