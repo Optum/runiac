@@ -36,14 +36,17 @@ for d in build/package/*/ ; do
     VERSION=$(whoami)
   fi
 
-  image="optumopensource/runiac:$VERSION-$cleanDir"
+  image="runiac:$VERSION-$cleanDir"
+
+  echo "building ${image}"
+
   DOCKER_BUILDKIT=1 docker build -f "$d/Dockerfile" -t "$image" . &
 
   if [ "$push" == "true"  ]
   then
     echo "pushing..."
-#    docker tag "$image" "optumopensource/$image" || exit 1
-    docker push "$image"
+    docker tag "$image" "optumopensource/$image" || exit 1
+    docker push "optumopensource/$image" || exit 1
   fi
 
 done
