@@ -117,8 +117,15 @@ var deployCmd = &cobra.Command{
 			cmd2.Args = append(cmd2.Args, "-it")
 		}
 
+		// TODO: how to make environment variables for the consumer or simply pass all in?
 		for _, env := range cmd2.Env {
 			if strings.HasPrefix(env, "TF_VAR_") {
+				cmd2.Args = append(cmd2.Args, "-e", env)
+			}
+		}
+
+		for _, env := range cmd2.Env {
+			if strings.HasPrefix(env, "ARM_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
 			}
 		}
