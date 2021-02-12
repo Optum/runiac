@@ -21,5 +21,10 @@ func (info ArmPlugin) Initialize(logger *logrus.Entry) {
 		Logger:                   logger.WithField("ArmPlugin", "info"),
 	}
 
-	azureCLI.Version(options)
+	out, err := azureCLI.Version(options)
+	if err != nil {
+		logger.Warn("Unable to print az CLI version")
+	} else {
+		logger.Info("Binary: ", out)
+	}
 }
