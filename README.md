@@ -318,7 +318,38 @@ runiac uses [provider plugin caching](https://www.terraform.io/docs/commands/cli
 
 ## Runners
 
+### Azure Resource Manager (ARM)
+
+Support for ARM template deployments is currently in preview.
+
+[./assets/runiac-arm.gif]
+
+See the [examples/arm-azure-hello-world](examples/arm-azure-hello-world) example for a quick start project you can refer to.
+
+#### Configuration
+
+You can tell runiac to deploy ARM templates by setting the following `runner` key in your `runiac.yml` file:
+
+```yaml
+runner: arm
+```
+
+Alternatively, you can specify this by passing `--runner arm` as part of the runniac CLI invocation.
+
+You must create a `main.json` file in each step that contains ARM templates. Your `main.json` can contain any valid ARM
+template deployment, including any template control ARM features, such as remote linked templates. 
+
 ### Terraform
+
+#### Configuration
+
+You can tell runiac to deploy Terraform-based infrastructure by setting the following `runner` key in your `runiac.yml` file:
+
+```yaml
+runner: terraform
+```
+
+Alternatively, you can specify this by passing `--runner terraform` as part of the runniac CLI invocation.
 
 #### Using Previous Step Output Variables
 

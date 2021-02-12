@@ -4,8 +4,10 @@ This directory contains several example projects that you can use as a starting 
 
 ## Index
 
-* [azure](terraform-azure-hello-world/): deploy infrastructure to Microsoft Azure
-* [gcp](terraform-gcp-hello-world/): deploy infrastructure to Google Cloud Platform
+* [arm-azure-hello-world](terraform-azure-hello-world/): deploy ARM template infrastructure to Microsoft Azure
+* [terraform-azure-hello-world](terraform-azure-hello-world/): deploy Terraform infrastructure to Microsoft Azure
+* [terraform-gcp-hello-world](terraform-gcp-hello-world/): deploy Terraform infrastructure to Google Cloud Platform
+* [kitchen-sink](kitchen-sink): deploy complex Terraform infrastructure simultaneously to both Microsoft Azure and Google Cloud Platform
 
 ## Common Requirements
 

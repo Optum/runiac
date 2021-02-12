@@ -41,10 +41,7 @@ runiac -a <your-azure-subscription-id> -e <your-environment-name> --self-destroy
 
 This example assumes you are using your own login credentials to deploy infrastructure. In a real world situation, you most likely will
 want to use a [service principal](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals), especially
-if you intend to use runiac in a CI/CD pipeline. A common approach is to use a service principal with a client ID and secret, as 
-[described here](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret).
-
-TODO: adapt for ARM templates
+if you intend to use runiac in a CI/CD pipeline.
 
 In the context of an Azure YAML pipeline, you can obtain these values by setting the `addSpnToEnvironment` input to `true` on the 
 [AzureCLI@2](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/deploy/azure-cli?view=azure-devops) task.
