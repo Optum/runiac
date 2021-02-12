@@ -30,22 +30,23 @@ for d in build/package/*/ ; do
   dir="${d%/*}"
   cleanDir=${dir##*/}
 
-  # if not in github actions, set to local default
-  if [ -z "$GITHUB_REF"  ]
+  # if not in version not set, set to local default
+  if [ -z "$VERSION"  ]
   then
-    GITHUB_REF=$(whoami)
+    VERSION=$(whoami)
   fi
 
-  image="runiac:$GITHUB_REF-$cleanDir"
-  DOCKER_BUILDKIT=1 docker build -f "$d/Dockerfile" -t "$image" . &
+  image="runiac:$VERSION-$cleanDir"
+
+  echo "building ${image}"
+
+  DOCKER_BUILDKIT=1 docker build -f "$d/Dockerfile" -t "$image" .
 
   if [ "$push" == "true"  ]
   then
     echo "pushing..."
-    docker tag "$image" "optumopensource/$image"
-    docker push "optumopensource/$image"
+    docker tag "$image" "optumopensource/$image" || exit 1
+    docker push "optumopensource/$image" || exit 1
   fi
 
 done
-
-wait

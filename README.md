@@ -41,6 +41,7 @@ We'd love to hear from you!  Submit github issues for questions, issues or feedb
 
 - [How does runiac work?](#how-does-runiac-work)
 - [Demo](#demo)
+- [Install](#install)
 - [Tutorial](#tutorial)
 - [Terminology](#terminology)
   - [Steps](#steps)
@@ -115,6 +116,18 @@ What webpack did for react development, runiac does for terraform.
 ## Demo
 
 - Record Gif Here of running `runiac`
+
+## Install
+
+**homebrew tap**:
+
+```bash
+brew install optum/tap/runiac
+```
+
+**manually**:
+
+Download the pre-compiled binaries from the [releases](https://github.com/Optum/runiac/releases) page and copy to the desired location.
 
 ## Tutorial
 

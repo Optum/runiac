@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Hello World runiac Project for Google Cloud Platform](#hello-world-runiac-project-for-google-cloud-platform)
+  - [Requirements](#requirements)
+  - [Running](#running)
+  - [Important Notes](#important-notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Hello World runiac Project for Google Cloud Platform
 
 This example will provide a starting point for working with runiac and deploying resources into

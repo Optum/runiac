@@ -1,0 +1,51 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    main: ./cmd/cli/main.go
+    binary: runiac
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+brews:
+  -
+    name: runiac
+    # GitHub/GitLab repository to push the formula to
+    # Gitea is not supported yet, but the support coming
+    tap:
+      owner: optum
+      name: homebrew-tap
+      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    folder: Formula
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@optum.com
+    homepage: "https://github.com/optum/runiac"
+    description: "Run IaC Anywhere with Ease"
+    license: "Apache2"
+    test: |
+      system "#{bin}/runiac version"
