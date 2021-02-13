@@ -115,7 +115,9 @@ What webpack did for react development, runiac does for terraform.
 
 ## Demo
 
-- Record Gif Here of running `runiac`
+See runiac in action!
+
+![](./assets/runiac-arm.gif)
 
 ## Install
 
@@ -333,11 +335,8 @@ runiac uses [provider plugin caching](https://www.terraform.io/docs/commands/cli
 
 ### Azure Resource Manager (ARM)
 
-Support for ARM template deployments is currently in preview.
-
-[./assets/runiac-arm.gif]
-
-See the [examples/arm-azure-hello-world](examples/arm-azure-hello-world) example for a quick start project you can refer to.
+Support for ARM template deployments is currently in preview. See the [examples/arm-azure-hello-world](examples/arm-azure-hello-world) 
+example for a quick start project you can refer to.
 
 #### Configuration
 

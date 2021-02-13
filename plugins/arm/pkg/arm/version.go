@@ -5,5 +5,5 @@ func Version(options *Options) (out string, err error) {
 		"--version",
 	}
 
-	return RunAzureCLICommand(true, options, args...)
+	return RunAzureCLICommand(false, options, args...)
 }
