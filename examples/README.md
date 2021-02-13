@@ -17,7 +17,7 @@ This directory contains several example projects that you can use as a starting 
 
 ## Index
 
-* [arm-azure-hello-world](terraform-azure-hello-world/): deploy ARM template infrastructure to Microsoft Azure
+* [arm-azure-hello-world](arm-azure-hello-world/): deploy ARM template infrastructure to Microsoft Azure
 * [terraform-azure-hello-world](terraform-azure-hello-world/): deploy Terraform infrastructure to Microsoft Azure
 * [terraform-gcp-hello-world](terraform-gcp-hello-world/): deploy Terraform infrastructure to Google Cloud Platform
 * [kitchen-sink](kitchen-sink): deploy complex Terraform infrastructure simultaneously to both Microsoft Azure and Google Cloud Platform
