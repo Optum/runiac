@@ -33,11 +33,11 @@ Assuming you've set up your subscription and login credentials, initialize a run
 directory:
 
 ```bash
-runiac init --base-container "runiac:azure-azure-gcloud"
+runiac init
 ```
 
-Since this example relies on an Azure CLI and Google Cloud SDK installation, we request to use the base `runiac:alpine-azure-gcloud` image.
-Note that `entrypoint.sh` is set up to prompt the user for when credentials are missing or expired. This facilitates getting the example working, 
+Since this example relies on an Azure CLI and Google Cloud SDK installation, we request to use the image `optumopensource/runiac:v0.0.1-beta3-alpine-azure-gcloud` via the `--container` flag.
+Note that `entrypoint.sh` is set up to prompt the user for when credentials are missing or expired. This facilitates getting the example working,
 but in a real-world scenario, you'll most likely want to follow your Terraform providers' best practices for propagating credentials instead.
 
 You can now execute runiac using the following runiac CLI command, replacing placeholders with your actual access details:
@@ -45,10 +45,11 @@ You can now execute runiac using the following runiac CLI command, replacing pla
 ```bash
 TF_VAR_pagerduty_token="your-pagerduty-token" \
 TF_VAR_gcp_project_id="your-gcp-project-od" \
-runiac apply \
+runiac deploy \
   -e nonprod \
   -a your-azure-subscription-id \
-  --interactive
+  --interactive \
+  --container optumopensource/runiac:v0.0.1-beta3-alpine-azure-gcloud
 ```
 
 This will deploy several tracks which target PagerDuty, Azure and GCP. Notice several things about this command:
@@ -65,9 +66,10 @@ Finally, You can clean up any resources that were created by running Terrscale w
 ```bash
 TF_VAR_pagerduty_token="your-pagerduty-token" \
 TF_VAR_gcp_project_id="your-gcp-project-od" \
-runiac apply \
+runiac deploy \
   -e nonprod \
   -a your-azure-subscription-id \
   --interactive \
+  --container optumopensource/runiac:v0.0.1-beta3-alpine-azure-gcloud \
   --self-destroy
 ```
