@@ -1,7 +1,7 @@
 # Configure the Azure Provider
 provider "google" {
   project         = var.gcp_project_id
-  region          = var.region
+  region          = var.runiac_region
 }
 
 provider "pagerduty" {

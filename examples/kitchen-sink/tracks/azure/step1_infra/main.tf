@@ -1,12 +1,12 @@
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "example" {
-  name     = "${var.resource_group}-${var.region}"
-  location = var.region
+  name     = "${var.resource_group}-${var.runiac_region}"
+  location = var.runiac_region
 }
 
 resource "azurerm_key_vault" "example" {
-  name                        = "kv-runiac-${var.region}"
+  name                        = "kv-runiac-${var.runiac_region}"
   location                    = azurerm_resource_group.example.location
   resource_group_name         = azurerm_resource_group.example.name
   enabled_for_disk_encryption = true
