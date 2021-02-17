@@ -238,9 +238,9 @@ func (tracker DirectoryBasedTracker) readTrack(cfg config.Config, name string, d
 				// if the step belongs to the default track, exclude the name of the track from the identifier
 				stepID := ""
 				if t.IsDefaultTrack {
-					stepID = fmt.Sprintf("#%s#%s", cfg.Project, stepName)
+					stepID = fmt.Sprintf("default/%s", stepName)
 				} else {
-					stepID = fmt.Sprintf("#%s#%s#%s", cfg.Project, t.Name, stepName)
+					stepID = fmt.Sprintf("%s/%s", t.Name, stepName)
 				}
 
 				// if step is not targeted, skip.
@@ -1000,7 +1000,7 @@ func executeStepTest(incomingLogger *logrus.Entry, fs afero.Fs, region string, r
 
 func contains(s []string, e string) bool {
 	for _, a := range s {
-		if strings.ToLower(a) == strings.ToLower(e) {
+		if strings.ToLower(a) == strings.ToLower(e) || strings.ToLower(fmt.Sprintf("default/%s", a)) == strings.ToLower(e) {
 			return true
 		}
 	}

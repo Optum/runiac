@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +29,7 @@ var DeploymentRing string
 var Local bool
 var Runner string
 var PullRequest string
+var StepWhitelist []string
 
 func init() {
 	deployCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
@@ -45,6 +45,7 @@ func init() {
 	deployCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
 	deployCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
 	deployCmd.Flags().StringVarP(&Runner, "runner", "", "terraform", "The deployment tool to use for deploying infrastructure")
+	deployCmd.Flags().StringSliceVarP(&StepWhitelist, "steps", "s", []string{}, "Only run the specified steps. To specify steps inside a track: -s {trackName}/{stepName}.  To run multiple steps, separate with a comma.  If empty, it will run all steps. To run no steps, specify a non-existent step.")
 	deployCmd.Flags().StringVar(&PullRequest, "pull-request", "", "Pre-configure settings to create an isolated configuration specific to a pull request, provide pull request identifier")
 
 	rootCmd.AddCommand(deployCmd)
@@ -55,6 +56,7 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy configurations",
 	Long:  `This will execute the deploy action for each step.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		checkDockerExists()
 
 		ok := checkInitialized()
@@ -105,6 +107,7 @@ var deployCmd = &cobra.Command{
 		cmd2.Args = appendEIfSet(cmd2.Args, "ENVIRONMENT", Environment)
 		cmd2.Args = appendEIfSet(cmd2.Args, "DRY_RUN", fmt.Sprintf("%v", DryRun))
 		cmd2.Args = appendEIfSet(cmd2.Args, "SELF_DESTROY", fmt.Sprintf("%v", SelfDestroy))
+		cmd2.Args = appendEIfSet(cmd2.Args, "STEP_WHITELIST", strings.Join(StepWhitelist, ","))
 
 		if len(PrimaryRegions) > 0 {
 			cmd2.Args = appendEIfSet(cmd2.Args, "PRIMARY_REGION", PrimaryRegions[0])
@@ -146,7 +149,7 @@ var deployCmd = &cobra.Command{
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/.config/gcloud:/root/.config/gcloud", dir))
 
 		// persist local terraform state between container executions
-		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/tfstate:/tfstate", dir))
+		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/tfstate:/runiac/tfstate", dir))
 
 		cmd2.Args = append(cmd2.Args, containerTag)
 
@@ -182,15 +185,7 @@ func checkDockerExists() {
 }
 
 func checkInitialized() bool {
-	fs := afero.NewOsFs()
-
-	ok, err := afero.DirExists(fs, ".runiac")
-	if err != nil {
-		log.Fatalf("Unable to determine if CLI directory exists: %v", err)
-		return false
-	}
-
-	return ok
+	return InitAction()
 }
 
 func getMachineName() (string, error) {
