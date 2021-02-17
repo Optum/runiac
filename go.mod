@@ -11,6 +11,7 @@ require (
 	github.com/gruntwork-io/gruntwork-cli v0.4.2
 	github.com/gruntwork-io/terratest v0.17.5
 	github.com/otiai10/copy v1.4.2
+	github.com/manifoldco/promptui v0.8.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.1.1
