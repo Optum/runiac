@@ -204,7 +204,7 @@ func promptForValues() (result surveyAnswers, err error) {
 		}
 	}
 
-	scmOptions = append(scmOptions, "None - do not use any source control tool")
+	scmOptions = append(scmOptions, "none - do not use any source control tool")
 
 	answers := surveyAnswers{}
 	questions := []*survey.Question{
@@ -313,8 +313,8 @@ var newCmd = &cobra.Command{
 			name = args[0]
 		}
 
-		// no arguments given, initiate a prompt for manual input
-		if len(args) == 0 && projectTemplate == "" && primaryRegion == "" && scmType == "" && runner == "" {
+		// not enough arguments given, initiate a prompt for manual input
+		if len(args) == 0 || projectTemplate == "" || primaryRegion == "" || scmType == "" || runner == "" {
 			// unless the cli is specifically set not to do so
 			if nonInteractive {
 				logrus.Error("Not enough arguments given, but CLI is in non-interactive mode")
