@@ -27,7 +27,7 @@ See the top-level README for information on obtaining these items:
 Assuming you've set up your service account credentials, you can execute runiac using the following command:
 
 ```bash
-runiac apply -a <your-gcp-project-id> -e <your-environment-name> --dry-run
+runiac deploy -a <your-gcp-project-id> -e <your-environment-name> --container optumopensource/runiac:v0.0.1-beta3-alpine-gcloud --dry-run
 ```
 
 This will run runiac without committing any infrastructure changes. You can view the output to see if it aligns with expectations. The example
@@ -37,7 +37,7 @@ you can add more resources under the `step1_default` directory.
 To deploy infrastructure changes, you can run the following command instead:
 
 ```bash
-runiac -a <your-gcp-project-id> -e <your-environment-name>
+runiac deploy -a <your-gcp-project-id> -e <your-environment-name> --container optumopensource/runiac:v0.0.1-beta3-alpine-gcloud
 ```
 
 Review the output to validate that your infrastructure changes have been deployed.
@@ -45,12 +45,12 @@ Review the output to validate that your infrastructure changes have been deploye
 Finally, You can clean up any resources that were created by running Terrscale with the `--self-destroy` flag:
 
 ```bash
-runiac -a <your-gcp-project-id> -e <your-environment-name> --self-destroy
+runiac deploy -a <your-gcp-project-id> -e <your-environment-name> --container optumopensource/runiac:v0.0.1-beta3-alpine-gcloud --self-destroy
 ```
 
 ## Important Notes
 
-Be aware that some Google Cloud Platform resources are not deleted immediately. Common examples include [IAM roles](https://cloud.google.com/iam/docs/creating-custom-roles#deleting-custom-role), among others, which remain in the system for a period of time before finally being purged 
+Be aware that some Google Cloud Platform resources are not deleted immediately. Common examples include [IAM roles](https://cloud.google.com/iam/docs/creating-custom-roles#deleting-custom-role), among others, which remain in the system for a period of time before finally being purged
 (ie: soft deletes). The Terraform provider documentation will usually [call this out](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam_custom_role) in a warning.
 
 This has implications on ephemeral deployments; you cannot create a role with a given name, run runiac with the `--self-destroy` flag
