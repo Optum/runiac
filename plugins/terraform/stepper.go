@@ -418,30 +418,14 @@ func interpolateString(exec config.StepExecution, s string) string {
 			"${var.runiac_region_deploy_type}", exec.RegionDeployType.String())
 	}
 
-	if strings.Contains(s, "${var.region}") {
+	if strings.Contains(s, "${var.runiac_region}") {
 		s = strings.ReplaceAll(s,
-			"${var.region}", exec.Region)
+			"${var.runiac_region}", exec.Region)
 	}
 
-	if strings.Contains(s, "${local.namespace-}") {
-		namespace_ := exec.Namespace
-
-		if len(namespace_) > 0 {
-			namespace_ += "-"
-		}
-
+	if strings.Contains(s, "${var.runiac_environment}") {
 		s = strings.ReplaceAll(s,
-			"${local.namespace-}", namespace_)
-	}
-
-	if strings.Contains(s, "${var.region}") {
-		s = strings.ReplaceAll(s,
-			"${var.runiac_step}", exec.StepName)
-	}
-
-	if strings.Contains(s, "${var.environment}") {
-		s = strings.ReplaceAll(s,
-			"${var.environment}", exec.Environment)
+			"${var.runiac_environment}", exec.Environment)
 	}
 
 	// Replace all ${var.core_account_ids_map instances.

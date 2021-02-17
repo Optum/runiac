@@ -1,3 +1,17 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Proposed changes](#proposed-changes)
+- [Issues for these changes](#issues-for-these-changes)
+- [Types of changes](#types-of-changes)
+- [Checklist](#checklist)
+- [Dependencies and Blockers](#dependencies-and-blockers)
+- [Relevant Links](#relevant-links)
+- [Further comments](#further-comments)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Proposed changes
 
 <!--

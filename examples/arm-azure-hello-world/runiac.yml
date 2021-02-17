@@ -1,4 +1,4 @@
 project: azure-hello-world
-primary_region: centralus
+primary_region: southcentralus
 regional_regions: centralus
-runner: terraform
+runner: arm

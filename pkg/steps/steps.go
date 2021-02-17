@@ -1,9 +1,10 @@
-//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.com/optum/runiac/pkg/steps StepperFactory,Stepper
+//go:generate mockgen -destination ../../mocks/mock_steps.go -package=mocks github.com/optum/runiac/pkg/config Stepper
 
 package steps
 
 import (
 	"fmt"
+	pluginsarm "github.com/optum/runiac/plugins/arm"
 	pluginsterraform "github.com/optum/runiac/plugins/terraform"
 	"strings"
 
@@ -11,8 +12,14 @@ import (
 )
 
 func DetermineRunner(s config.Step) config.Stepper {
-	// TODO(plugins): support multiple plugin step runners
-	return pluginsterraform.TerraformStepper{}
+	switch s.DeployConfig.Runner {
+	case "arm":
+		return pluginsarm.ArmStepper{}
+	case "terraform":
+		return pluginsterraform.TerraformStepper{}
+	default:
+		return nil
+	}
 }
 
 // Adds previous step output to stepParams which get added as environment variables

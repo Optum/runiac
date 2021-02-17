@@ -3,7 +3,7 @@ locals {
 
     region = lookup({
         "centralus": "us-central1"
-    }, var.region, "centralus")
+    }, var.runiac_region, "centralus")
 }
 
 variable pagerduty_token {
@@ -18,15 +18,15 @@ variable gcp_project_id {
     type = string
 }
 
-variable account_id {
+variable runiac_account_id {
     type = string
 }
 
-variable region {
+variable runiac_region {
     type = string
 }
 
-variable environment {
+variable runiac_environment {
     type = string
 }
 

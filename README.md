@@ -41,6 +41,7 @@ We'd love to hear from you!  Submit github issues for questions, issues or feedb
 
 - [How does runiac work?](#how-does-runiac-work)
 - [Demo](#demo)
+- [Install](#install)
 - [Tutorial](#tutorial)
 - [Terminology](#terminology)
   - [Steps](#steps)
@@ -114,7 +115,21 @@ What webpack did for react development, runiac does for terraform.
 
 ## Demo
 
-- Record Gif Here of running `runiac`
+See runiac in action!
+
+![](./assets/runiac-arm.gif)
+
+## Install
+
+**homebrew tap**:
+
+```bash
+brew install optum/tap/runiac
+```
+
+**manually**:
+
+Download the pre-compiled binaries from the [releases](https://github.com/Optum/runiac/releases) page and copy to the desired location.
 
 ## Tutorial
 
@@ -318,7 +333,35 @@ runiac uses [provider plugin caching](https://www.terraform.io/docs/commands/cli
 
 ## Runners
 
+### Azure Resource Manager (ARM)
+
+Support for ARM template deployments is currently in preview. See the [examples/arm-azure-hello-world](examples/arm-azure-hello-world) 
+example for a quick start project you can refer to.
+
+#### Configuration
+
+You can tell runiac to deploy ARM templates by setting the following `runner` key in your `runiac.yml` file:
+
+```yaml
+runner: arm
+```
+
+Alternatively, you can specify this by passing `--runner arm` as part of the runniac CLI invocation.
+
+You must create a `main.json` file in each step that contains ARM templates. Your `main.json` can contain any valid ARM
+template deployment, including any template control ARM features, such as remote linked templates. 
+
 ### Terraform
+
+#### Configuration
+
+You can tell runiac to deploy Terraform-based infrastructure by setting the following `runner` key in your `runiac.yml` file:
+
+```yaml
+runner: terraform
+```
+
+Alternatively, you can specify this by passing `--runner terraform` as part of the runniac CLI invocation.
 
 #### Using Previous Step Output Variables
 

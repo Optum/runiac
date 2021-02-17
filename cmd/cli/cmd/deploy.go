@@ -28,6 +28,8 @@ var Container string
 var Namespace string
 var DeploymentRing string
 var Local bool
+var Runner string
+var PullRequest string
 
 func init() {
 	deployCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
@@ -42,6 +44,8 @@ func init() {
 	deployCmd.Flags().StringVarP(&Container, "container", "c", "runiac:alpine", "The container to execute, defaults 'runiac:alpine'")
 	deployCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
 	deployCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
+	deployCmd.Flags().StringVarP(&Runner, "runner", "", "terraform", "The deployment tool to use for deploying infrastructure")
+	deployCmd.Flags().StringVar(&PullRequest, "pull-request", "", "Pre-configure settings to create an isolated configuration specific to a pull request, provide pull request identifier")
 
 	rootCmd.AddCommand(deployCmd)
 }
@@ -89,9 +93,13 @@ var deployCmd = &cobra.Command{
 
 			Namespace = namespace
 			DeploymentRing = "local"
+		} else if PullRequest != "" {
+			Namespace = PullRequest
+			DeploymentRing = "pr"
 		}
 
 		cmd2.Args = appendEIfSet(cmd2.Args, "DEPLOYMENT_RING", DeploymentRing)
+		cmd2.Args = appendEIfSet(cmd2.Args, "RUNNER", Runner)
 		cmd2.Args = appendEIfSet(cmd2.Args, "NAMESPACE", Namespace)
 		cmd2.Args = appendEIfSet(cmd2.Args, "VERSION", Version)
 		cmd2.Args = appendEIfSet(cmd2.Args, "ENVIRONMENT", Environment)
@@ -112,8 +120,15 @@ var deployCmd = &cobra.Command{
 			cmd2.Args = append(cmd2.Args, "-it")
 		}
 
+		// TODO: how to make environment variables for the consumer or simply pass all in?
 		for _, env := range cmd2.Env {
 			if strings.HasPrefix(env, "TF_VAR_") {
+				cmd2.Args = append(cmd2.Args, "-e", env)
+			}
+		}
+
+		for _, env := range cmd2.Env {
+			if strings.HasPrefix(env, "ARM_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
 			}
 		}
