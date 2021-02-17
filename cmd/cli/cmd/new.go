@@ -6,30 +6,27 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/manifoldco/promptui"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-type promptItem struct {
-	Key         string
-	Label       string
-	Description string
-}
-
-var selectTemplates = &promptui.SelectTemplates{
-	Label:    "{{ . }}?",
-	Active:   "{{ .Label | green }} - {{ .Description }}",
-	Inactive: "{{ .Label | white }} - {{ .Description }}",
-	Selected: "{{ .Label | green }} - {{ .Description }}",
-}
-
 var projectTemplate string
 var primaryRegion string
 var scmType string
 var runner string
+var tools string
 var nonInteractive bool
+
+type surveyAnswers struct {
+	Name            string
+	ProjectTemplate string
+	PrimaryRegion   string
+	Runner          string
+	Tools           []string
+	Scm             string
+}
 
 type ProjectTemplateType int
 
@@ -47,6 +44,24 @@ func stringToTemplateType(s string) (ProjectTemplateType, error) {
 	}
 
 	return UnknownProjectTemplateType, errors.New("Invalid template type")
+}
+
+type ToolType int
+
+const (
+	AzureToolType ToolType = iota
+	GCloudToolType
+	UnknownToolType
+)
+
+func stringToToolType(s string) (ToolType, error) {
+	if s == "azure" {
+		return AzureToolType, nil
+	} else if s == "gcloud" {
+		return GCloudToolType, nil
+	}
+
+	return UnknownToolType, errors.New("Invalid tool type")
 }
 
 type ScmType int
@@ -67,19 +82,19 @@ func stringToScmType(s string) (ScmType, error) {
 	return UnknownScmType, errors.New("Invalid SCM type")
 }
 
-type Runner int
+type RunnerType int
 
 const (
-	UnknownRunner Runner = iota
-	ArmRunner
-	TerraformRunner
+	UnknownRunner RunnerType = iota
+	ArmRunnerType
+	TerraformRunnerType
 )
 
-func stringToRunner(s string) (Runner, error) {
+func stringToRunner(s string) (RunnerType, error) {
 	if s == "arm" {
-		return ArmRunner, nil
+		return ArmRunnerType, nil
 	} else if s == "terraform" {
-		return TerraformRunner, nil
+		return TerraformRunnerType, nil
 	}
 
 	return UnknownRunner, errors.New("Invalid runner type")
@@ -101,6 +116,7 @@ func init() {
 	newCmd.Flags().StringVar(&scmType, "scm", "", "Initialize a repository in the project directory (none, git)")
 	newCmd.Flags().StringVar(&primaryRegion, "primary-region", "", "Primary cloud provider region where you intend to deploy infrastructure")
 	newCmd.Flags().StringVar(&runner, "runner", "", "Configures the project for a specific deployment tool (arm, terraform)")
+	newCmd.Flags().StringVar(&runner, "tools", "", "Comma-separated list of tools to include in the project (azure, gcloud)")
 	newCmd.Flags().BoolVar(&nonInteractive, "non-interactive", false, "Disables manual input prompts")
 
 	rootCmd.AddCommand(newCmd)
@@ -177,104 +193,100 @@ func initializeRuniacConfig(projectName string, region string, runner string, fs
 	return
 }
 
-func promptForValues() (name string, err error) {
-	prompt := promptui.Prompt{
-		Label: "Project name",
-		Validate: func(input string) error {
-			if len(input) == 0 {
-				return errors.New("Name must not be empty")
-			} else if strings.Contains(input, " ") {
-				return errors.New("Name cannot contain spaces")
-			}
-
-			return nil
-		},
-	}
-
-	name, err = prompt.Run()
-	if err != nil {
-		return
-	}
-
-	projectTemplates := []promptItem{
-		{Key: "simple", Label: "Simple", Description: "single set of steps"},
-		{Key: "tracks", Label: "Tracks", Description: "multiple steps organized by parallel tracks"},
-	}
-
-	pSelect := promptui.Select{
-		Label:     "What type of project do you want to create",
-		Items:     projectTemplates,
-		Templates: selectTemplates,
-		Size:      len(projectTemplates),
-	}
-
-	i, _, err := pSelect.Run()
-	if err != nil {
-		return
-	}
-
-	projectTemplate = projectTemplates[i].Key
-
-	prompt = promptui.Prompt{
-		Label: "What cloud provider region will your infrastructure primarily be deployed to? (us-central1, southcentralus, etc.)",
-	}
-
-	primaryRegion, err = prompt.Run()
-	if err != nil {
-		return
-	}
-
+func promptForValues() (result surveyAnswers, err error) {
 	scmTypes := discoverScms()
-	scmOptions := make([]promptItem, 0)
-	for _, item := range scmTypes {
-		switch item {
+	scmOptions := make([]string, 0)
+	for _, scmType := range scmTypes {
+		switch scmType {
 		case Git:
-			scmOptions = append(scmOptions, promptItem{
-				Key:         "git",
-				Label:       "git",
-				Description: "initialize a git repository in the project directory",
-			})
+			scmOptions = append(scmOptions, "git - Initialize a git repository in the project directory")
 		}
 	}
 
-	scmOptions = append(scmOptions, promptItem{
-		Key:         "none",
-		Label:       "None",
-		Description: "do not initialize any source control repository",
-	})
+	scmOptions = append(scmOptions, "None - do not use any source control tool")
 
-	pSelect = promptui.Select{
-		Label:     "What source control tool do you want to use",
-		Items:     scmOptions,
-		Templates: selectTemplates,
-		Size:      len(scmOptions),
+	answers := surveyAnswers{}
+	questions := []*survey.Question{
+		{
+			Name:     "name",
+			Prompt:   &survey.Input{
+				Message: "Choose a name for your project.",
+			},
+			Validate: survey.Required,
+		},
+		{
+			Name:     "primaryRegion",
+			Prompt:   &survey.Input{
+				Message: "Which cloud provider region will your resources primarily be deployed to? (us-central1, southcentralus, etc.)",
+			},
+		},
+		{
+			Name: "projectTemplate",
+			Prompt: &survey.Select{
+				Message: "What type of project do you want to create?",
+				Options: []string{
+					"simple - A single set of deployment steps", 
+					"tracks - Multiple sets of steps that can be deployed in parallel",
+				},
+			},
+		},
+		{
+			Name: "runner",
+			Prompt: &survey.Select{
+				Message: "Which deployment tool do you want to use?",
+				Options: []string{
+					"arm - Use Azure Resource Manager templates (preview)", 
+					"terraform - Use Hashicorp Terraform",
+				},
+			},
+		},
+		{
+			Name: "tools",
+			Prompt: &survey.MultiSelect{
+				Message: "Choose the set of tools you need to deploy your infrastructure:",
+				Options: []string{
+					"azure - Microsoft Azure CLI", 
+					"gcloud - Google Cloud SDK",
+				},
+			},
+		},
+		{
+			Name: "scm",
+			Prompt: &survey.Select{
+				Message: "Which source control tool do you want to use?",
+				Options: scmOptions,
+			},
+		},
 	}
 
-	i, _, err = pSelect.Run()
+	err = survey.Ask(questions, &answers)
 	if err != nil {
 		return
 	}
 
-	scmType = scmOptions[i].Key
-
-	runners := []promptItem{
-		{Key: "arm", Label: "ARM Templates", Description: "use Azure Resource Manager deployment templates (preview)"},
-		{Key: "terraform", Label: "Terraform", Description: "use Terraform"},
+	confirm := false
+	prompt := &survey.Confirm{
+		Message: "Does everything look good?",
 	}
 
-	pSelect = promptui.Select{
-		Label:     "What delivery tool do you want to use",
-		Items:     runners,
-		Templates: selectTemplates,
-		Size:      len(runners),
-	}
-
-	i, _, err = pSelect.Run()
-	if err != nil {
+	survey.AskOne(prompt, &confirm)
+	if !confirm {
+		err = errors.New("")
 		return
 	}
 
-	runner = runners[i].Key
+	result = surveyAnswers{
+		Name: answers.Name,
+		PrimaryRegion: answers.PrimaryRegion,
+		ProjectTemplate: strings.TrimSpace(strings.Split(answers.ProjectTemplate, "-")[0]),
+		Runner: strings.TrimSpace(strings.Split(answers.Runner, "-")[0]),
+		Scm: strings.TrimSpace(strings.Split(answers.Scm, "-")[0]),
+	}
+
+	result.Tools = make([]string, 0)
+	for _, tool := range answers.Tools {
+		result.Tools = append(result.Tools, strings.TrimSpace(strings.Split(tool, "-")[0]))
+	}
 
 	return
 }
@@ -299,11 +311,18 @@ var newCmd = &cobra.Command{
 				return
 			}
 
-			name, err = promptForValues()
+			result, err := promptForValues()
 			if err != nil {
 				logrus.Error(fmt.Sprintf("CLI terminated: %v", err))
 				return
 			}
+
+			name = result.Name
+			projectTemplate = result.ProjectTemplate
+			primaryRegion = result.PrimaryRegion
+			runner = result.Runner
+			scmType = result.Scm
+			tools = strings.Join(result.Tools, ",")
 		}
 
 		// validate template type
@@ -318,6 +337,18 @@ var newCmd = &cobra.Command{
 		if err != nil {
 			logrus.Error(fmt.Sprintf("Unknown SCM type '%s' (valid types: none, git)", scmType))
 			return
+		}
+
+		// validate container tools
+		containerTools := make([]ToolType, 0)
+		for _, toolType := range strings.Split(tools, ",") {
+			if toolType == "azure" {
+				containerTools = append(containerTools, AzureToolType)
+			} else if toolType == "gcloud" {
+				containerTools = append(containerTools, GCloudToolType)
+			} else {
+				logrus.Error(fmt.Sprintf("Unknown tool type '%s' (valid types: azure, gcloud)", toolType))
+			}
 		}
 
 		fs := afero.NewOsFs()
@@ -375,6 +406,6 @@ var newCmd = &cobra.Command{
 			break
 		}
 
-		fmt.Printf("🍺 Initialized a new project. You can now run the 'runiac init' command in the %s directory.\n", name)
+		fmt.Printf("🍺 Initialized a new project in directory: %s.\n", name)
 	},
 }
