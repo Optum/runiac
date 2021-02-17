@@ -225,8 +225,8 @@ func TestGetTracksWithTargetAll_ShouldReturnCorrectTracks(t *testing.T) {
 	}
 }
 
-func TestGetTracksWithStepTarget_ShouldReturnCorrectTracks(t *testing.T) {
-	stubStepWhitelist := []string{fmt.Sprintf("#core#%s#%s", stubTrackNameA, stubStepWithTests.Name), fmt.Sprintf("#core#%s#%s", stubTrackNameB, "b11")}
+func TestGetTracksWithStepWhitelist_ShouldReturnCorrectTracks(t *testing.T) {
+	stubStepWhitelist := []string{fmt.Sprintf("%s/%s", stubTrackNameA, stubStepWithTests.Name), fmt.Sprintf("%s/%s", stubTrackNameB, "b11")}
 	// act
 	mockTracks := sut.GatherTracks(config.Config{
 		StepWhitelist: stubStepWhitelist,
@@ -241,7 +241,7 @@ func TestGetTracksWithStepTarget_ShouldReturnCorrectTracks(t *testing.T) {
 		for _, steps := range track.OrderedSteps {
 			for _, step := range steps {
 				stepCount++
-				require.Contains(t, stubStepWhitelist, fmt.Sprintf("#core#%s#%s", track.Name, step.Name), "Returned step %s should be in the step whitelist", step.Name)
+				require.Contains(t, stubStepWhitelist, fmt.Sprintf("%s/%s", track.Name, step.Name), "Returned step %s should be in the step whitelist", step.Name)
 			}
 		}
 	}
