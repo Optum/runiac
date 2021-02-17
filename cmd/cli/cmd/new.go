@@ -356,8 +356,9 @@ var newCmd = &cobra.Command{
 				containerTools = append(containerTools, AzureCLIToolType)
 			} else if toolType == "gcloud" {
 				containerTools = append(containerTools, GCloudToolType)
-			} else {
+			} else if toolType != "" {
 				logrus.Error(fmt.Sprintf("Unknown tool type '%s' (valid types: azure, gcloud)", toolType))
+				return
 			}
 		}
 
@@ -419,7 +420,6 @@ var newCmd = &cobra.Command{
 		// determine which base container image to use by default
 		// this is somewhat "hacky" since we rely on an implicit naming convention, but for
 		// now it can suffice due to us only supporting a few standard image tags
-		baseContainer := "runiac:alpine"
 		tags := make([]string, 0)
 		for _, containerTool := range containerTools {
 			switch containerTool {
@@ -433,8 +433,8 @@ var newCmd = &cobra.Command{
 		}
 
 		sort.Strings(tags)
-		tagSuffix := strings.Join(tags, "-")
-		baseContainer = fmt.Sprintf("%s-%s", baseContainer, tagSuffix)
+		tags = append([]string{DefaultBaseContainer}, tags...)
+		baseContainer := strings.Join(tags, "-")
 
 		// initialize runiac in the new directory
 		err = InitializeDirectory(name, baseContainer)
