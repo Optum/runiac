@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -17,25 +18,34 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
+func InitializeDirectory(baseDir string, baseContainer string) error {
+	err := appFS.Mkdir(fmt.Sprintf("%s/.runiac", baseDir), 0755)
+	if err != nil {
+		return err
+	}
+
+	dockerfile := strings.ReplaceAll(Dockerfile, "${BASE_CONTAINER}", baseContainer)
+	err = afero.WriteFile(appFS, fmt.Sprintf("%s/.runiac/Dockerfile", baseDir), []byte(dockerfile), 0644)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+		return err
+	}
+
+	err = afero.WriteFile(appFS, fmt.Sprintf("%s/.runiac/.dockerignore", baseDir), []byte(DockerIgnore), 0644)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+		return err
+	}
+
+	return nil
+}
+
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a project",
 	Long:  `Initialize a project`,
 	Run: func(cmd *cobra.Command, args []string) {
-		_ = appFS.Mkdir(".runiac", 0755)
-
-		dockerfile := strings.ReplaceAll(Dockerfile, "${BASE_CONTAINER}", BaseContainer)
-		err := afero.WriteFile(appFS, ".runiac/Dockerfile", []byte(dockerfile), 0644)
-
-		if err != nil {
-			logrus.WithError(err).Error(err)
-		}
-
-		err = afero.WriteFile(appFS, ".runiac/.dockerignore", []byte(DockerIgnore), 0644)
-
-		if err != nil {
-			logrus.WithError(err).Error(err)
-		}
+		InitializeDirectory(".", BaseContainer)
 	},
 }
 

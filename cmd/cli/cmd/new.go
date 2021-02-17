@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -49,14 +50,14 @@ func stringToTemplateType(s string) (ProjectTemplateType, error) {
 type ToolType int
 
 const (
-	AzureToolType ToolType = iota
+	AzureCLIToolType ToolType = iota
 	GCloudToolType
 	UnknownToolType
 )
 
 func stringToToolType(s string) (ToolType, error) {
-	if s == "azure" {
-		return AzureToolType, nil
+	if s == "azure-cli" {
+		return AzureCLIToolType, nil
 	} else if s == "gcloud" {
 		return GCloudToolType, nil
 	}
@@ -210,7 +211,7 @@ func promptForValues() (result surveyAnswers, err error) {
 		{
 			Name:     "name",
 			Prompt:   &survey.Input{
-				Message: "Choose a name for your project.",
+				Message: "Choose a name for your project:",
 			},
 			Validate: survey.Required,
 		},
@@ -218,6 +219,9 @@ func promptForValues() (result surveyAnswers, err error) {
 			Name:     "primaryRegion",
 			Prompt:   &survey.Input{
 				Message: "Which cloud provider region will your resources primarily be deployed to? (us-central1, southcentralus, etc.)",
+				Help: `Depending on which cloud service(s) you intend to deploy to, this value will be the name of a region. For example, when deploying
+to Microsoft Azure, valid regions include 'southcentralus' and 'eastus2'. When deploying to Google Cloud Platform, then the region
+name could be 'us-central1'.`,
 			},
 		},
 		{
@@ -228,6 +232,8 @@ func promptForValues() (result surveyAnswers, err error) {
 					"simple - A single set of deployment steps", 
 					"tracks - Multiple sets of steps that can be deployed in parallel",
 				},
+				Help: `A template provides standard directory structures as recommended by runiac developers. You can always migrate from one
+type of project to another by rearranging your directories manually after the fact.`,
 			},
 		},
 		{
@@ -238,6 +244,8 @@ func promptForValues() (result surveyAnswers, err error) {
 					"arm - Use Azure Resource Manager templates (preview)", 
 					"terraform - Use Hashicorp Terraform",
 				},
+				Help: `runiac will invoke an underlying delivery tool to actually deploy your infrastructure. Currently, ARM templates and Terraform
+are supported.`,
 			},
 		},
 		{
@@ -245,9 +253,11 @@ func promptForValues() (result surveyAnswers, err error) {
 			Prompt: &survey.MultiSelect{
 				Message: "Choose the set of tools you need to deploy your infrastructure:",
 				Options: []string{
-					"azure - Microsoft Azure CLI", 
+					"azure-cli - Microsoft Azure CLI", 
 					"gcloud - Google Cloud SDK",
 				},
+				Help: `Your infrastructure may require extra tooling apart from the underlying delivery tool. runiac providers some standard cloud
+tools to facilitate this. You may choose zero or many tools to include in your project.`,
 			},
 		},
 		{
@@ -278,14 +288,14 @@ func promptForValues() (result surveyAnswers, err error) {
 	result = surveyAnswers{
 		Name: answers.Name,
 		PrimaryRegion: answers.PrimaryRegion,
-		ProjectTemplate: strings.TrimSpace(strings.Split(answers.ProjectTemplate, "-")[0]),
-		Runner: strings.TrimSpace(strings.Split(answers.Runner, "-")[0]),
-		Scm: strings.TrimSpace(strings.Split(answers.Scm, "-")[0]),
+		ProjectTemplate: strings.TrimSpace(strings.Split(answers.ProjectTemplate, " - ")[0]),
+		Runner: strings.TrimSpace(strings.Split(answers.Runner, " - ")[0]),
+		Scm: strings.TrimSpace(strings.Split(answers.Scm, " - ")[0]),
 	}
 
 	result.Tools = make([]string, 0)
 	for _, tool := range answers.Tools {
-		result.Tools = append(result.Tools, strings.TrimSpace(strings.Split(tool, "-")[0]))
+		result.Tools = append(result.Tools, strings.TrimSpace(strings.Split(tool, " - ")[0]))
 	}
 
 	return
@@ -342,8 +352,8 @@ var newCmd = &cobra.Command{
 		// validate container tools
 		containerTools := make([]ToolType, 0)
 		for _, toolType := range strings.Split(tools, ",") {
-			if toolType == "azure" {
-				containerTools = append(containerTools, AzureToolType)
+			if toolType == "azure-cli" {
+				containerTools = append(containerTools, AzureCLIToolType)
 			} else if toolType == "gcloud" {
 				containerTools = append(containerTools, GCloudToolType)
 			} else {
@@ -404,6 +414,34 @@ var newCmd = &cobra.Command{
 			}
 
 			break
+		}
+
+		// determine which base container image to use by default
+		// this is somewhat "hacky" since we rely on an implicit naming convention, but for
+		// now it can suffice due to us only supporting a few standard image tags
+		baseContainer := "runiac:alpine"
+		tags := make([]string, 0)
+		for _, containerTool := range containerTools {
+			switch containerTool {
+			case AzureCLIToolType:
+				tags = append(tags, "azure")
+			case GCloudToolType:
+				tags = append(tags, "gcloud")
+			default:
+				break
+			}
+		}
+
+		sort.Strings(tags)
+		tagSuffix := strings.Join(tags, "-")
+		baseContainer = fmt.Sprintf("%s-%s", baseContainer, tagSuffix)
+
+		// initialize runiac in the new directory
+		err = InitializeDirectory(name, baseContainer)
+		if err != nil {
+			logrus.Warn(fmt.Sprintf("Initialized a new project in directory %s, but 'runiac init' failed. Try running it manually.", name))
+			logrus.Error(err)
+			return
 		}
 
 		fmt.Printf("🍺 Initialized a new project in directory: %s.\n", name)
