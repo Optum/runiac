@@ -1,3 +1,4 @@
 project: gcp-hello-world
 primary_region: us-central1
 regional_regions: us-central1
+runner: terraform

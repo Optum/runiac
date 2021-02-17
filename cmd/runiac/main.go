@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,9 +11,11 @@ import (
 	"github.com/optum/runiac/pkg/config"
 	"github.com/optum/runiac/pkg/logging"
 	"github.com/optum/runiac/pkg/tracks"
-	"github.com/optum/runiac/plugins/terraform/pkg/terraform"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+
+	pluginsarm "github.com/optum/runiac/plugins/arm"
+	pluginsterraform "github.com/optum/runiac/plugins/terraform"
 )
 
 var fs afero.Fs
@@ -182,24 +185,23 @@ func initFunc() {
 		Fs:  fs,
 	}
 
-	// prepare basic parameters for executing terraform version
-	// disable checkpoints since we just want to print the version string alone
-	tfOptions := &terraform.Options{
-		TerraformDir: ".",
-		EnvVars: map[string]string{
-			"CHECKPOINT_DISABLE": "true",
-		},
-		Logger:             logger.WithField("terraform", "version"),
-		NoColor:            true,
-		MaxRetries:         1,
-		TimeBetweenRetries: 0,
+	// initialize the runner plugin
+	plugin, err := getRunnerPlugin(deployment.Config)
+	if err != nil {
+		log.WithError(err).Error("Could not determine runner plugin")
+		return
 	}
 
-	terraformer := &terraform.Terraform{}
-	resp, err := terraformer.Version(tfOptions)
-	if err != nil {
-		tfOptions.Logger.WithError(err).Error("Error running terraform version")
-	} else {
-		tfOptions.Logger.Info("Binary: ", resp)
+	plugin.Initialize(log)
+}
+
+func getRunnerPlugin(config config.Config) (config.RunnerPlugin, error) {
+	switch config.Runner {
+	case "arm":
+		return pluginsarm.ArmPlugin{}, nil
+	case "terraform":
+		return pluginsterraform.TerraformPlugin{}, nil
+	default:
+		return nil, errors.New("Invalid runner")
 	}
 }

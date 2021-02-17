@@ -290,8 +290,8 @@ func TestGetBackendConfig_ShouldCorrectlyHandleParseGCSBackend(t *testing.T) {
 	}{
 		"ShouldCorrectlyParseGCSBackend": {
 			stubParsedBackend: TerraformBackend{
-				GCSBucket: "test-${var.environment}-tfstate",
-				GCSPrefix: "test/${var.runiac_deployment_ring}/${var.runiac_region_deploy_type}/${var.region}/${local.namespace-}test.tfstate",
+				GCSBucket: "test-${var.runiac_environment}-tfstate",
+				GCSPrefix: "test/${var.runiac_deployment_ring}/${var.runiac_region_deploy_type}/${var.runiac_region}/test.tfstate",
 				Type:      GCSBackend,
 			},
 			environment:  "prod",
