@@ -123,7 +123,7 @@ func RecordStepSuccess(logger *logrus.Entry, csp string, track string, step stri
 		Result:                  result,
 		Region:                  region,
 		RegionDeployType:        regionDeployType,
-		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", executionID, stage, track, step),
+		AccountStepDeploymentID: fmt.Sprintf("%s/%s/%s", stage, track, step),
 		CSP:                     csp,
 		TargetRegions:           runiacTargetRegions,
 	}
@@ -137,7 +137,7 @@ func RecordStepFail(logger *logrus.Entry, csp string, track string, step string,
 		Result:                  result,
 		Region:                  region,
 		RegionDeployType:        regionDeployType,
-		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", executionID, stage, track, step),
+		AccountStepDeploymentID: fmt.Sprintf("%s/%s/%s", stage, track, step),
 		CSP:                     csp,
 		TargetRegions:           runiacTargetRegions,
 	}
@@ -150,7 +150,7 @@ func RecordStepTestFail(logger *logrus.Entry, csp string, track string, step str
 		Result:                  result,
 		Region:                  region,
 		RegionDeployType:        regionDeployType,
-		AccountStepDeploymentID: fmt.Sprintf("%s#%s#%s#%s", executionID, stage, track, step),
+		AccountStepDeploymentID: fmt.Sprintf("%s/%s/%s", stage, track, step),
 		CSP:                     csp,
 		TargetRegions:           runiacTargetRegions,
 	}
