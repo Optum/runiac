@@ -8,43 +8,28 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/hashicorp/go-getter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-var projectTemplate string
-var primaryRegion string
-var scmType string
-var runner string
-var tools string
-var nonInteractive bool
-
-type surveyAnswers struct {
-	Name            string
-	ProjectTemplate string
-	PrimaryRegion   string
-	Runner          string
-	Tools           []string
-	Scm             string
-}
-
-type ProjectTemplateType int
+type DirectoryLayoutType int
 
 const (
-	Simple ProjectTemplateType = iota
+	Simple DirectoryLayoutType = iota
 	Tracks
-	UnknownProjectTemplateType
+	UnknownDirectoryLayoutType
 )
 
-func stringToTemplateType(s string) (ProjectTemplateType, error) {
+func stringToDirectoryLayoutType(s string) (DirectoryLayoutType, error) {
 	if s == "simple" {
 		return Simple, nil
 	} else if s == "tracks" {
 		return Tracks, nil
 	}
 
-	return UnknownProjectTemplateType, errors.New("Invalid template type")
+	return UnknownDirectoryLayoutType, errors.New("Invalid layout type")
 }
 
 type ToolType int
@@ -118,13 +103,6 @@ runner: ${RUNNER}
 `
 
 func init() {
-	newCmd.Flags().StringVar(&projectTemplate, "template", "", "Create scaffolding using a predefined project template (simple, tracks)")
-	newCmd.Flags().StringVar(&scmType, "scm", "", "Initialize a repository in the project directory (none, git)")
-	newCmd.Flags().StringVar(&primaryRegion, "primary-region", "", "Primary cloud provider region where you intend to deploy infrastructure")
-	newCmd.Flags().StringVar(&runner, "runner", "", "Configures the project for a specific deployment tool (arm, terraform)")
-	newCmd.Flags().StringVar(&runner, "tools", "", "Comma-separated list of tools to include in the project (azure, gcloud)")
-	newCmd.Flags().BoolVar(&nonInteractive, "non-interactive", false, "Disables manual input prompts")
-
 	rootCmd.AddCommand(newCmd)
 }
 
@@ -208,7 +186,84 @@ func initializeFiles(projectName string, fs afero.Fs) (err error) {
 	return
 }
 
-func promptForValues() (result surveyAnswers, err error) {
+func initializeProject(projectName string, baseContainer string) error {
+	// initialize runiac in the new directory
+	err := InitializeDirectory(projectName, baseContainer)
+	if err != nil {
+		logrus.Warn(fmt.Sprintf("Initialized a new project in directory %s, but 'runiac init' failed. Try running it manually.", projectName))
+		return err
+	}
+
+	fmt.Printf("🍺 Initialized a new project in directory: %s.\n", projectName)
+	return nil
+}
+
+func initializeScm(projectName string, scm ScmType, fs afero.Fs) error {
+	switch scm {
+	case Git:
+		return initializeGit(projectName, fs)
+	}
+
+	return nil
+}
+
+func process() error {
+	// ask for project name and validate that a directory with that name doesn't already exist
+	name := ""
+	err := survey.AskOne(&survey.Input{
+		Message: "Choose a name for your project:",
+	}, &name, survey.WithValidator(func(val interface{}) error {
+		str, ok := val.(string)
+		if !ok {
+			return errors.New("Invalid directory. Choose a different project name.")
+		}
+
+		// check if directory already exists
+		exists, _ := afero.DirExists(afero.NewOsFs(), str)
+		if exists {
+			return errors.New(fmt.Sprintf("A directory '%s' already exists or is not valid. Choose a different project name.", str))
+		}
+
+		return nil
+	}))
+
+	if err != nil {
+		return err
+	}
+
+	// ask for project template
+	template := ""
+	err = survey.AskOne(&survey.Select{
+		Message: "What type of project do you want to create?",
+		Options: []string{
+			"azure-arm - Use ARM templates for Microsoft Azure",
+			"azure-terraform - Use Terraform for Microsoft Azure",
+			"gcp-terraform - Use Terraform for Google Cloud Platform",
+			"kitchen-sink - Use Terraform across various cloud providers and services",
+			"third-party - Download a third-party template from a URL",
+			"custom - Configure a custom project not based on a specific template",
+		},
+		Help: `A template provides standard directory structures as recommended by runiac developers. You can always migrate from one
+type of project to another by rearranging your directories manually after the fact.`,
+	}, &template, survey.WithValidator(survey.Required))
+
+	if err != nil {
+		return err
+	}
+
+	projectTemplate := strings.TrimSpace(strings.Split(template, " - ")[0])
+	if projectTemplate == "third-party" {
+		return processThirdParty(name)
+	} else if projectTemplate == "custom" {
+		return processCustom(name)
+	} else {
+		return processPredefined(name, projectTemplate)
+	}
+
+	return nil
+}
+
+func promptForSourceControl() (ScmType, error) {
 	scmTypes := discoverScms()
 	scmOptions := make([]string, 0)
 	for _, scmType := range scmTypes {
@@ -220,18 +275,144 @@ func promptForValues() (result surveyAnswers, err error) {
 
 	scmOptions = append(scmOptions, "none - do not use any source control tool")
 
-	answers := surveyAnswers{}
+	scmTypeValue := ""
+	err := survey.AskOne(&survey.Select{
+		Message: "Which source control tool do you want to use?",
+		Options: scmOptions,
+	}, &scmTypeValue, survey.WithValidator(survey.Required))
+
+	if err != nil {
+		return UnknownScmType, err
+	}
+
+	scmType := strings.TrimSpace(strings.Split(scmTypeValue, " - ")[0])
+
+	// validate scm type
+	scm, err := stringToScmType(scmType)
+	if err != nil {
+		logrus.Error(fmt.Sprintf("Unknown SCM type '%s' (valid types: none, git)", scmType))
+		return UnknownScmType, err
+	}
+
+	return scm, nil
+}
+
+func promptForConfirmation() (bool, error) {
+	prompt := &survey.Confirm{
+		Message: "Does everything look good?",
+	}
+
+	confirm := false
+	err := survey.AskOne(prompt, &confirm)
+	if err != nil {
+		return false, nil
+	}
+
+	return confirm, nil
+}
+
+func processThirdParty(name string) error {
+	source := ""
+	err := survey.AskOne(&survey.Input{
+		Message: "What is the URL for the template?",
+		Help: `This is the URL where the project template is hosted. It must be accessible from your current network, and must not 
+require authentication. 
+
+When using GitHub:
+You can provide a shorthand form, such as github.com/user/runiac-template instead. For subdirectories, use a double slash
+to indicate the path under the GitHub repository: github.com/user/runiac-template//simple-variant.`,
+	}, &source, survey.WithValidator(survey.Required))
+
+	if err != nil {
+		return err
+	}
+
+	scm, err := promptForSourceControl()
+	if err != nil {
+		return err
+	}
+
+	err = getter.Get(name, source)
+	if err != nil {
+		return err
+	}
+
+	if scm != None {
+		err = initializeScm(name, scm, afero.NewOsFs())
+		if err != nil {
+			return err
+		}
+	}
+
+	err = initializeProject(name, DefaultBaseContainer)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+	}
+
+	return nil
+}
+
+func processPredefined(name string, template string) error {
+	scm, err := promptForSourceControl()
+	if err != nil {
+		return err
+	}
+
+	subdir := ""
+	containerTag := ""
+	switch template {
+	case "azure-arm":
+		subdir = "arm-azure-hello-world"
+		containerTag = "azure"
+	case "azure-terraform":
+		subdir = "terraform-azure-hello-world"
+		containerTag = "azure"
+	case "gcp-terraform":
+		subdir = "terraform-gcp-hello-world"
+		containerTag = "gcloud"
+	case "kitchen-sink":
+		subdir = "kitchen-sink"
+		containerTag = "azure-gcloud"
+	}
+
+	source := fmt.Sprintf("github.com/optum/runiac.git//examples/%s", subdir)
+	err = getter.Get(name, source)
+	if err != nil {
+		return err
+	}
+
+	if scm != None {
+		err = initializeScm(name, scm, afero.NewOsFs())
+		if err != nil {
+			return err
+		}
+	}
+
+	err = initializeProject(name, fmt.Sprintf("%s-%s", DefaultBaseContainer, containerTag))
+	if err != nil {
+		logrus.WithError(err).Error(err)
+	}
+
+	return nil
+}
+
+func processCustom(name string) error {
 	questions := []*survey.Question{
 		{
-			Name:     "name",
-			Prompt:   &survey.Input{
-				Message: "Choose a name for your project:",
+			Name: "layout",
+			Prompt: &survey.Select{
+				Message: "How do you want to organize your infrastructure deployment? (simple, tracks)",
+				Options: []string{
+					"simple - A single set of steps",
+					"tracks - Multiple groups of steps that can be executed in parallel",
+				},
+				Help: `You can choose to organize your infrastructure deployment strategy into a single set of steps or into a more complex 
+grouping of steps that can be executed in parallel.`,
 			},
-			Validate: survey.Required,
 		},
 		{
-			Name:     "primaryRegion",
-			Prompt:   &survey.Input{
+			Name: "primaryRegion",
+			Prompt: &survey.Input{
 				Message: "Which cloud provider region will your resources primarily be deployed to? (us-central1, southcentralus, etc.)",
 				Help: `Depending on which cloud service(s) you intend to deploy to, this value will be the name of a region. For example, when deploying
 to Microsoft Azure, valid regions include 'southcentralus' and 'eastus2'. When deploying to Google Cloud Platform, then the region
@@ -239,23 +420,11 @@ name could be 'us-central1'.`,
 			},
 		},
 		{
-			Name: "projectTemplate",
-			Prompt: &survey.Select{
-				Message: "What type of project do you want to create?",
-				Options: []string{
-					"simple - A single set of deployment steps", 
-					"tracks - Multiple sets of steps that can be deployed in parallel",
-				},
-				Help: `A template provides standard directory structures as recommended by runiac developers. You can always migrate from one
-type of project to another by rearranging your directories manually after the fact.`,
-			},
-		},
-		{
 			Name: "runner",
 			Prompt: &survey.Select{
 				Message: "Which deployment tool do you want to use?",
 				Options: []string{
-					"arm - Use Azure Resource Manager templates (preview)", 
+					"arm - Use Azure Resource Manager templates (preview)",
 					"terraform - Use Hashicorp Terraform",
 				},
 				Help: `runiac will invoke an underlying delivery tool to actually deploy your infrastructure. Currently, ARM templates and Terraform
@@ -267,52 +436,136 @@ are supported.`,
 			Prompt: &survey.MultiSelect{
 				Message: "Choose the set of tools you need to deploy your infrastructure:",
 				Options: []string{
-					"azure-cli - Microsoft Azure CLI", 
+					"azure-cli - Microsoft Azure CLI",
 					"gcloud - Google Cloud SDK",
 				},
 				Help: `Your infrastructure may require extra tooling apart from the underlying delivery tool. runiac providers some standard cloud
 tools to facilitate this. You may choose zero or many tools to include in your project.`,
 			},
 		},
-		{
-			Name: "scm",
-			Prompt: &survey.Select{
-				Message: "Which source control tool do you want to use?",
-				Options: scmOptions,
-			},
-		},
 	}
 
-	err = survey.Ask(questions, &answers)
+	answers := struct {
+		Layout        string
+		PrimaryRegion string
+		Runner        string
+		Tools         []string
+	}{}
+
+	err := survey.Ask(questions, &answers)
 	if err != nil {
-		return
+		return err
 	}
 
-	confirm := false
-	prompt := &survey.Confirm{
-		Message: "Does everything look good?",
+	scm, err := promptForSourceControl()
+	if err != nil {
+		return err
 	}
 
-	survey.AskOne(prompt, &confirm)
-	if !confirm {
+	layout, err := stringToDirectoryLayoutType(strings.TrimSpace(strings.Split(answers.Layout, " - ")[0]))
+	if err != nil {
+		return err
+	}
+
+	region := answers.PrimaryRegion
+	runner := strings.TrimSpace(strings.Split(answers.Runner, " - ")[0])
+
+	confirm, err := promptForConfirmation()
+	if !confirm || err != nil {
 		err = errors.New("")
-		return
+		return err
 	}
 
-	result = surveyAnswers{
-		Name: answers.Name,
-		PrimaryRegion: answers.PrimaryRegion,
-		ProjectTemplate: strings.TrimSpace(strings.Split(answers.ProjectTemplate, " - ")[0]),
-		Runner: strings.TrimSpace(strings.Split(answers.Runner, " - ")[0]),
-		Scm: strings.TrimSpace(strings.Split(answers.Scm, " - ")[0]),
+	// validate container tools
+	containerTools := make([]ToolType, 0)
+	for _, toolTypeValue := range answers.Tools {
+		toolType := strings.TrimSpace(strings.Split(toolTypeValue, " - ")[0])
+
+		if toolType == "azure-cli" {
+			containerTools = append(containerTools, AzureCLIToolType)
+		} else if toolType == "gcloud" {
+			containerTools = append(containerTools, GCloudToolType)
+		} else if toolType != "" {
+			return errors.New(fmt.Sprintf("Unknown tool type '%s' (valid types: azure, gcloud)", toolType))
+		}
 	}
 
-	result.Tools = make([]string, 0)
-	for _, tool := range answers.Tools {
-		result.Tools = append(result.Tools, strings.TrimSpace(strings.Split(tool, " - ")[0]))
+	fs := afero.NewOsFs()
+
+	// create the project directory
+	err = fs.Mkdir(name, 0755)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+		return errors.New("")
 	}
 
-	return
+	// initialize default files
+	err = initializeFiles(name, fs)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+		return errors.New("")
+	}
+
+	// create directory structures
+	switch layout {
+	case Simple:
+		err = createSimpleDirectories(name, fs)
+		if err != nil {
+			logrus.WithError(err).Error(err)
+			return errors.New("")
+		}
+
+		break
+
+	case Tracks:
+		err = createTracksDirectories(name, fs)
+		if err != nil {
+			logrus.WithError(err).Error(err)
+			return errors.New("")
+		}
+
+		break
+	}
+
+	// determine which base container image to use by default
+	// this is somewhat "hacky" since we rely on an implicit naming convention, but for
+	// now it can suffice due to us only supporting a few standard image tags
+	tags := make([]string, 0)
+	for _, containerTool := range containerTools {
+		switch containerTool {
+		case AzureCLIToolType:
+			tags = append(tags, "azure")
+		case GCloudToolType:
+			tags = append(tags, "gcloud")
+		default:
+			break
+		}
+	}
+
+	sort.Strings(tags)
+	tags = append([]string{DefaultBaseContainer}, tags...)
+	baseContainer := strings.Join(tags, "-")
+
+	// initialize the runiac config file
+	err = initializeRuniacConfig(name, region, runner, fs)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+		return err
+	}
+
+	// initialize scm repositories
+	err = initializeScm(name, scm, fs)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+		return err
+	}
+
+	err = initializeProject(name, baseContainer)
+	if err != nil {
+		logrus.WithError(err).Error(err)
+	}
+
+	return nil
 }
 
 var newCmd = &cobra.Command{
@@ -321,150 +574,10 @@ var newCmd = &cobra.Command{
 	Long:  `Creates scaffolding for a new runiac project`,
 	Args:  cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		var name string
-		var err error
-		if len(args) > 0 {
-			name = args[0]
-		}
-
-		// not enough arguments given, initiate a prompt for manual input
-		if len(args) == 0 || projectTemplate == "" || primaryRegion == "" || scmType == "" || runner == "" {
-			// unless the cli is specifically set not to do so
-			if nonInteractive {
-				logrus.Error("Not enough arguments given, but CLI is in non-interactive mode")
-				return
-			}
-
-			result, err := promptForValues()
-			if err != nil {
-				logrus.Error(fmt.Sprintf("CLI terminated: %v", err))
-				return
-			}
-
-			name = result.Name
-			projectTemplate = result.ProjectTemplate
-			primaryRegion = result.PrimaryRegion
-			runner = result.Runner
-			scmType = result.Scm
-			tools = strings.Join(result.Tools, ",")
-		}
-
-		// validate template type
-		template, err := stringToTemplateType(projectTemplate)
+		err := process()
 		if err != nil {
-			logrus.Error(fmt.Sprintf("Unknown project template '%s' (valid types: simple, tracks)", projectTemplate))
+			logrus.Error(fmt.Sprintf("Did not create a new project: %s", err))
 			return
 		}
-
-		// validate scm type
-		scm, err := stringToScmType(scmType)
-		if err != nil {
-			logrus.Error(fmt.Sprintf("Unknown SCM type '%s' (valid types: none, git)", scmType))
-			return
-		}
-
-		// validate container tools
-		containerTools := make([]ToolType, 0)
-		for _, toolType := range strings.Split(tools, ",") {
-			if toolType == "azure-cli" {
-				containerTools = append(containerTools, AzureCLIToolType)
-			} else if toolType == "gcloud" {
-				containerTools = append(containerTools, GCloudToolType)
-			} else if toolType != "" {
-				logrus.Error(fmt.Sprintf("Unknown tool type '%s' (valid types: azure, gcloud)", toolType))
-				return
-			}
-		}
-
-		fs := afero.NewOsFs()
-
-		// check if directory already exists
-		exists, _ := afero.DirExists(fs, name)
-		if exists {
-			logrus.Error(fmt.Sprintf("A directory '%s' already exists. Choose a different project name.", name))
-			return
-		}
-
-		// create the project directory
-		err = fs.Mkdir(name, 0755)
-		if err != nil {
-			logrus.WithError(err).Error(err)
-			return
-		}
-
-		// initialize the runiac config file
-		err = initializeRuniacConfig(name, primaryRegion, runner, fs)
-		if err != nil {
-			logrus.WithError(err).Error(err)
-			return
-		}
-
-		// initialize default files
-		err = initializeFiles(name, fs)
-		if err != nil {
-			logrus.WithError(err).Error(err)
-			return
-		}
-
-		// create directory structures
-		switch template {
-		case Simple:
-			err = createSimpleDirectories(name, fs)
-			if err != nil {
-				logrus.WithError(err).Error(err)
-				return
-			}
-
-			break
-
-		case Tracks:
-			err = createTracksDirectories(name, fs)
-			if err != nil {
-				logrus.WithError(err).Error(err)
-				return
-			}
-
-			break
-		}
-
-		// initialize scm repositories
-		switch scm {
-		case Git:
-			err = initializeGit(name, fs)
-			if err != nil {
-				logrus.WithError(err).Error(err)
-			}
-
-			break
-		}
-
-		// determine which base container image to use by default
-		// this is somewhat "hacky" since we rely on an implicit naming convention, but for
-		// now it can suffice due to us only supporting a few standard image tags
-		tags := make([]string, 0)
-		for _, containerTool := range containerTools {
-			switch containerTool {
-			case AzureCLIToolType:
-				tags = append(tags, "azure")
-			case GCloudToolType:
-				tags = append(tags, "gcloud")
-			default:
-				break
-			}
-		}
-
-		sort.Strings(tags)
-		tags = append([]string{DefaultBaseContainer}, tags...)
-		baseContainer := strings.Join(tags, "-")
-
-		// initialize runiac in the new directory
-		err = InitializeDirectory(name, baseContainer)
-		if err != nil {
-			logrus.Warn(fmt.Sprintf("Initialized a new project in directory %s, but 'runiac init' failed. Try running it manually.", name))
-			logrus.Error(err)
-			return
-		}
-
-		fmt.Printf("🍺 Initialized a new project in directory: %s.\n", name)
 	},
 }
