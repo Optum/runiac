@@ -24,7 +24,7 @@ type Config struct {
 	RegionalRegions []string `mapstructure:"regional_regions"` // runiac will apply regional step deployments across these regions
 	PrimaryRegion   string   `mapstructure:"primary_region" required:"true"`
 	DryRun          bool     `mapstructure:"dry_run"` // DryRun will only execute up to Terraform plan, describing what will happen if deployed
-	Runner          string   `mapstructure:runner`  // Delivery framework to invoke for executing steps
+	Runner          string   `mapstructure:runner`    // Delivery framework to invoke for executing steps
 
 	UniqueExternalExecutionID string
 	DeploymentRing            string `mapstructure:"deployment_ring"`
@@ -116,12 +116,13 @@ func GetConfig() (Config, error) {
 	_ = viper.BindEnv("dry_run")
 	_ = viper.BindEnv("self_destroy")
 	_ = viper.BindEnv("deployment_ring")
-	_ = viper.BindEnv("primary_regions")
+	_ = viper.BindEnv("primary_region")
 	_ = viper.BindEnv("regional_regions")
 	_ = viper.BindEnv("max_retries")
 	_ = viper.BindEnv("max_test_retries")
 	_ = viper.BindEnv("account_id")
 	_ = viper.BindEnv("runner")
+	_ = viper.BindEnv("step_whitelist")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -164,9 +165,9 @@ func GetConfig() (Config, error) {
 func InputValidation(sl validator.StructLevel) {
 	input := sl.Current().Interface().(Config)
 
-	if input.Environment == "" {
-		sl.ReportError(input.Namespace, "environment", "environment", "required-environment", "")
-	}
+	//if input.Environment == "" {
+	//	sl.ReportError(input.Namespace, "environment", "environment", "required-environment", "")
+	//}
 
 	if input.PrimaryRegion == "" {
 		sl.ReportError(input.Namespace, "primary_region", "primaryRegion", "required-primary-region", "")
