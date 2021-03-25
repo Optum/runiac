@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -189,29 +189,43 @@ func checkInitialized() bool {
 }
 
 func getMachineName() (string, error) {
-	if runtime.GOOS == "windows" {
-		fmt.Println("Hello from Windows")
-		return "", nil
-	} else {
-		cmdd := exec.Command("whoami")
-
-		stdout, err := cmdd.StdoutPipe()
-		if err != nil {
-			return "", err
-		}
-
-		err = cmdd.Start()
-		if err != nil {
-			return "", err
-		}
-
-		out, err := ioutil.ReadAll(stdout)
-
-		if err := cmdd.Wait(); err != nil {
-			return "", err
-		}
-
-		return strings.TrimSuffix(fmt.Sprintf("%s", out), "\n"), err
+	// This handles most *nix platforms
+	username := os.Getenv("USER")
+	if username != "" {
+		return sanitizeMachineName(username), nil
 	}
 
+	// This handles Windows platforms
+	username = os.Getenv("USERNAME")
+	if username != "" {
+		return sanitizeMachineName(username), nil
+	}
+
+	// This is for other platforms without ENV vars set above
+	cmdd := exec.Command("whoami")
+
+	stdout, err := cmdd.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+
+	err = cmdd.Start()
+	if err != nil {
+		return "", err
+	}
+
+	out, err := ioutil.ReadAll(stdout)
+
+	if err := cmdd.Wait(); err != nil {
+		return "", err
+	}
+
+	return sanitizeMachineName(string(out)), err
+}
+
+func sanitizeMachineName(s string) string {
+	s = strings.TrimSpace(s)
+	re := regexp.MustCompile("[^a-zA-Z0-9]")
+
+	return re.ReplaceAllLiteralString(s, "_")
 }
