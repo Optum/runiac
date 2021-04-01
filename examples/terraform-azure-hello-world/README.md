@@ -27,7 +27,7 @@ See the top-level README for information on obtaining these items:
 Assuming you've set up your subscription and login credentials, you can execute runiac using the following command:
 
 ```bash
-runiac deploy -a <your-azure-subscription-id> --container optumopensource/runiac:v0.0.1-beta3-alpine-azure --dry-run
+runiac deploy -a <your-azure-subscription-id> --container optumopensource/runiac:v0.0.2-alpine-azure --dry-run
 ```
 
 This will run runiac without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
