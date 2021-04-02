@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"log"
@@ -10,7 +11,9 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
 )
 
@@ -56,7 +59,6 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy configurations",
 	Long:  `This will execute the deploy action for each step.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		checkDockerExists()
 
 		ok := checkInitialized()
@@ -71,17 +73,22 @@ var deployCmd = &cobra.Command{
 		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", ".runiac/Dockerfile", "--build-arg", fmt.Sprintf("RUNIAC_CONTAINER=%s", Container), ".")
 
 		var stdoutBuf, stderrBuf bytes.Buffer
-		cmdd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
-		cmdd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 
 		cmdd.Env = append(os.Environ(), buildKit)
-
-		err := cmdd.Run()
+		s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
+		s.Suffix = " Building project container..."
+		s.Start()
+		b, err := cmdd.CombinedOutput()
 		if err != nil {
-			log.Fatalf("cmd.Run() failed with %s\n", err)
+			s.Stop()
+			logrus.Error(string(b))
+			logrus.WithError(err).Fatalf("Building project container failed with %s\n", err)
 		}
+		s.Stop()
 
-		cmd2 := exec.Command("docker", "run")
+		logrus.Info("Completed build, lets run!")
+
+		cmd2 := exec.Command("docker", "run", "--rm")
 
 		cmd2.Env = append(os.Environ(), buildKit)
 
@@ -90,7 +97,7 @@ var deployCmd = &cobra.Command{
 			namespace, err := getMachineName()
 
 			if err != nil {
-				log.Fatal(err)
+				logrus.WithError(err).Fatal(err)
 			}
 
 			Namespace = namespace
@@ -123,7 +130,7 @@ var deployCmd = &cobra.Command{
 			cmd2.Args = append(cmd2.Args, "-it")
 		}
 
-		// TODO: how to make environment variables for the consumer or simply pass all in?
+		// TODO: how to allow consumer whitelist environment variables or simply pass all in?
 		for _, env := range cmd2.Env {
 			if strings.HasPrefix(env, "TF_VAR_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
@@ -153,7 +160,7 @@ var deployCmd = &cobra.Command{
 
 		cmd2.Args = append(cmd2.Args, containerTag)
 
-		log.Printf("%s\n", strings.Join(cmd2.Args, " "))
+		logrus.Info(strings.Join(cmd2.Args, " "))
 
 		cmd2.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 		cmd2.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
@@ -161,7 +168,7 @@ var deployCmd = &cobra.Command{
 
 		err2 := cmd2.Run()
 		if err2 != nil {
-			log.Fatalf("cmd.Run() failed with %s\n", err2)
+			log.Fatalf("Running iac failed with %s\n", err2)
 		}
 	},
 }
