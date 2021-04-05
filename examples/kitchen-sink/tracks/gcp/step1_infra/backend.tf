@@ -1,5 +1,6 @@
 terraform {
   backend "local" {
-    path = "/tfstate/gcp/${var.runiac_step}/terraform.tfstate"
+    path = "gcp/${var.runiac_step}/terraform.tfstate"
+    workspace_dir = "/runiac/tfstate"
   }
 }

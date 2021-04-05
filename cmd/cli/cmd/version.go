@@ -15,6 +15,6 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of runiac",
 	Long:  `All software has versions. This is runiac's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("runiac v0.0.1-beta4")
+		fmt.Println("runiac v0.0.3")
 	},
 }
