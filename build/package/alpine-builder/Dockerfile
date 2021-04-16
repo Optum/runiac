@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 
-ARG GOVERSION=1.15
+ARG GOVERSION=1.16
  
 FROM golang:${GOVERSION} as builder
 

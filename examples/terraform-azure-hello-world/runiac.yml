@@ -2,3 +2,4 @@ project: azure-hello-world
 primary_region: centralus
 regional_regions: centralus
 runner: terraform
+container: optumopensource/runiac:v0.0.3-alpine-azure

@@ -1,4 +1,3 @@
-
 # runiac - Run IaC Anywhere With Ease
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/optum/runiac/graphs/commit-activity)
@@ -8,7 +7,6 @@
 [comment]: <> (<a href="https://cla-assistant.io/Optum/runiac"><img src="https://cla-assistant.io/readme/badge/Optum/runiac" alt="CLA assistant" /></a>)
 
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](http://golang.org)
-
 
 ![](./logo.jpg)
 
@@ -31,13 +29,14 @@ This enables two large benefits:
 
 - Changes can be tested quickly and reliably from a local machine, knowing the
 
-[comment]: <> (runiac is meant to be run as an image.  We do **not** recommend running the `runiac` executor binary in another image, as it might not work.)
+[comment]: <> (runiac is meant to be run as an image. We do **not** recommend running the `runiac` executor binary in another image, as it might not work.)
 
-We'd love to hear from you!  Submit github issues for questions, issues or feedback.
+We'd love to hear from you! Submit github issues for questions, issues or feedback.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [How does runiac work?](#how-does-runiac-work)
 - [Demo](#demo)
@@ -91,7 +90,7 @@ We'd love to hear from you!  Submit github issues for questions, issues or feedb
 ## How does runiac work?
 
 runiac's primary goal is to enable developers to spend more time iterating on valuable infrastructure changes rather than pipeline or glue code.  
-It enables this by following the `smart endpoints, dumb pipelines`, `portability`, and `fun` principles defined at `doeac`.  
+It enables this by following the `smart endpoints, dumb pipelines`, `portability`, and `fun` principles defined at `doeac`.
 
 - Infrastructure changes do not require pipeline changes
 - Ability to change and test infrastructure changes locally with a production like environment
@@ -101,16 +100,16 @@ What webpack did for react development, runiac does for terraform.
 
 - Directory layout
 - Steps
-    - Primary deployment type
-    - Regional
+  - Primary deployment type
+  - Regional
 - Config
-    - Primary Regions
-    - Regional Regions
-    - Project
-    - Environment
-    - Account
-    - Namespace
-    - `--local`
+  - Primary Regions
+  - Regional Regions
+  - Project
+  - Environment
+  - Account
+  - Namespace
+  - `--local`
 - Tracks
 
 ## Demo
@@ -140,7 +139,7 @@ For more detailed examples of runiac, be sure to check out the [examples](exampl
 ### Steps
 
 - _Steps_ follow a folder naming convention of `step{progressionLevel}_{stepName}`
-    - A Step's _Progression Level_ identifies the ordering of execution.
+  - A Step's _Progression Level_ identifies the ordering of execution.
 - All steps receive a common set of input variables (see below)
 - All steps receive the output variables of the steps in the progression level ahead of them.
   - For example:
@@ -199,7 +198,7 @@ If the primary region deployment is successful, runiac will then run each step's
 ##### Primary
 
 Primary deployments represent all iac in the top level directory of the executing step.
-Currently, the primary deployment type is executed _once per region group_. 
+Currently, the primary deployment type is executed _once per region group_.
 For example, in the `us` region group, the primary code would only be executed in the primary region of the `us` region group, `us-east-1`.
 
 ```bash
@@ -229,7 +228,7 @@ tracks/network
 
 #### Default Track
 
-For projects that are relatively straightforward and don't require multiple tracks, you do not need to use tracks in your folder heiarachy. 
+For projects that are relatively straightforward and don't require multiple tracks, you do not need to use tracks in your folder heiarachy.
 The benefit of this approach is a simpler directory hierarchy, and you still have the possibility to scale out with
 multiple tracks down the road.
 
@@ -279,9 +278,10 @@ When providing a list of steps to execute using the `runiac_STEP_WHITELIST` envi
 ```
 
 Where:
-* `PROJECT` is the value of the `runiac_PROJECT` environment variable (default to `runiac` is not specified)
-* `[TRACK]` is the name of the track the step is located under (unless using the default track)
-* `STEP_NAME`: is the name of the step, without the leading `stepX_` prefix
+
+- `PROJECT` is the value of the `runiac_PROJECT` environment variable (default to `runiac` is not specified)
+- `[TRACK]` is the name of the track the step is located under (unless using the default track)
+- `STEP_NAME`: is the name of the step, without the leading `stepX_` prefix
 
 For example, given the following runiac directory setup:
 
@@ -319,6 +319,7 @@ The most flexible way to specify a version string for your deployment artifacts 
 can source your version string however you wish with this approach.
 
 Otherwise, you can create a `version.json` file at the root of the directory structure, with a `version` element:
+
 ```json
 {
   "version": "v0.0.1"
@@ -335,7 +336,7 @@ runiac uses [provider plugin caching](https://www.terraform.io/docs/commands/cli
 
 ### Azure Resource Manager (ARM)
 
-Support for ARM template deployments is currently in preview. See the [examples/arm-azure-hello-world](examples/arm-azure-hello-world) 
+Support for ARM template deployments is currently in preview. See the [examples/arm-azure-hello-world](examples/arm-azure-hello-world)
 example for a quick start project you can refer to.
 
 #### Configuration
@@ -349,7 +350,7 @@ runner: arm
 Alternatively, you can specify this by passing `--runner arm` as part of the runniac CLI invocation.
 
 You must create a `main.json` file in each step that contains ARM templates. Your `main.json` can contain any valid ARM
-template deployment, including any template control ARM features, such as remote linked templates. 
+template deployment, including any template control ARM features, such as remote linked templates.
 
 ### Terraform
 
@@ -554,6 +555,7 @@ runiac will then execute `tests.test` after a successful step deployment.
 By convention the backend type will be automatically configured.
 
 Supported Types:
+
 - S3
 - AzureRM
 - GCS
@@ -609,7 +611,7 @@ Supported variables for dynamic [`bucket and/or prefix`](https://www.terraform.i
 Example Usage:
 
 ```hcl-terraform
-terraform { 
+terraform {
   backend "gcs" {
     bucket  = "df-${var.environment}-tfstate"
     prefix  = "infra/${var.gaia_deployment_ring}/${var.gaia_region_deploy_type}/${var.region}/${local.namespace-}infra.tfstate"
@@ -746,13 +748,14 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
 runiac is only executed locally with unit tests. To execute runiac child projects locally, one would need to build this container first.
 
 Docker Build:
+
 ```bash
 $ DOCKER_BUILDKIT=1 docker build -t runiac .
 ```
 
 We recommend adding an alias to install the cli locally:
 
-`alias runiacdev='(cd <LOCAL_PROJECT_LOCATION>/cmd/cli && go build -o $GOPATH/bin/runiac) && runiac'`
+`alias runiacdev='(cd <LOCAL_PROJECT_LOCATION>/cmd/cli && go build -o $GOPATH/bin/runiacdev) && runiacdev'`
 
 This allows one to use the the `examples` for iterating on runiac changes.
 

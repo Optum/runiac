@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,8 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var Version string
@@ -44,7 +46,7 @@ func init() {
 	deployCmd.Flags().BoolVar(&SelfDestroy, "self-destroy", false, "Teardown after running deploy")
 	deployCmd.Flags().StringVar(&LogLevel, "log-level", "", "Log level")
 	deployCmd.Flags().BoolVar(&Interactive, "interactive", false, "Run Docker container in interactive mode")
-	deployCmd.Flags().StringVarP(&Container, "container", "c", "runiac:alpine", "The container to execute, defaults 'runiac:alpine'")
+	deployCmd.Flags().StringVarP(&Container, "container", "c", "", "The runiac core container to execute")
 	deployCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
 	deployCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
 	deployCmd.Flags().StringVarP(&Runner, "runner", "", "terraform", "The deployment tool to use for deploying infrastructure")
@@ -69,6 +71,11 @@ var deployCmd = &cobra.Command{
 
 		buildKit := "DOCKER_BUILDKIT=1"
 		containerTag := "sample"
+
+		// check viper configuration if not set
+		if Container == "" && viper.GetString("container") != "" {
+			Container = viper.GetString("container")
+		}
 
 		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", ".runiac/Dockerfile", "--build-arg", fmt.Sprintf("RUNIAC_CONTAINER=%s", Container), ".")
 
