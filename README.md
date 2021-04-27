@@ -1,5 +1,7 @@
 # runiac - Run IaC Anywhere With Ease
 
+[Documentation](https://runiac.io/docs)
+
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/optum/runiac/graphs/commit-activity)
 ![build](https://github.com/optum/runiac/workflows/build/badge.svg?branch=main)
 [![Github all releases](https://img.shields.io/github/downloads/optum/runiac/total.svg)](https://GitHub.com/optum/runiac/releases/)
@@ -24,12 +26,9 @@ A tool for running infrastructure as code (e.g. Terraform) anywhere with ease.
 - Keeping Your Pipelines Simple
 - Plugin-based
 
-> NOTE: the below documentation is out of date and will be removed soon. Please see [runiac.io](https://runiac.io) for latest docs
+> NOTE: README documentation is out of date and will be removed soon. Please see [runiac.io](https://runiac.io) for latest docs
 
-runiac's primary goal is enabling easy, meaningful local development that mimics a production deployment.  
-This enables two large benefits:
-
-- Changes can be tested quickly and reliably from a local machine, knowing the
+runiac's primary goal is enabling easy, meaningful local development that mimics a production deployment.
 
 [comment]: <> (runiac is meant to be run as an image. We do **not** recommend running the `runiac` executor binary in another image, as it might not work.)
 
@@ -44,18 +43,6 @@ We'd love to hear from you! Submit github issues for questions, issues or feedba
 - [Demo](#demo)
 - [Install](#install)
 - [Tutorial](#tutorial)
-- [Terminology](#terminology)
-  - [Steps](#steps)
-    - [Step Execution Examples](#step-execution-examples)
-      - [Concurrent Steps](#concurrent-steps)
-      - [Sequential Steps](#sequential-steps)
-      - [Concurrent and Sequential Steps](#concurrent-and-sequential-steps)
-    - [Step Deployment Types](#step-deployment-types)
-      - [Primary](#primary)
-      - [Regional](#regional)
-  - [Tracks](#tracks)
-    - [Default Track](#default-track)
-    - [Pre-track](#pre-track)
 - [Using runiac](#using-runiac)
   - [Inputs](#inputs)
     - [Choosing which steps to execute](#choosing-which-steps-to-execute)
@@ -75,12 +62,6 @@ We'd love to hear from you! Submit github issues for questions, issues or feedba
       - [Type](#type)
       - [S3](#s3)
       - [GCS](#gcs)
-    - [Provider (AWS)](#provider-aws)
-      - [AssumeRole](#assumerole)
-    - [Provider (Azurerm)](#provider-azurerm)
-      - [Targeting a specific Azure subscription using subscription_id](#targeting-a-specific-azure-subscription-using-subscription_id)
-        - [Supported parameters](#supported-parameters)
-    - [Working with Secrets](#working-with-secrets)
     - [Deployment Ring Specific Configurations](#deployment-ring-specific-configurations)
       - [Count](#count)
     - [Override Files](#override-files)
