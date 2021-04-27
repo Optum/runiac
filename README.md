@@ -24,6 +24,8 @@ A tool for running infrastructure as code (e.g. Terraform) anywhere with ease.
 - Keeping Your Pipelines Simple
 - Plugin-based
 
+> NOTE: the below documentation is out of date and will be removed soon. Please see [runiac.io](https://runiac.io) for latest docs
+
 runiac's primary goal is enabling easy, meaningful local development that mimics a production deployment.  
 This enables two large benefits:
 
