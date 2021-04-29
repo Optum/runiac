@@ -1,6 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [Basic runiac Examples for Azure](#basic-runiac-examples-for-azure)
   - [Requirements](#requirements)
@@ -27,7 +28,7 @@ See the top-level README for information on obtaining these items:
 Assuming you've set up your subscription and login credentials, you can execute runiac using the following command:
 
 ```bash
-runiac deploy -a <your-azure-subscription-id> --container optumopensource/runiac:v0.0.2-alpine-azure --dry-run
+runiac deploy -a <your-azure-subscription-id> --dry-run
 ```
 
 This will run runiac without commiting any infrastructure changes. You can view the output to see if it aligns with expectations. The example
@@ -37,7 +38,7 @@ resources within the `step1_default` directory.
 To deploy infrastructure changes, you can run the following command instead:
 
 ```bash
-runiac deploy -a <your-azure-subscription-id> -e <your-environment-name> --container optumopensource/runiac:v0.0.1-beta3-alpine-azure
+runiac deploy -a <your-azure-subscription-id>
 ```
 
 Review the output to validate that your infrastructure changes have been deployed.
@@ -45,13 +46,12 @@ Review the output to validate that your infrastructure changes have been deploye
 Finally, You can clean up any resources that were created by running runiac with the `--self-destroy` flag:
 
 ```bash
-runiac deploy -a <your-azure-subscription-id> -e <your-environment-name> --container optumopensource/runiac:v0.0.1-beta3-alpine-azure --self-destroy
+runiac deploy -a <your-azure-subscription-id> -e <your-environment-name> --self-destroy
 ```
 
 ## Important Notes
 
-This example assumes you are using your own login credentials to deploy infrastructure. In a real world situation, you most likely will
-want to use a [service principal](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals), especially
+This example assumes you are using your own login credentials to deploy infrastructure. In a real world situation, it is recommended to use a [service principal](https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals), especially
 if you intend to use runiac in a CI/CD pipeline. A common approach is to use a service principal with a client ID and secret, as
 [described here](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret).
 

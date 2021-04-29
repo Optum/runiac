@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var BaseContainer string
@@ -53,12 +54,12 @@ var initCmd = &cobra.Command{
 
 func InitAction() bool {
 
-	logrus.Info("Creating .runiac directory")
+	logrus.Debug("Creating .runiac directory")
 	_ = appFS.Mkdir(".runiac", 0755)
 
 	dockerfile := strings.ReplaceAll(Dockerfile, "${BASE_CONTAINER}", BaseContainer)
 
-	logrus.Info("Writing .runiac/Dockerfile")
+	logrus.Debug("Writing .runiac/Dockerfile")
 	err := afero.WriteFile(appFS, ".runiac/Dockerfile", []byte(dockerfile), 0644)
 
 	if err != nil {
@@ -66,7 +67,7 @@ func InitAction() bool {
 		return false
 	}
 
-	logrus.Info("Writing .runiac/.dockerignore")
+	logrus.Debug("Writing .runiac/.dockerignore")
 	err = afero.WriteFile(appFS, ".runiac/.dockerignore", []byte(DockerIgnore), 0644)
 
 	if err != nil {
