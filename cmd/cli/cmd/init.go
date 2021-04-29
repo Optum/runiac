@@ -13,7 +13,7 @@ var BaseContainer string
 var appFS = afero.NewOsFs()
 
 // the base container for runiac
-var DefaultBaseContainer = "optumopensource/runiac:v0.0.1-beta2-alpine"
+var DefaultBaseContainer = "optumopensource/runiac:v0.0.4-alpine-azure-gcloud"
 
 func init() {
 	initCmd.Flags().StringVar(&BaseContainer, "base-container", DefaultBaseContainer, "Base Docker image to use containing required tooling")

@@ -102,7 +102,11 @@ regional_regions: ${PRIMARY_REGION}
 runner: ${RUNNER}
 `
 
+var templateUrl string
+
 func init() {
+	newCmd.Flags().StringVarP(&templateUrl, "url", "", "", "URL to download project template")
+
 	rootCmd.AddCommand(newCmd)
 }
 
@@ -231,6 +235,11 @@ func process() error {
 		return err
 	}
 
+	// if a template url was provided, we can skip prompting for a source
+	if len(templateUrl) > 0 {
+		return processUrl(name, templateUrl)
+	}
+
 	// ask for project template
 	template := ""
 	err = survey.AskOne(&survey.Select{
@@ -327,12 +336,16 @@ to indicate the path under the GitHub repository: github.com/user/runiac-templat
 		return err
 	}
 
+	return processUrl(name, source)
+}
+
+func processUrl(name string, templateUrl string) error {
 	scm, err := promptForSourceControl()
 	if err != nil {
 		return err
 	}
 
-	err = getter.Get(name, source)
+	err = getter.Get(name, templateUrl)
 	if err != nil {
 		return err
 	}
@@ -569,7 +582,7 @@ tools to facilitate this. You may choose zero or many tools to include in your p
 }
 
 var newCmd = &cobra.Command{
-	Use:   "new [project-name]",
+	Use:   "new",
 	Short: "Create a new runiac project",
 	Long:  `Creates scaffolding for a new runiac project`,
 	Args:  cobra.MinimumNArgs(0),
