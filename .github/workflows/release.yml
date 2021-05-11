@@ -9,19 +9,16 @@ jobs:
   dockerhub-core:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Extract tag name
-        shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
-        id: extract_tag
-      - name: "Log into registry"
-        run: echo "${{ secrets.DOCKER_HUB_PASSWORD}}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME}}" --password-stdin
-      - name: "Build containers"
-        run: ./scripts/build_containers.sh --push
-        env:
-          VERSION: ${{ steps.extract_tag.outputs.tag }}
+      - name: Invoke runiac containers
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: dockerhub
+          repo: runiac/docker
+          token: ${{ secrets.RUNIAC_PAT }}
+          ref: ${{ github.ref }}
 
   goreleaser-cli:
+    needs: dockerhub-core
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,7 +29,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
-      - name: Run GoReleaser
+      - name: Release CLI (GoReleaser)
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
