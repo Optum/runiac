@@ -41,7 +41,7 @@ brews:
     commit_author:
       name: goreleaserbot
       email: goreleaser@optum.com
-    homepage: "https://runiac.com/optum/runiac"
+    homepage: "https://runiac.io"
     description: "Run IaC Anywhere with Ease"
     license: "Apache2"
     test: |
