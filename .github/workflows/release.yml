@@ -15,7 +15,7 @@ jobs:
           workflow: dockerhub
           repo: runiac/docker
           token: ${{ secrets.RUNIAC_PAT }}
-          ref: ${{ github.ref }}
+          inputs: '{ "ref": "${{ github.ref }}" }'
 
   goreleaser-cli:
     needs: dockerhub-core
