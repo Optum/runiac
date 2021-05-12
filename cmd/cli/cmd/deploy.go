@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var Version string
+var AppVersion string
 var Environment string
 var PrimaryRegions []string
 var RegionalRegions []string
@@ -37,7 +37,7 @@ var PullRequest string
 var StepWhitelist []string
 
 func init() {
-	deployCmd.Flags().StringVarP(&Version, "version", "v", "", "Version of the iac code")
+	deployCmd.Flags().StringVarP(&AppVersion, "version", "v", "", "Version of the iac code")
 	deployCmd.Flags().StringVarP(&Environment, "environment", "e", "", "Targeted environment")
 	deployCmd.Flags().StringVarP(&Account, "account", "a", "", "Targeted Cloud Account (ie. azure subscription, gcp project)")
 	deployCmd.Flags().StringArrayVarP(&PrimaryRegions, "primary-regions", "p", []string{}, "Primary regions")
@@ -117,7 +117,7 @@ var deployCmd = &cobra.Command{
 		cmd2.Args = appendEIfSet(cmd2.Args, "DEPLOYMENT_RING", DeploymentRing)
 		cmd2.Args = appendEIfSet(cmd2.Args, "RUNNER", Runner)
 		cmd2.Args = appendEIfSet(cmd2.Args, "NAMESPACE", Namespace)
-		cmd2.Args = appendEIfSet(cmd2.Args, "VERSION", Version)
+		cmd2.Args = appendEIfSet(cmd2.Args, "VERSION", AppVersion)
 		cmd2.Args = appendEIfSet(cmd2.Args, "ENVIRONMENT", Environment)
 		cmd2.Args = appendEIfSet(cmd2.Args, "DRY_RUN", fmt.Sprintf("%v", DryRun))
 		cmd2.Args = appendEIfSet(cmd2.Args, "SELF_DESTROY", fmt.Sprintf("%v", SelfDestroy))
