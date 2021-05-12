@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,6 +37,7 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		logrus.WithError(err).Warn("Failed reading .runiac configuration")
+
+		//logrus.WithError(err).Warn("Failed reading .runiac configuration")
 	}
 }
