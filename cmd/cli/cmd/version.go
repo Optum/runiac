@@ -17,6 +17,6 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of runiac",
 	Long:  `All software has versions. This is runiac's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("runiac %s. Commit %s.  Built on %s.", Version, Commit, Date)
+		fmt.Printf("runiac %s. Commit %s.  Built on %s.\n", Version, Commit, Date)
 	},
 }
