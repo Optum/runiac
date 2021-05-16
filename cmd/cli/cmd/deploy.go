@@ -70,14 +70,11 @@ var deployCmd = &cobra.Command{
 		}
 
 		buildKit := "DOCKER_BUILDKIT=1"
-		containerTag := "sample"
+		containerTag := viper.GetString("project")
 
-		// check viper configuration if not set
-		if Container == "" && viper.GetString("container") != "" {
-			Container = viper.GetString("container")
-		}
+		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", ".runiac/Dockerfile")
 
-		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", ".runiac/Dockerfile", "--build-arg", fmt.Sprintf("RUNIAC_CONTAINER=%s", Container), ".")
+		cmdd.Args = append(cmdd.Args, getBuildArguments()...)
 
 		var stdoutBuf, stderrBuf bytes.Buffer
 
@@ -200,6 +197,22 @@ func checkDockerExists() {
 
 func checkInitialized() bool {
 	return InitAction()
+}
+
+func getBuildArguments() (args []string) {
+	// check viper configuration if not set
+	if Container == "" && viper.GetString("container") != "" {
+		Container = viper.GetString("container")
+	}
+
+	if Container != "" {
+		args = append(args, "--build-arg", fmt.Sprintf("RUNIAC_CONTAINER=%s", Container))
+	}
+
+	// must be last argument added for docker build current directory context
+	args = append(args, ".")
+
+	return
 }
 
 func getMachineName() (string, error) {
