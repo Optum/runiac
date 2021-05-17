@@ -14,12 +14,14 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.4'
-      - name: "build containers"
+      - name: Setup gotestsum
+        uses: autero1/action-gotestsum@v0.1.0
+        with:
+          gotestsum_version: 1.6.4
+      - name: "go test"
         run: |
-        curl -L -o gotestsum.tgz "https://github.com/gotestyourself/gotestsum/releases/download/v1.6.4/gotestsum_1.6.4_linux_amd64.tar.gz";
-        tar -C . -xzf gotestsum.tgz;
-
-        ./gotestsum --format standard-verbose --junitfile ./reports/junit.xml --raw-command -- go test -parallel 5 --json ./...
+        rm -rf ./reports && mkdir ./reports
+        gotestsum --format standard-verbose --junitfile ./reports/junit.xml --raw-command -- go test -parallel 5 --json ./...
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v2
