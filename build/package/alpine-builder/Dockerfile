@@ -25,7 +25,7 @@ COPY plugins ./plugins
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    gotestsum --format standard-verbose --junitfile /reports/junit.xml --raw-command -- go test -parallel 5 --json ./... || echo "failed"
+    gotestsum --format standard-verbose --junitfile /reports/junit.xml --raw-command -- go test -parallel 5 --json ./... || echo "failed" && exit 1
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
