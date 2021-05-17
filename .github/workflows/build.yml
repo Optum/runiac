@@ -13,9 +13,11 @@ jobs:
       - uses: actions/checkout@v2
       - name: "build containers"
         run: ./scripts/build_containers.sh
-      - name: Publish Unit Test Results
+      - name: Upload Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.7
         if: always()
+        uses: actions/upload-artifact@v2
         with:
+          name: Unit Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: reports/*.xml
