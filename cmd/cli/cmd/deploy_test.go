@@ -1,6 +1,9 @@
 package cmd
 
-import "testing"
+import (
+	"github.com/stretchr/testify/require"
+	"testing"
+)
 
 func TestSanitizeMachinename(t *testing.T) {
 	tests := map[string]string{
@@ -15,8 +18,22 @@ func TestSanitizeMachinename(t *testing.T) {
 
 	for in, expected := range tests {
 		result := sanitizeMachineName(in)
-		if result != expected {
-			t.Errorf("sanitizeMachineName(\"%s\") = \"%s\"; want \"%s\"", in, result, expected)
-		}
+
+		require.Equal(t, expected, result, "sanitizeMachineName(\"%s\") = \"%s\"; want \"%s\"", in, result, expected)
+	}
+}
+
+func TestGetBuildArguments_ShouldSetBuildArgContainerOnlyWhenValueExists(t *testing.T) {
+	// if container is set, include in docker build. if not, do not include.
+	tests := map[string][]string{
+		"foobar": {"--build-arg", "RUNIAC_CONTAINER=foobar", "."},
+		"":       {"."},
+	}
+
+	for in, expected := range tests {
+		Container = in
+
+		result := getBuildArguments()
+		require.Equal(t, expected, result)
 	}
 }
