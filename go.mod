@@ -18,7 +18,9 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.1 // indirect
 	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
