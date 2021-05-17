@@ -11,8 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.4'
       - name: "build containers"
-        run: ./scripts/build_containers.sh
+        run: |
+        curl -L -o gotestsum.tgz "https://github.com/gotestyourself/gotestsum/releases/download/v1.6.4/gotestsum_1.6.4_linux_amd64.tar.gz" && \
+        tar -C /usr/local/bin -xzf gotestsum.tgz && \
+        rm gotestsum.tgz && \
+        rm /usr/local/bin/LICENSE && \
+        rm /usr/local/bin/README.md
+        
+        gotestsum --format standard-verbose --junitfile ./reports/junit.xml --raw-command -- go test -parallel 5 --json ./...
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v2
