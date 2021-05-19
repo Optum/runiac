@@ -7,7 +7,7 @@ Describe the big picture of your changes here to communicate to the maintainers 
 ## Issues for these changes
 
 <!--
-Provide links to Rally for these User Stories/Defects
+Provide links to Github Issues
 -->
 
 ## Types of changes
