@@ -15,6 +15,8 @@
 
 This directory contains several example projects that you can use as a starting point for runiac.
 
+These examples can be individually scaffolded by using the runiac CLI. See each of the specific READMEs for more information.
+
 ## Index
 
 * [arm-azure-hello-world](arm-azure-hello-world/): deploy ARM template infrastructure to Microsoft Azure

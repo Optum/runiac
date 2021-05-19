@@ -36,17 +36,20 @@ var Runner string
 var PullRequest string
 var StepWhitelist []string
 
+// the base container for runiac
+var DefaultBaseContainer = "runiac/deploy:latest-alpine-full"
+
 func init() {
 	deployCmd.Flags().StringVarP(&AppVersion, "version", "v", "", "Version of the iac code")
 	deployCmd.Flags().StringVarP(&Environment, "environment", "e", "", "Targeted environment")
-	deployCmd.Flags().StringVarP(&Account, "account", "a", "", "Targeted Cloud Account (ie. azure subscription, gcp project)")
+	deployCmd.Flags().StringVarP(&Account, "account", "a", "", "Targeted Cloud Account (ie. azure subscription, gcp project or aws account)")
 	deployCmd.Flags().StringArrayVarP(&PrimaryRegions, "primary-regions", "p", []string{}, "Primary regions")
-	deployCmd.Flags().StringArrayVarP(&RegionalRegions, "regional-regions", "r", []string{}, "Regional regions")
+	deployCmd.Flags().StringArrayVarP(&RegionalRegions, "regional-regions", "r", []string{}, "Runiac will concurrently execute the ./regional directory across these regions setting the runiac_region input variable")
 	deployCmd.Flags().BoolVar(&DryRun, "dry-run", false, "Dry Run")
 	deployCmd.Flags().BoolVar(&SelfDestroy, "self-destroy", false, "Teardown after running deploy")
 	deployCmd.Flags().StringVar(&LogLevel, "log-level", "", "Log level")
 	deployCmd.Flags().BoolVar(&Interactive, "interactive", false, "Run Docker container in interactive mode")
-	deployCmd.Flags().StringVarP(&Container, "container", "c", "", "The runiac core container to execute")
+	deployCmd.Flags().StringVarP(&Container, "container", "c", "", fmt.Sprintf("The runiac deploy container to execute in, defaults to '%s'", DefaultBaseContainer))
 	deployCmd.Flags().StringVarP(&DeploymentRing, "deployment-ring", "d", "", "The deployment ring to configure")
 	deployCmd.Flags().BoolVar(&Local, "local", false, "Pre-configure settings to create an isolated configuration specific to the executing machine")
 	deployCmd.Flags().StringVarP(&Runner, "runner", "", "terraform", "The deployment tool to use for deploying infrastructure")

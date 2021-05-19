@@ -5,26 +5,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 )
 
 var BaseContainer string
 var appFS = afero.NewOsFs()
-
-func init() {
-	initCmd.Flags().StringVar(&BaseContainer, "base-container", "runiac:alpine-azure", "Base Docker image to use containing required tooling")
-
-	rootCmd.AddCommand(initCmd)
-}
-
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize a project",
-	Long:  `Initialize a project`,
-	Run: func(cmd *cobra.Command, args []string) {
-
-	},
-}
 
 func InitAction() bool {
 

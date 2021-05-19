@@ -25,6 +25,12 @@ See the top-level README for information on obtaining these items:
 
 ## Running
 
+If you did not clone this repository, you can have runiac scaffold a copy of this example by running:
+
+```bash
+runiac new --url github.com/optum/runiac//examples/terraform-azure-hello-world
+```
+
 Assuming you've set up your subscription and login credentials, you can execute runiac using the following command:
 
 ```bash
