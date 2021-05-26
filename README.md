@@ -26,7 +26,7 @@ A tool for running infrastructure as code (e.g. Terraform) anywhere with ease.
 - Keeping Your Pipelines Simple
 - Plugin-based
 
-**Please see [runiac.io](https://runiac.io) for latest docs**
+**Please see [runiac.io](https://runiac.io/docs/) for latest docs**
 
 [comment]: <> (runiac is meant to be run as an image. We do **not** recommend running the `runiac` executor binary in another image, as it might not work.)
 
