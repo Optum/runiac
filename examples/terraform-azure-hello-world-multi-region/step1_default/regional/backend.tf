@@ -1,6 +1,6 @@
 terraform {
   backend "local" {
-    path = "default.tfstate"
+    path = "azure/${var.runiac_step}/terraform.tfstate"
     workspace_dir = "/runiac/tfstate"
   }
 }

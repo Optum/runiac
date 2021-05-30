@@ -1,4 +1,4 @@
 project: azure-hello-world
 primary_region: centralus
-regional_regions: centralus
+regional_regions: centralus,eastus,westus,uksouth,southeastasia
 runner: terraform

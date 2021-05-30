@@ -63,9 +63,9 @@ brew install optum/tap/runiac
 
 Download the pre-compiled binaries from the [releases](https://github.com/Optum/runiac/releases) page and copy to the desired location.
 
-## Tutorial
+## Getting Started
 
-For more detailed examples of runiac, be sure to check out the [examples](examples/) directory!
+For more detailed examples of runiac, be sure to check out the [starters on github!](https://github.com/topics/runiac-starter)
 
 ## Using runiac
 

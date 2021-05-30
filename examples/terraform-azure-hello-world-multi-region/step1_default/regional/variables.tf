@@ -2,27 +2,26 @@ locals {
     namespace- = var.runiac_namespace == "" ? "" : "${var.runiac_namespace}-"
 }
 
-variable runiac_account_id {
+variable "runiac_account_id" {
     type = string
 }
 
-variable runiac_region {
+variable "runiac_region" {
     type = string
 }
 
-variable runiac_environment {
+variable "runiac_environment" {
     type = string
 }
 
-variable runiac_namespace {
+variable "runiac_namespace" {
     type = string
 }
 
-variable runiac_step {
+variable "runiac_step" {
     type = string
 }
 
-variable resource_group {
+variable "runiac_primary_region" {
     type = string
-    default = "rg-runiac-sample"
 }

@@ -10,14 +10,14 @@ then
   push=true
 fi
 
-rm -rf ./reports
-outputVolume=$(docker volume create)
+rm -rf ./reports;
+outputVolume=$(docker volume create);
 DOCKER_BUILDKIT=1 docker build -f "build/package/alpine-builder/Dockerfile" -t "runiac:alpine-builder" . || exit 1;
-CID=$(docker create -v "$outputVolume":/reports "runiac:alpine-builder")
-docker cp "$CID":/reports $(pwd)
-touch ./reports/*.xml
-docker rm "$CID"
-docker volume rm "$outputVolume"
+CID=$(docker create -v "$outputVolume":/reports "runiac:alpine-builder");
+docker cp "$CID":/reports $(pwd);
+touch ./reports/*.xml;
+docker rm "$CID";
+docker volume rm "$outputVolume";
 
 
 # Build consumer images
