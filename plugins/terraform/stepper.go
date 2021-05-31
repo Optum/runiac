@@ -3,16 +3,17 @@ package plugins_terraform
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/optum/runiac/pkg/config"
-	"github.com/optum/runiac/pkg/retry"
-	"github.com/optum/runiac/pkg/shell"
-	"github.com/optum/runiac/plugins/terraform/pkg/terraform"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/optum/runiac/pkg/config"
+	"github.com/optum/runiac/pkg/retry"
+	"github.com/optum/runiac/pkg/shell"
+	"github.com/optum/runiac/plugins/terraform/pkg/terraform"
+	"github.com/sirupsen/logrus"
 )
 
 type TerraformStepper struct{}
@@ -89,9 +90,8 @@ func (stepper TerraformStepper) ExecuteStepTests(exec config.StepExecution) (out
 
 func GetTerraformCLIVars(exec config.StepExecution) map[string]interface{} {
 	vars := map[string]interface{}{
-		"runiac_environment": exec.Environment,
-		"runiac_account_id":  exec.AccountID,
-		"runiac_region":      exec.Region,
+		"runiac_account_id": exec.AccountID,
+		"runiac_region":     exec.Region,
 	}
 
 	return vars
@@ -99,6 +99,11 @@ func GetTerraformCLIVars(exec config.StepExecution) map[string]interface{} {
 
 func GetTerraformEnvVars(exec config.StepExecution) map[string]string {
 	output := exec.OptionalStepParams
+
+	if output == nil {
+		output = map[string]string{}
+	}
+
 	// set core accounts
 	coreAccountsCount := len(exec.CoreAccounts)
 	if exec.CoreAccounts != nil && coreAccountsCount > 0 {
@@ -121,6 +126,7 @@ func GetTerraformEnvVars(exec config.StepExecution) map[string]string {
 
 	output["runiac_app_version"] = exec.AppVersion
 	output["runiac_namespace"] = exec.Namespace
+	output["runiac_environment"] = exec.Environment
 
 	return output
 }
