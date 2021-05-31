@@ -162,6 +162,9 @@ var deployCmd = &cobra.Command{
 		// persist gcloud cli
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/.config/gcloud:/root/.config/gcloud", dir))
 
+		// persist aws cli
+		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/.aws:/root/.aws", dir))
+
 		// persist local terraform state between container executions
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/tfstate:/runiac/tfstate", dir))
 
