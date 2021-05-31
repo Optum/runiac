@@ -17,6 +17,27 @@ var sut config.Stepper
 var logger = logrus.NewEntry(logrus.New())
 var DefaultStubAccountID = "1"
 
+func TestGetTerraformCLIArgs_ShouldNotIncludeEnvironment(t *testing.T) {
+	t.Parallel()
+
+	cliVars := GetTerraformCLIVars(config.StepExecution{
+		Environment: "fun",
+	})
+
+	require.NotContains(t, cliVars, "runiac_environment")
+}
+
+func TestGetTerraformEnvArgs_ShouldIncludeEnvironment(t *testing.T) {
+	t.Parallel()
+
+	vars := GetTerraformEnvVars(config.StepExecution{
+		Environment: "fun",
+	})
+
+	require.Contains(t, vars, "runiac_environment")
+	require.Equal(t, "fun", vars["runiac_environment"])
+}
+
 func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *testing.T) {
 	t.Parallel()
 	fs := afero.NewMemMapFs()
