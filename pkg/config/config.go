@@ -3,10 +3,11 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -35,6 +36,7 @@ type Config struct {
 	Version                   string          `mapstructure:"version"` // Version override
 	MaxRetries                int             `mapstructure:"max_retries"`
 	MaxTestRetries            int             `mapstructure:"max_test_retries"`
+	TimeBetweenRetries        int             `mapstructure:"time_between_retries"`
 	LogLevel                  string          `mapstructure:"log_level"`
 	CoreAccounts              CoreAccountsMap `mapstructure:"core_accounts"`
 	RegionGroups              RegionGroupsMap `mapstructure:"region_grouprs"`
@@ -120,6 +122,7 @@ func GetConfig() (Config, error) {
 	_ = viper.BindEnv("regional_regions")
 	_ = viper.BindEnv("max_retries")
 	_ = viper.BindEnv("max_test_retries")
+	_ = viper.BindEnv("time_between_retries")
 	_ = viper.BindEnv("account_id")
 	_ = viper.BindEnv("runner")
 	_ = viper.BindEnv("step_whitelist")
@@ -133,11 +136,12 @@ func GetConfig() (Config, error) {
 	}
 
 	conf := &Config{
-		MaxTestRetries: 2,
-		MaxRetries:     3,
-		LogLevel:       logrus.InfoLevel.String(),
-		Project:        "runiac",
-		TargetAll:      true,
+		MaxTestRetries:     2,
+		MaxRetries:         3,
+		TimeBetweenRetries: 0,
+		LogLevel:           logrus.InfoLevel.String(),
+		Project:            "runiac",
+		TargetAll:          true,
 	}
 	err := viper.Unmarshal(conf)
 

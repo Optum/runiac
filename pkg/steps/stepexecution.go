@@ -3,14 +3,15 @@ package steps
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/optum/runiac/pkg/cloudaccountdeployment"
 	"github.com/optum/runiac/pkg/config"
 	"github.com/optum/runiac/plugins/terraform/pkg/terraform"
 	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"path/filepath"
-	"strings"
 )
 
 func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeployType config.RegionDeployType, region string, defaultStepOutputVariables map[string]map[string]string) config.StepExecution {
@@ -33,6 +34,7 @@ func NewExecution(s config.Step, logger *logrus.Entry, fs afero.Fs, regionDeploy
 		DryRun:                     s.DeployConfig.DryRun,
 		MaxRetries:                 s.DeployConfig.MaxRetries,
 		MaxTestRetries:             s.DeployConfig.MaxTestRetries,
+		TimeBetweenRetries:         s.DeployConfig.TimeBetweenRetries,
 		Project:                    s.DeployConfig.Project,
 		TrackName:                  s.TrackName,
 		RegionGroupRegions:         s.DeployConfig.RegionalRegions,

@@ -21,6 +21,7 @@ type StepExecution struct {
 	AccountID                  string `json:"account_id"`
 	MaxRetries                 int
 	MaxTestRetries             int
+	TimeBetweenRetries         int
 	CoreAccounts               map[string]Account
 	RegionGroups               RegionGroupsMap
 	Namespace                  string

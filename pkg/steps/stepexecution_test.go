@@ -31,6 +31,7 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 			UniqueExternalExecutionID: "stubExecutionID",
 			MaxRetries:                3,
 			MaxTestRetries:            2,
+			TimeBetweenRetries:        0,
 		},
 		TrackName: "stubTrackName",
 	}
@@ -50,5 +51,6 @@ func TestNewExecution_ShouldSetFields(t *testing.T) {
 	require.Equal(t, stubStep.DeployConfig.RegionalRegions, mock.RegionGroupRegions, "RegionGroupRegions should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxRetries, mock.MaxRetries, "MaxRetries should match stub value")
 	require.Equal(t, stubStep.DeployConfig.MaxTestRetries, mock.MaxTestRetries, "MaxTestRetries should match stub value")
+	require.Equal(t, stubStep.DeployConfig.TimeBetweenRetries, mock.TimeBetweenRetries, "TimeBetweenRetries should match stub value")
 
 }

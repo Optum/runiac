@@ -66,7 +66,7 @@ func (stepper TerraformStepper) ExecuteStepTests(exec config.StepExecution) (out
 		}
 	}
 
-	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), exec.MaxTestRetries, 20*time.Second, exec.Logger, func(retryCount int) error {
+	_ = retry.DoWithRetry(fmt.Sprintf("execute tests: %s", testDir), exec.MaxTestRetries, time.Duration(exec.TimeBetweenRetries), exec.Logger, func(retryCount int) error {
 		retryLogger := exec.Logger.WithField("retryCount", retryCount)
 		stepDeployID := fmt.Sprintf("%s-%s-%s-%s-%s", exec.Project, exec.TrackName, exec.StepName, exec.RegionDeployType, exec.Region)
 		cmd := shell.Command{
@@ -219,7 +219,7 @@ var executeTerraformInDir = func(exec config.StepExecution, destroy bool) (outpu
 	}
 
 	// terraform plan
-	_ = retry.DoWithRetry("terraform plan and apply", tfOptions.MaxRetries, 10*time.Second, tfOptions.Logger, func(attempt int) error {
+	_ = retry.DoWithRetry("terraform plan and apply", tfOptions.MaxRetries, tfOptions.TimeBetweenRetries, tfOptions.Logger, func(attempt int) error {
 
 		retryLogger := tfOptions.Logger.WithField("retryCount", attempt)
 
@@ -475,7 +475,7 @@ func getCommonTfOptions2(exec config.StepExecution) (tfOptions *terraform.Option
 		NoColor:                  true,
 		RetryableTerraformErrors: map[string]string{".*": "General Terraform error occurred."},
 		MaxRetries:               exec.MaxRetries,
-		TimeBetweenRetries:       5 * time.Second,
+		TimeBetweenRetries:       time.Duration(exec.TimeBetweenRetries),
 	}
 
 	return
