@@ -185,7 +185,7 @@ func initializeGit(name string, fs afero.Fs) error {
 	}
 
 	// check if a git repository has already been initialized
-	exists, err := afero.Exists(".git")
+	exists, err := afero.Exists(fs, fmt.Sprintf("%s/.git", name))
 	if err != nil {
 		return err
 	}
@@ -356,21 +356,20 @@ func processUrl(name string, templateUrl string) error {
 }
 
 func processPredefined(name string, template string) error {
-	repo := ""
+	source := ""
 	switch template {
 	case "azure-arm":
-		repo = fmt.Sprintf("%s/runiac-starter-arm-azure-hello-world", runiacGitHubOrg)
+		source = fmt.Sprintf("%s/runiac-starter-arm-azure-hello-world", runiacGitHubOrg)
 	case "azure-terraform":
-		repo = fmt.Sprintf("%s/runiac-starter-terraform-azure-hello-world", runiacGitHubOrg)
+		source = fmt.Sprintf("%s/runiac-starter-terraform-azure-hello-world", runiacGitHubOrg)
 	case "aws-terraform":
-		repo = fmt.Sprintf("%s/runiac-starter-terraform-aws-hello-world", runiacGitHubOrg)
+		source = fmt.Sprintf("%s/runiac-starter-terraform-aws-hello-world", runiacGitHubOrg)
 	case "gcp-terraform":
-		repo = fmt.Sprintf("%s/runiac-starter-terraform-gcp-hello-world", runiacGitHubOrg)
+		source = fmt.Sprintf("%s/runiac-starter-terraform-gcp-hello-world", runiacGitHubOrg)
 	case "kitchen-sink":
-		repo = "github.com/optum/runiac.git//examples/kitchen-sink"
+		source = "github.com/optum/runiac.git//examples/kitchen-sink"
 	}
 
-	source := , subdir)
 	err := getter.Get(name, source)
 	if err != nil {
 		return err
