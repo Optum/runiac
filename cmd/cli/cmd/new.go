@@ -19,6 +19,7 @@ import (
 
 var templateUrl string
 var scm string
+var runiacGitHubOrg = "github.com/runiac"
 
 func init() {
 	newCmd.Flags().StringVarP(&templateUrl, "url", "", "", "URL to download project template")
@@ -183,6 +184,16 @@ func initializeGit(name string, fs afero.Fs) error {
 		return err
 	}
 
+	// check if a git repository has already been initialized
+	exists, err := afero.Exists(".git")
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	}
+
 	// initialize the repository
 	cmd := exec.Command("git", "init", "-b", "main")
 	cmd.Dir = name
@@ -345,19 +356,21 @@ func processUrl(name string, templateUrl string) error {
 }
 
 func processPredefined(name string, template string) error {
-	subdir := ""
+	repo := ""
 	switch template {
 	case "azure-arm":
-		subdir = "arm-azure-hello-world"
+		repo = fmt.Sprintf("%s/runiac-starter-arm-azure-hello-world", runiacGitHubOrg)
 	case "azure-terraform":
-		subdir = "terraform-azure-hello-world"
+		repo = fmt.Sprintf("%s/runiac-starter-terraform-azure-hello-world", runiacGitHubOrg)
+	case "aws-terraform":
+		repo = fmt.Sprintf("%s/runiac-starter-terraform-aws-hello-world", runiacGitHubOrg)
 	case "gcp-terraform":
-		subdir = "terraform-gcp-hello-world"
+		repo = fmt.Sprintf("%s/runiac-starter-terraform-gcp-hello-world", runiacGitHubOrg)
 	case "kitchen-sink":
-		subdir = "kitchen-sink"
+		repo = "github.com/optum/runiac.git//examples/kitchen-sink"
 	}
 
-	source := fmt.Sprintf("github.com/optum/runiac.git//examples/%s", subdir)
+	source := , subdir)
 	err := getter.Get(name, source)
 	if err != nil {
 		return err
