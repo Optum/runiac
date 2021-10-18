@@ -127,8 +127,8 @@ var deployCmd = &cobra.Command{
 			cmd2.Args = appendEIfSet(cmd2.Args, "PRIMARY_REGION", PrimaryRegions[0])
 		}
 
-		if len(PrimaryRegions) > 0 {
-			cmd2.Args = appendEIfSet(cmd2.Args, "REGIONAL_REGIONS", strings.Join(append(RegionalRegions, PrimaryRegions[0]), ","))
+		if len(RegionalRegions) > 0 {
+			cmd2.Args = appendEIfSet(cmd2.Args, "REGIONAL_REGIONS", strings.Join(RegionalRegions, ","))
 		}
 		cmd2.Args = appendEIfSet(cmd2.Args, "ACCOUNT_ID", Account)
 		cmd2.Args = appendEIfSet(cmd2.Args, "LOG_LEVEL", LogLevel)
