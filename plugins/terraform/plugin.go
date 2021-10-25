@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type TerraformPlugin struct {}
+type TerraformPlugin struct{}
 
 func (info TerraformPlugin) Initialize(logger *logrus.Entry) {
 	logger.Info("Initializing runiac Terraform plugin")

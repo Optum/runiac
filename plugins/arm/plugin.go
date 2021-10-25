@@ -1,11 +1,11 @@
 package plugins_arm
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/optum/runiac/plugins/arm/pkg/arm"
+	"github.com/sirupsen/logrus"
 )
 
-type ArmPlugin struct {}
+type ArmPlugin struct{}
 
 func (info ArmPlugin) Initialize(logger *logrus.Entry) {
 	logger.Info("Initializing runiac ARM plugin")
@@ -13,12 +13,12 @@ func (info ArmPlugin) Initialize(logger *logrus.Entry) {
 
 	// display azure cli binary information
 	azureCLI := arm.AzureCLI{}
-	
+
 	options := &arm.Options{
-		AzureCLIBinary:           "az",
-		AzureCLIDir:              ".",
-		EnvVars:                  map[string]string{},
-		Logger:                   logger.WithField("ArmPlugin", "info"),
+		AzureCLIBinary: "az",
+		AzureCLIDir:    ".",
+		EnvVars:        map[string]string{},
+		Logger:         logger.WithField("ArmPlugin", "info"),
 	}
 
 	out, err := azureCLI.Version(options)

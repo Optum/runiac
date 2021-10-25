@@ -1,12 +1,12 @@
 package plugins_arm
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 
-	"github.com/spf13/afero"
 	"github.com/optum/runiac/pkg/config"
 	"github.com/optum/runiac/plugins/arm/pkg/arm"
+	"github.com/spf13/afero"
 )
 
 type ArmStepper struct{}
@@ -120,10 +120,10 @@ func (stepper ArmStepper) ExecuteStepTests(exec config.StepExecution) (output co
 
 func getCommonOptions(exec config.StepExecution) (options *arm.Options, err error) {
 	options = &arm.Options{
-		AzureCLIBinary:           "az",
-		AzureCLIDir:              exec.Dir,
-		EnvVars:                  map[string]string{},
-		Logger:                   exec.Logger,
+		AzureCLIBinary: "az",
+		AzureCLIDir:    exec.Dir,
+		EnvVars:        map[string]string{},
+		Logger:         exec.Logger,
 	}
 
 	return
@@ -135,7 +135,7 @@ func createDeploymentName(exec config.StepExecution) string {
 
 func parseMainTemplate(exec config.StepExecution) (string, error) {
 	fs := afero.NewOsFs()
-	
+
 	err := fs.Mkdir(fmt.Sprintf("%s/.temp", exec.Dir), 0755)
 	if err != nil {
 		exec.Logger.WithError(err).Error(err)
@@ -177,7 +177,7 @@ func parseMainTemplate(exec config.StepExecution) (string, error) {
 		templateLink := properties["_templateLink"].(map[string]interface{})
 		if templateLink != nil {
 			localUri := templateLink["localUri"].(string)
-			
+
 			linkedTemplateData, err := afero.ReadFile(fs, fmt.Sprintf("%s/%s", exec.Dir, localUri))
 			if err != nil {
 				exec.Logger.WithError(err).Error(err)
