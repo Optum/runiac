@@ -1,7 +1,7 @@
 package arm
 
 func SubShow(options *Options, deploymentName string, accountID string) (out string, err error) {
-	args := []string {
+	args := []string{
 		"deployment",
 		"sub",
 		"show",

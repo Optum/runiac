@@ -1,7 +1,7 @@
 package arm
 
 func SubDelete(options *Options, deploymentName string, accountID string) (out string, err error) {
-	args := []string {
+	args := []string{
 		"deployment",
 		"sub",
 		"delete",

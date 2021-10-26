@@ -1,7 +1,7 @@
 package arm
 
 func ResourceDelete(options *Options, ids []string) (out string, err error) {
-	args := []string {
+	args := []string{
 		"resource",
 		"delete",
 		"--ids",

@@ -5,9 +5,9 @@ import (
 )
 
 type Options struct {
-	AzureCLIBinary           string
-	AzureCLIDir              string
-	EnvVars                  map[string]string
-	OutputMaxLineSize        int
-	Logger                   *logrus.Entry
+	AzureCLIBinary    string
+	AzureCLIDir       string
+	EnvVars           map[string]string
+	OutputMaxLineSize int
+	Logger            *logrus.Entry
 }

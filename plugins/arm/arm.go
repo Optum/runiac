@@ -2,7 +2,7 @@ package plugins_arm
 
 // Struct representing the final deployment metadata plan stored by ARM
 type deployment struct {
-	Name string `json:"name"`
+	Name       string               `json:"name"`
 	Properties deploymentProperties `json:"properties"`
 }
 
