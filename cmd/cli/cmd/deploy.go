@@ -83,7 +83,7 @@ var deployCmd = &cobra.Command{
 		} else if viper.GetString("dockerfile") != "" {
 			Dockerfile = viper.GetString("dockerfile")
 		} else {
-			Dockerfile = DockerfileTemplate
+			Dockerfile = DefaultDockerfile
 		}
 
 		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", Dockerfile)
