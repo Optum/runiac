@@ -78,15 +78,7 @@ var deployCmd = &cobra.Command{
 		buildKit := "DOCKER_BUILDKIT=1"
 		containerTag := viper.GetString("project")
 
-		if Dockerfile != "" {
-			//Dockerfile = Dockerfile
-		} else if viper.GetString("dockerfile") != "" {
-			Dockerfile = viper.GetString("dockerfile")
-		} else {
-			Dockerfile = DockerfileTemplate
-		}
-
-		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", Dockerfile)
+		cmdd := exec.Command("docker", "build", "-t", containerTag, "-f", getDockerfileForBuild())
 
 		cmdd.Args = append(cmdd.Args, getBuildArguments()...)
 
@@ -234,6 +226,17 @@ func checkDockerExists() {
 
 func checkInitialized() bool {
 	return InitAction()
+}
+
+func getDockerfileForBuild() string {
+	if Dockerfile != "" {
+		//Dockerfile = Dockerfile
+	} else if viper.GetString("dockerfile") != "" {
+		return viper.GetString("dockerfile")
+	} else {
+		return DefaultDockerfile
+	}
+	return Dockerfile
 }
 
 func getBuildArguments() (args []string) {

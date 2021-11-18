@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSanitizeMachinename(t *testing.T) {
@@ -36,4 +38,13 @@ func TestGetBuildArguments_ShouldSetBuildArgContainerOnlyWhenValueExists(t *test
 		result := getBuildArguments()
 		require.Equal(t, expected, result)
 	}
+}
+
+func TestGetDockerfileForBuild(t *testing.T) {
+	result := getDockerfileForBuild()
+	require.Equal(t, ".runiac/Dockerfile", result)
+	viper.Set("dockerfile", "mock")
+	result2 := getDockerfileForBuild()
+	require.Equal(t, "mock", result2)
+	viper.Set("dockerfile", "")
 }
