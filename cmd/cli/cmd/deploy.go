@@ -232,9 +232,9 @@ func getDockerfileForBuild() string {
 	if Dockerfile != "" {
 		//Dockerfile = Dockerfile
 	} else if viper.GetString("dockerfile") != "" {
-		Dockerfile = viper.GetString("dockerfile")
+		return viper.GetString("dockerfile")
 	} else {
-		Dockerfile = DefaultDockerfile
+		return DefaultDockerfile
 	}
 	return Dockerfile
 }

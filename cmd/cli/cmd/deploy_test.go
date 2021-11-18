@@ -43,10 +43,8 @@ func TestGetBuildArguments_ShouldSetBuildArgContainerOnlyWhenValueExists(t *test
 func TestGetDockerfileForBuild(t *testing.T) {
 	result := getDockerfileForBuild()
 	require.Equal(t, ".runiac/Dockerfile", result)
-}
-
-func TestGetDockerfileForBuildViper(t *testing.T) {
 	viper.Set("dockerfile", "mock")
-	result := getDockerfileForBuild()
-	require.Equal(t, "mock", result)
+	result2 := getDockerfileForBuild()
+	require.Equal(t, "mock", result2)
+	viper.Set("dockerfile", "")
 }
