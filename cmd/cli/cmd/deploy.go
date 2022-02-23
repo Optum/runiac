@@ -159,16 +159,16 @@ var deployCmd = &cobra.Command{
 			if strings.HasPrefix(env, "TF_VAR_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
 			}
-		}
 
-		for _, env := range cmd2.Env {
 			if strings.HasPrefix(env, "ARM_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
 			}
-		}
 
-		for _, env := range cmd2.Env {
 			if strings.HasPrefix(env, "RUNIAC_") {
+				cmd2.Args = append(cmd2.Args, "-e", env)
+			}
+
+			if strings.HasPrefix(env, "AWS_") {
 				cmd2.Args = append(cmd2.Args, "-e", env)
 			}
 		}
