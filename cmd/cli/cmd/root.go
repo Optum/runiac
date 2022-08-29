@@ -15,7 +15,8 @@ var rootCmd = &cobra.Command{
 love by tiny-dancer and friends. Open sourced for the community by Optum.
 Complete documentation is available at https://runiac.io`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
+		cmd.Help()
+		os.Exit(0)
 	},
 }
 
