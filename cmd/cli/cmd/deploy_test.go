@@ -40,11 +40,30 @@ func TestGetBuildArguments_ShouldSetBuildArgContainerOnlyWhenValueExists(t *test
 	}
 }
 
-func TestGetDockerfileForBuild(t *testing.T) {
-	result := getDockerfileForBuild()
-	require.Equal(t, ".runiac/Dockerfile", result)
+func Test_DeployCommand(t *testing.T) {
+	cmd := rootCmd
+	cmd.SetArgs([]string{"deploy", "--test"})
+	cmd.Execute()
+
+	// Assert config values are used when command line is not present
+	cmd.SetArgs([]string{"deploy", "--test"})
+	viper.Set("container_engine", "mock")
+	viper.Set("container", "mock")
 	viper.Set("dockerfile", "mock")
-	result2 := getDockerfileForBuild()
-	require.Equal(t, "mock", result2)
-	viper.Set("dockerfile", "")
+
+	cmd.Execute()
+	require.Equal(t, "mock", Dockerfile)
+	require.Equal(t, "mock", ContainerEngine)
+	require.Equal(t, "mock", Container)
+
+	// Assert command line precedence
+	cmd.SetArgs([]string{"deploy", "--test", "--dockerfile=mockofseagulls", "--container-engine=mockofseagulls", "--container=mockofseagulls"})
+	viper.Set("container_engine", "ignore_me")
+	viper.Set("container", "ignore_me")
+	viper.Set("dockerfile", "ignore_me")
+
+	cmd.Execute()
+	require.Equal(t, "mockofseagulls", Dockerfile)
+	require.Equal(t, "mockofseagulls", ContainerEngine)
+	require.Equal(t, "mockofseagulls", Container)
 }
