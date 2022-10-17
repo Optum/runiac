@@ -197,6 +197,9 @@ var deployCmd = &cobra.Command{
 		// persist azure cli between container executions
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/.azure:/root/.azure", dir))
 
+		// persist Azure Az Powershell module between container executions. .azure and .Azure are treated as two separate folders on linux, and they can't both be bound to same location on host
+		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/.azurepowershell:/root/.Azure", dir))
+
 		// persist gcloud cli
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/.config/gcloud:/root/.config/gcloud", dir))
 
