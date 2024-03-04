@@ -15,7 +15,7 @@ jobs:
         with:
           workflow: dockerhub
           repo: runiac/docker
-          token: ${{ secrets.RUNIAC_PAT }}
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
           ref: main
           inputs: '{ "ref": "${{ github.ref }}" }'
 
