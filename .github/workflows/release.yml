@@ -15,7 +15,7 @@ jobs:
         with:
           workflow: dockerhub
           repo: runiac/docker
-          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          token: ${{ secrets.RUNIAC_PAT }}
           ref: main
           inputs: '{ "ref": "${{ github.ref }}" }'
 
@@ -37,5 +37,5 @@ jobs:
           version: v1.13.1 #latest
           args: release --rm-dist
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_COMMITTER_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.GIT_COMMITTER_TOKEN }}
