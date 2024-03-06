@@ -25,7 +25,7 @@ jobs:
           gotestsum --format standard-verbose --junitfile ./reports/junit.xml --raw-command -- go test -parallel 5 --json ./...;
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Unit Test Results
           path: reports/*.xml
