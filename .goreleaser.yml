@@ -15,9 +15,10 @@ builds:
     binary: runiac
     ldflags: -s -w -X github.com/optum/runiac/cmd/cli/cmd.Version={{.Version}} -X github.com/optum/runiac/cmd/cli/cmd.Commit={{.Commit}} -X github.com/optum/runiac/cmd/cli/cmd.Date={{.Date}}
 archives:
-  - replacements:
-      386: i386
-      amd64: x86_64
+  - name_template: >-
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
 checksum:
   name_template: "checksums.txt"
 snapshot:
