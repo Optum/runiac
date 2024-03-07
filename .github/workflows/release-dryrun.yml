@@ -19,7 +19,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --clean --skip=publish
+          args: release --clean --skip=publish --snapshot
         env:
           GITHUB_TOKEN: ${{ github.token }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.GIT_COMMITTER_TOKEN }}
