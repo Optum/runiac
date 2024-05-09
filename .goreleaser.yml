@@ -39,10 +39,15 @@ brews:
     repository:
       owner: optum
       name: homebrew-tap
+      branch: "{{.ProjectName}}-{{.Version}}"
       # Optionally a token can be provided, if it differs from the token provided to GoReleaser
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
       pull_request:
         enabled: true
+        base:
+          owner: optum
+          name: homebrew-tap
+          branch: main
     directory: Formula
     commit_author:
       name: goreleaserbot
