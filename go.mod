@@ -11,7 +11,7 @@ require (
 	github.com/gookit/color v1.5.4
 	github.com/gruntwork-io/go-commons v0.17.1
 	github.com/gruntwork-io/terratest v0.46.11
-	github.com/hashicorp/go-getter v1.7.4
+	github.com/hashicorp/go-getter v1.7.5
 	github.com/otiai10/copy v1.14.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
