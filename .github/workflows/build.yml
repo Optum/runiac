@@ -4,7 +4,8 @@ on:
     branches:
       - main
 permissions:
-  contents: write
+  checks: write
+  pull-requests: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,7 +24,7 @@ jobs:
           rm -rf ./reports && mkdir ./reports;
           gotestsum --format standard-verbose --junitfile ./reports/junit.xml --raw-command -- go test -parallel 5 --json ./...;
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.15.1
+        uses: EnricoMi/publish-unit-test-result-action@v2.16.1
         with:
           commit: ${{ github.event.workflow_run.head_sha }}
           files: "reports/*.xml"
