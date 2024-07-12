@@ -50,11 +50,17 @@ func StringToBackendType(s string) (TFBackendType, error) {
 	return val, nil
 }
 
+// TerraformS3BackendAssumeRole provides a nested struct for the assume_role block in an S3 backend of Terraform
+// https://developer.hashicorp.com/terraform/language/settings/backends/s3#assume-role-configuration
+type TerraformS3BackendAssumeRole struct {
+	RoleArn string
+}
+
 // TerraformBackend is a structure that represents a terraform backend file
 type TerraformBackend struct {
 	Type                  TFBackendType
 	Key                   string
-	S3RoleArn             string
+	AssumeRole            TerraformS3BackendAssumeRole
 	S3Bucket              string
 	AZUResourceGroupName  string
 	AZUStorageAccountName string
@@ -115,7 +121,7 @@ func ParseTFBackend(fs afero.Fs, log *logrus.Entry, file string) (backend Terraf
 	roleMatch := rRegex.FindStringSubmatch(s)
 
 	if len(roleMatch) > 0 {
-		backend.S3RoleArn = roleMatch[1]
+		backend.AssumeRole.RoleArn = roleMatch[1]
 	}
 
 	// Bucket

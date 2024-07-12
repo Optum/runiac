@@ -502,7 +502,7 @@ func TestParseBackend_ShouldParseRoleArnWhenSet(t *testing.T) {
 	mockResult := ParseTFBackend(fs, logger, "testbackend.tf")
 
 	require.Equal(t, S3Backend, mockResult.Type)
-	require.Equal(t, "stubrolearn", mockResult.S3RoleArn)
+	require.Equal(t, "stubrolearn", mockResult.AssumeRole.RoleArn)
 }
 
 func TestTFBackendTypeToString(t *testing.T) {
