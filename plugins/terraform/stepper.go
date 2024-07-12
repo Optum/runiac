@@ -357,11 +357,7 @@ func GetBackendConfig(exec config.StepExecution, backendParser TFBackendParser) 
 	if declaredBackend.Key != "" {
 		// grab statefile name (base)
 		interpolatedKey := interpolateString(exec, declaredBackend.Key)
-
-		// only track override config if interpolated is different from what user declared
-		if interpolatedKey != declaredBackend.Key {
-			b["key"] = interpolatedKey
-		}
+		b["key"] = interpolatedKey
 	}
 
 	if declaredBackend.AssumeRole.RoleArn != "" {
