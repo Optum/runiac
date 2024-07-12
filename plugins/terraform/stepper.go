@@ -367,8 +367,8 @@ func GetBackendConfig(exec config.StepExecution, backendParser TFBackendParser) 
 
 		// only track override config if interpolated is different from what user declared
 		if interpolatedRoelArn != roleArn {
-			b["assume_role"] = fmt.Sprintf("{\"role_arn\"=\"%s\"}", roleArn)
 			roleArn = interpolatedRoelArn
+			b["assume_role"] = fmt.Sprintf("{\"role_arn\"=\"%s\"}", roleArn)
 		}
 		exec.Logger.Debugf("Resolved S3RoleArn: %s", roleArn)
 	}
