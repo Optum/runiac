@@ -1,7 +1,7 @@
 // deploy a PagerDuty team
 resource "pagerduty_team" "example" {
   name        = "Engineering"
-  description = "All engineering" 
+  description = "All engineering"
 }
 
 // deploy a user account into PagerDuty

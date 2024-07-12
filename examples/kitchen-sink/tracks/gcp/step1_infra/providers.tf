@@ -1,7 +1,7 @@
 # Configure the Azure Provider
 provider "google" {
-  project         = var.gcp_project_id
-  region          = var.runiac_region
+  project = var.gcp_project_id
+  region  = var.runiac_region
 }
 
 provider "pagerduty" {
@@ -14,7 +14,7 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 3.51.0"
     }
-    
+
     pagerduty = {
       source  = "PagerDuty/pagerduty"
       version = "~> 1.8.0"
