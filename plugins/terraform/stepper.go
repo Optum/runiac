@@ -363,11 +363,11 @@ func GetBackendConfig(exec config.StepExecution, backendParser TFBackendParser) 
 	if declaredBackend.AssumeRole.RoleArn != "" {
 		roleArn := declaredBackend.AssumeRole.RoleArn
 		exec.Logger.Tracef("Declared S3RoleArn: %s", roleArn)
-		interpolatedRoelArn := interpolateString(exec, declaredBackend.AssumeRole.RoleArn)
+		interpolatedRoleArn := interpolateString(exec, declaredBackend.AssumeRole.RoleArn)
 
 		// only track override config if interpolated is different from what user declared
-		if interpolatedRoelArn != roleArn {
-			roleArn = interpolatedRoelArn
+		if interpolatedRoleArn != roleArn {
+			roleArn = interpolatedRoleArn
 			b["assume_role"] = fmt.Sprintf("{\"role_arn\"=\"%s\"}", roleArn)
 		}
 		exec.Logger.Debugf("Resolved S3RoleArn: %s", roleArn)
