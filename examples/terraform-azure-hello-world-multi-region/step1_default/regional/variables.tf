@@ -1,27 +1,27 @@
 locals {
-    namespace- = var.runiac_namespace == "" ? "" : "${var.runiac_namespace}-"
+  namespace- = var.runiac_namespace == "" ? "" : "${var.runiac_namespace}-"
 }
 
 variable "runiac_account_id" {
-    type = string
+  type = string
 }
 
 variable "runiac_region" {
-    type = string
+  type = string
 }
 
 variable "runiac_environment" {
-    type = string
+  type = string
 }
 
 variable "runiac_namespace" {
-    type = string
+  type = string
 }
 
 variable "runiac_step" {
-    type = string
+  type = string
 }
 
 variable "runiac_primary_region" {
-    type = string
+  type = string
 }

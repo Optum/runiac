@@ -356,47 +356,87 @@ func GetBackendConfig(exec config.StepExecution, backendParser TFBackendParser) 
 	// if user has decided to overwrite state file convention in backend.tf, support this override
 	if declaredBackend.Key != "" {
 		// grab statefile name (base)
-		b["key"] = interpolateString(exec, declaredBackend.Key)
+		interpolatedKey := interpolateString(exec, declaredBackend.Key)
+		b["key"] = interpolatedKey
 	}
 
-	if declaredBackend.S3RoleArn != "" {
-		b["role_arn"] = interpolateString(exec, declaredBackend.S3RoleArn)
+	if declaredBackend.AssumeRole.RoleArn != "" {
+		roleArn := declaredBackend.AssumeRole.RoleArn
+		exec.Logger.Tracef("Declared S3RoleArn: %s", roleArn)
+		interpolatedRoleArn := interpolateString(exec, declaredBackend.AssumeRole.RoleArn)
 
-		exec.Logger.Debugf("Declared S3RoleArn: %s", b["role_arn"])
+		// only track override config if interpolated is different from what user declared
+		if interpolatedRoleArn != roleArn {
+			roleArn = interpolatedRoleArn
+			b["assume_role"] = fmt.Sprintf("{\"role_arn\"=\"%s\"}", roleArn)
+		}
+		exec.Logger.Debugf("Resolved S3RoleArn: %s", roleArn)
 	}
 
 	if declaredBackend.S3Bucket != "" {
-		b["bucket"] = interpolateString(exec, declaredBackend.S3Bucket)
+		bucket := declaredBackend.S3Bucket
+		exec.Logger.Tracef("Declared S3 bucket: %s", bucket)
+		interpolatedBucket := interpolateString(exec, bucket)
 
-		exec.Logger.Debugf("Declared S3 bucket: %s", b["bucket"])
+		// only track override config if interpolated is different from what user declared
+		if interpolatedBucket != bucket {
+			b["bucket"] = interpolatedBucket
+			bucket = interpolatedBucket
+		}
+		exec.Logger.Debugf("Resolved S3 bucket: %s", bucket)
 	}
 
 	if declaredBackend.GCSBucket != "" {
-		b["bucket"] = interpolateString(exec, declaredBackend.GCSBucket)
+		bucket := declaredBackend.GCSBucket
+		exec.Logger.Tracef("Declared GCS bucket: %s", bucket)
+		interpolatedBucket := interpolateString(exec, bucket)
 
-		exec.Logger.Debugf("Declared GCS bucket: %s", b["bucket"])
+		// only track override config if interpolated is different from what user declared
+		if interpolatedBucket != bucket {
+			b["bucket"] = interpolatedBucket
+			bucket = interpolatedBucket
+		}
+		exec.Logger.Debugf("Resolved GCS bucket: %s", bucket)
 	}
 
 	if declaredBackend.GCSPrefix != "" {
-		b["prefix"] = interpolateString(exec, declaredBackend.GCSPrefix)
+		prefix := declaredBackend.GCSPrefix
+		exec.Logger.Tracef("Declared GCS prefix: %s", prefix)
+		interpolatedPrefix := interpolateString(exec, prefix)
 
-		exec.Logger.Debugf("Declared GCS prefix: %s", b["prefix"])
+		// only track override config if interpolated is different from what user declared
+		if interpolatedPrefix != prefix {
+			b["prefix"] = interpolatedPrefix
+			prefix = interpolatedPrefix
+		}
+		exec.Logger.Debugf("Resolved GCS prefix: %s", prefix)
 	}
 
 	if declaredBackend.AZUResourceGroupName != "" {
-		b["resource_group_name"] = interpolateString(exec, declaredBackend.AZUResourceGroupName)
+		interpolatedRgName := interpolateString(exec, declaredBackend.AZUResourceGroupName)
+
+		// only track override config if interpolated is different from what user declared
+		if interpolatedRgName != declaredBackend.AZUResourceGroupName {
+			b["resource_group_name"] = interpolatedRgName
+		}
 	}
 
 	if declaredBackend.AZUStorageAccountName != "" {
-		b["storage_account_name"] = interpolateString(exec, declaredBackend.AZUStorageAccountName)
-	}
+		interpolatedStorageAcctName := interpolateString(exec, declaredBackend.AZUStorageAccountName)
 
-	if declaredBackend.AZUStorageAccountName != "" {
-		b["storage_account_name"] = interpolateString(exec, declaredBackend.AZUStorageAccountName)
+		// only track override config if interpolated is different from what user declared
+		if interpolatedStorageAcctName != declaredBackend.AZUStorageAccountName {
+			b["storage_account_name"] = interpolatedStorageAcctName
+		}
 	}
 
 	if declaredBackend.Path != "" {
-		b["path"] = interpolateString(exec, declaredBackend.Path)
+		interpolatedPath := interpolateString(exec, declaredBackend.Path)
+
+		// only track override config if interpolated is different from what user declared
+		if interpolatedPath != declaredBackend.Path {
+			b["path"] = interpolatedPath
+		}
 	}
 
 	declaredBackend.Config = b

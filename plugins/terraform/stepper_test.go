@@ -59,7 +59,7 @@ func TestGetBackendConfig_ShouldParseAssumeRoleCoreAccountIDMapCorrectly(t *test
 		}}, ParseTFBackend)
 
 	require.Equal(t, S3Backend, mockResult.Type)
-	require.Equal(t, fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", DefaultStubAccountID), mockResult.Config["role_arn"])
+	require.Contains(t, mockResult.Config["assume_role"], fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", DefaultStubAccountID))
 }
 
 func TestGetBackendConfig_ShouldInterpolateBucketField(t *testing.T) {
@@ -150,7 +150,7 @@ func TestGetBackendConfig_ShouldInterpolateStorageAccountNameField(t *testing.T)
 	require.Equal(t, "st-fake", mockResult.Config["storage_account_name"])
 }
 
-func TestGetBackendConfig_ShouldParseAssumeRoleStepCorrectly(t *testing.T) {
+func TestGetBackendConfig_ShouldInterpolateS3BackendKeyField(t *testing.T) {
 	t.Parallel()
 	fs := afero.NewMemMapFs()
 
@@ -175,10 +175,11 @@ func TestGetBackendConfig_ShouldHandleFeatureToggleDisableS3BackendKeyPrefixCorr
 	t.Parallel()
 	fs := afero.NewMemMapFs()
 
+	// needs to interpolate _something_ in order to show up in mockResult.Config
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "noprefix"
+		key         = "noprefix-${var.runiac_step}"
 	  }
 	}
 	`), 0644)
@@ -199,10 +200,11 @@ func TestGetBackendConfig_ShouldReturnSameValueForKeyAsStepAsNoKey(t *testing.T)
 	t.Parallel()
 	fs := afero.NewMemMapFs()
 
+	// needs to interpolate _something_ in order to show up in mockResult.Config
 	_ = afero.WriteFile(fs, "backend.tf", []byte(`
 	terraform {
 	  backend "s3" {
-		key         = "fakestep"
+		key         = "fakestep-${var.runiac_step}"
 	  }
 	}
 	`), 0644)
@@ -502,7 +504,7 @@ func TestParseBackend_ShouldParseRoleArnWhenSet(t *testing.T) {
 	mockResult := ParseTFBackend(fs, logger, "testbackend.tf")
 
 	require.Equal(t, S3Backend, mockResult.Type)
-	require.Equal(t, "stubrolearn", mockResult.S3RoleArn)
+	require.Equal(t, "stubrolearn", mockResult.AssumeRole.RoleArn)
 }
 
 func TestTFBackendTypeToString(t *testing.T) {
