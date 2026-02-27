@@ -1,9 +1,13 @@
 package config
 
 import (
-	"github.com/stretchr/testify/require"
+	"fmt"
 	"os"
+	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var yamlExample = []byte(`Hacker: true
@@ -36,4 +40,31 @@ func TestGetConfig_EnvironmentVariablesShouldMatch(t *testing.T) {
 	require.Equal(t, "terraform", conf.Runner)
 	require.NotEmpty(t, conf.StepWhitelist)
 	require.Equal(t, "default/default", conf.StepWhitelist[0])
+}
+
+func TestConfigStructTags_ShouldBeValid(t *testing.T) {
+	t.Parallel()
+
+	rt := reflect.TypeOf(Config{})
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		tag := string(field.Tag)
+		if tag == "" {
+			continue
+		}
+
+		// Check that all key:"value" pairs have properly quoted values
+		// A malformed tag like `mapstructure:runner` (missing quotes) will not
+		// be parseable by reflect.StructTag.Lookup
+		for _, key := range []string{"mapstructure", "required"} {
+			if !strings.Contains(tag, key) {
+				continue
+			}
+			_, ok := field.Tag.Lookup(key)
+			require.True(t, ok, fmt.Sprintf(
+				"struct field %q has malformed %q tag: %s (missing quotes around value?)",
+				field.Name, key, tag,
+			))
+		}
+	}
 }
