@@ -14,7 +14,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.1
+          go-version: 1.25.7
       - name: Setup gotestsum
         uses: autero1/action-gotestsum@v2.0.0
         with:
@@ -24,7 +24,7 @@ jobs:
           rm -rf ./reports && mkdir ./reports;
           gotestsum --format standard-verbose --junitfile ./reports/junit.xml --raw-command -- go test -parallel 5 --json ./...;
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.16.1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           commit: ${{ github.event.workflow_run.head_sha }}
           files: "reports/*.xml"
