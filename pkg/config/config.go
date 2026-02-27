@@ -24,7 +24,7 @@ type Config struct {
 	RegionalRegions []string `mapstructure:"regional_regions"` // runiac will apply regional step deployments across these regions
 	PrimaryRegion   string   `mapstructure:"primary_region" required:"true"`
 	DryRun          bool     `mapstructure:"dry_run"` // DryRun will only execute up to Terraform plan, describing what will happen if deployed
-	Runner          string   `mapstructure:runner`    // Delivery framework to invoke for executing steps
+	Runner          string   `mapstructure:"runner"`  // Delivery framework to invoke for executing steps
 
 	UniqueExternalExecutionID string
 	DeploymentRing            string `mapstructure:"deployment_ring"`
