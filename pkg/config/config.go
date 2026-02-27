@@ -37,7 +37,7 @@ type Config struct {
 	MaxTestRetries            int             `mapstructure:"max_test_retries"`
 	LogLevel                  string          `mapstructure:"log_level"`
 	CoreAccounts              CoreAccountsMap `mapstructure:"core_accounts"`
-	RegionGroups              RegionGroupsMap `mapstructure:"region_grouprs"`
+	RegionGroups              RegionGroupsMap `mapstructure:"region_groups"`
 	// Set at task definition creation
 	Namespace   string `mapstructure:"namespace"`                   // The namespace to use in the Terraform run.
 	Environment string `mapstructure:"environment" required:"true"` // The name of the environment (e.g. pr, nonprod, prod)
