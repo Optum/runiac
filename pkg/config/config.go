@@ -24,7 +24,7 @@ type Config struct {
 	RegionalRegions []string `mapstructure:"regional_regions"` // runiac will apply regional step deployments across these regions
 	PrimaryRegion   string   `mapstructure:"primary_region" required:"true"`
 	DryRun          bool     `mapstructure:"dry_run"` // DryRun will only execute up to Terraform plan, describing what will happen if deployed
-	Runner          string   `mapstructure:runner`    // Delivery framework to invoke for executing steps
+	Runner          string   `mapstructure:"runner"`  // Delivery framework to invoke for executing steps
 
 	UniqueExternalExecutionID string
 	DeploymentRing            string `mapstructure:"deployment_ring"`
@@ -37,7 +37,7 @@ type Config struct {
 	MaxTestRetries            int             `mapstructure:"max_test_retries"`
 	LogLevel                  string          `mapstructure:"log_level"`
 	CoreAccounts              CoreAccountsMap `mapstructure:"core_accounts"`
-	RegionGroups              RegionGroupsMap `mapstructure:"region_grouprs"`
+	RegionGroups              RegionGroupsMap `mapstructure:"region_groups"`
 	// Set at task definition creation
 	Namespace   string `mapstructure:"namespace"`                   // The namespace to use in the Terraform run.
 	Environment string `mapstructure:"environment" required:"true"` // The name of the environment (e.g. pr, nonprod, prod)

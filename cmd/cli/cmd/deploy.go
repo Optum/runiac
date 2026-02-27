@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -299,7 +298,7 @@ func getMachineName() (string, error) {
 		return "", err
 	}
 
-	out, err := ioutil.ReadAll(stdout)
+	out, err := io.ReadAll(stdout)
 
 	if err := cmdd.Wait(); err != nil {
 		return "", err
