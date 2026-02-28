@@ -46,14 +46,26 @@ type Config struct {
 
 type RegionGroupsMap map[string]map[string][]string
 
+// Decode implements the mapstructure v1 string decoder interface.
 func (ipd *RegionGroupsMap) Decode(value string) error {
 	return json.Unmarshal([]byte(value), ipd)
 }
 
+// UnmarshalText implements encoding.TextUnmarshaler for mapstructure v2 compatibility.
+func (ipd *RegionGroupsMap) UnmarshalText(text []byte) error {
+	return json.Unmarshal(text, ipd)
+}
+
 type CoreAccountsMap map[string]Account
 
+// Decode implements the mapstructure v1 string decoder interface.
 func (ipd *CoreAccountsMap) Decode(value string) error {
 	return json.Unmarshal([]byte(value), ipd)
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler for mapstructure v2 compatibility.
+func (ipd *CoreAccountsMap) UnmarshalText(text []byte) error {
+	return json.Unmarshal(text, ipd)
 }
 
 // Deployment ...
