@@ -1,16 +1,15 @@
 # syntax=docker/dockerfile:1
 
-ARG GOVERSION=1.25.7
+ARG GOVERSION=1.26.3
+ARG TERRAFORM_VERSION=1.14.9
 
 FROM golang:${GOVERSION} AS builder
 
-RUN apt-get update && apt-get upgrade -y ca-certificates && apt-get install -y bash && apt-get install -y unzip
+RUN apt-get update && apt-get upgrade -y ca-certificates && apt-get install -y bash
 
-RUN curl -L -o gotestsum.tgz "https://github.com/gotestyourself/gotestsum/releases/download/v1.13.0/gotestsum_1.13.0_linux_amd64.tar.gz" && \
-    tar -C /usr/local/bin -xzf gotestsum.tgz && \
-    rm gotestsum.tgz && \
-    rm -f /usr/local/bin/LICENSE && \
-    rm -f /usr/local/bin/README.md;
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go install gotest.tools/gotestsum@v1.13.0
 
 WORKDIR /app
 
@@ -31,10 +30,14 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ./runiac ./cmd/runiac/
 
-FROM hashicorp/terraform:1.14.6
+FROM hashicorp/terraform:${TERRAFORM_VERSION}
+
+ARG GOVERSION
+ARG TERRAFORM_VERSION
 
 # Common tools
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache && \
+    apk add --no-cache \
     bash \
     jq \
     curl \
@@ -44,7 +47,7 @@ RUN mkdir -p $HOME/.terraform.d/plugin-cache
 
 # Grab from builder
 COPY --from=builder /app/runiac /usr/local/bin
-COPY --from=builder /usr/local/bin/gotestsum /usr/local/bin/gotestsum
+COPY --from=builder /go/bin/gotestsum /usr/local/bin/gotestsum
 
 ENV TF_IN_AUTOMATION=true
 # Required by gotestsum JUnit XML report:
