@@ -208,6 +208,16 @@ var deployCmd = &cobra.Command{
 		// persist local terraform state between container executions
 		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s/.runiac/tfstate:/runiac/tfstate", dir))
 
+		// surface the run report (plan + errors) on the host via a dedicated mount + default output dir
+		reportHostDir := fmt.Sprintf("%s/.runiac/report", dir)
+		if err := os.MkdirAll(reportHostDir, 0o755); err != nil {
+			logrus.WithError(err).Warnf("unable to create run report dir %s", reportHostDir)
+		}
+		cmd2.Args = append(cmd2.Args, "-v", fmt.Sprintf("%s:/runiac/report", reportHostDir))
+		if val, ok := defaultReportOutputDir(os.Getenv("RUNIAC_OUTPUT_DIR")); ok {
+			cmd2.Args = append(cmd2.Args, "-e", "RUNIAC_OUTPUT_DIR="+val)
+		}
+
 		cmd2.Args = append(cmd2.Args, containerTag)
 
 		logrus.Info(strings.Join(cmd2.Args, " "))
@@ -232,6 +242,16 @@ func setStringFlag(cmd *cobra.Command, flag *string, cmdLineOption string, confi
 			*flag = configValue
 		}
 	}
+}
+
+// defaultReportOutputDir returns the in-container RUNIAC_OUTPUT_DIR to inject when
+// the caller has not set one, and whether to inject it. A caller-provided value is
+// preserved so consumers can redirect the run report elsewhere.
+func defaultReportOutputDir(existing string) (dir string, inject bool) {
+	if strings.TrimSpace(existing) == "" {
+		return "/runiac/report", true
+	}
+	return "", false
 }
 
 func appendEIfSet(slice []string, arg string, val string) []string {

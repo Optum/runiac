@@ -67,3 +67,18 @@ func Test_DeployCommand(t *testing.T) {
 	require.Equal(t, "mockofseagulls", ContainerEngine)
 	require.Equal(t, "mockofseagulls", Container)
 }
+
+func TestDefaultReportOutputDir(t *testing.T) {
+	// no caller value -> inject the default in-container report dir
+	dir, inject := defaultReportOutputDir("")
+	require.True(t, inject)
+	require.Equal(t, "/runiac/report", dir)
+
+	// whitespace-only is treated as unset
+	_, inject = defaultReportOutputDir("   ")
+	require.True(t, inject)
+
+	// caller-provided value is preserved (do not inject the default)
+	_, inject = defaultReportOutputDir("/custom/out")
+	require.False(t, inject)
+}
