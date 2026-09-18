@@ -71,6 +71,9 @@ type StepOutput struct {
 	StreamOutput     string
 	Err              error
 	OutputVariables  map[string]interface{}
+	// PlanResourceChanges maps a terraform plan action (e.g. "[create]") to the
+	// resource addresses affected. Populated best-effort by the terraform plugin.
+	PlanResourceChanges map[string][]string
 }
 
 // TFProviderType represents a Terraform provider type
