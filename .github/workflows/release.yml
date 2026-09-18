@@ -6,6 +6,9 @@ on:
     tags:
       - "*"
 
+permissions:
+  contents: read
+
 jobs:
   dockerhub-core:
     runs-on: ubuntu-latest
@@ -22,6 +25,8 @@ jobs:
   goreleaser-cli:
     needs: dockerhub-core
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
