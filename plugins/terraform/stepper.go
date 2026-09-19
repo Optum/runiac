@@ -286,6 +286,7 @@ var executeTerraformInDir = func(exec config.StepExecution, destroy bool) (outpu
 
 			tfOptions.Logger.Info(fmt.Sprintf("%s, %s, %s: %s", c.Address, c.Type, c.Name, c.Change.Actions))
 		}
+		output.PlanResourceChanges = resourceChangesByAction
 		applyChanges := true
 		//noChanges := len(resourceChangesByAction["[no-op]"]) == len(plan.ResourceChanges)
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/optum/runiac/pkg/config"
 	"github.com/optum/runiac/pkg/logging"
+	"github.com/optum/runiac/pkg/reporting"
 	"github.com/optum/runiac/pkg/tracks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -42,6 +43,7 @@ func main() {
 	stepCount := 0
 	executedStepCount := 0
 	failedTestCount := 0
+	stepReports := []reporting.StepReport{}
 
 	for _, t := range output.Tracks {
 		if t.Skipped {
@@ -60,6 +62,20 @@ func main() {
 				case config.Skipped:
 					skippedSteps = append(skippedSteps, fmt.Sprintf("%v/%v/%v/%v", t.Name, s.Name, tExecution.RegionDeployType, tExecution.Region))
 				}
+
+				errStr := ""
+				if s.Output.Err != nil {
+					errStr = s.Output.Err.Error()
+				}
+				stepReports = append(stepReports, reporting.StepReport{
+					Track:            t.Name,
+					Step:             s.Name,
+					Region:           tExecution.Region,
+					RegionDeployType: fmt.Sprintf("%v", tExecution.RegionDeployType),
+					Status:           statusString(s.Output.Status),
+					Error:            errStr,
+					PlanChanges:      s.Output.PlanResourceChanges,
+				})
 			}
 
 		}
@@ -93,6 +109,18 @@ func main() {
 		result = "fail"
 	}
 
+	reporting.SortSteps(stepReports)
+	reportMD := reporting.Write(afero.NewOsFs(), log, reporting.RunReport{
+		Result:        result,
+		Message:       resultMessage,
+		ExecutedSteps: executedStepCount - failedStepCount,
+		TotalSteps:    stepCount,
+		FailedSteps:   failedSteps,
+		SkippedSteps:  skippedSteps,
+		Steps:         stepReports,
+	})
+	fmt.Fprintf(os.Stdout, "\n%s\n", reportMD)
+
 	slog := log.WithFields(logrus.Fields{
 		"type":          "summary",
 		"skipped":       strings.Join(skippedSteps, ","),
@@ -106,6 +134,23 @@ func main() {
 	} else {
 		slog.Error(resultMessage)
 		os.Exit(1)
+	}
+}
+
+// statusString maps a DeployResult to a stable label without risking the
+// out-of-range panic in DeployResult.String() for the Na value.
+func statusString(d config.DeployResult) string {
+	switch d {
+	case config.Success:
+		return "SUCCESS"
+	case config.Unstable:
+		return "UNSTABLE"
+	case config.Skipped:
+		return "SKIPPED"
+	case config.Na:
+		return "NA"
+	default:
+		return "FAIL"
 	}
 }
 

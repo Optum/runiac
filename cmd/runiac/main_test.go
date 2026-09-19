@@ -6,8 +6,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/optum/runiac/pkg/config"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 )
 
 var DefaultStubAccountID = "1"
@@ -42,4 +44,26 @@ func TestMain(m *testing.M) {
 
 	// Exit
 	os.Exit(exitCode)
+}
+
+func TestStatusString(t *testing.T) {
+	cases := []struct {
+		in   config.DeployResult
+		want string
+	}{
+		{config.Success, "SUCCESS"},
+		{config.Unstable, "UNSTABLE"},
+		{config.Skipped, "SKIPPED"},
+		{config.Na, "NA"},
+		{config.Fail, "FAIL"},
+	}
+	for _, c := range cases {
+		require.Equal(t, c.want, statusString(c.in))
+	}
+}
+
+// TestStatusString_NaDoesNotPanic guards the reason statusString exists:
+// config.DeployResult.String() indexes a 4-element array and panics on Na.
+func TestStatusString_NaDoesNotPanic(t *testing.T) {
+	require.NotPanics(t, func() { _ = statusString(config.Na) })
 }
